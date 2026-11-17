@@ -411,7 +411,12 @@ const TYPES = {
   '-':    { name:'Ruhetag oder alternatives Training', hf:'',
     what:'Pause – oder etwa eine Stunde leichter Ausgleichssport wie Radfahren oder Schwimmen sowie Krafttraining. Crosstraining bringt dem Laufen selbst wenig, steigert aber die Fettverbrennung; wadenlastige Geräte wie Stepper meiden.',
     why:'Erholung gehört zum Training.', feel:'Ganz entspannt.', src:'Beck, 2024, S. 162; Galloway & Galloway, 2019, S. 49' },
-  'P':    { name:'Pause', hf:'', what:'Ruhe vor dem Rennen.', why:'Frisch an den Start.', feel:'', src:'Aderhold, 2018, S. 480 f.' }
+  'P':    { name:'Pause', hf:'', what:'Ruhe vor dem Rennen.', why:'Frisch an den Start.', feel:'', src:'Aderhold, 2018, S. 480 f.' },
+  'KT':   { name:'Krafttraining', hf:'',
+    what:'Etwa 30–45 Minuten Kräftigung – dafür brauchst du kein Fitnessstudio, Übungen mit dem eigenen Körpergewicht reichen.',
+    list:['Rumpf: Unterarmstütz, Füße abwechselnd um eine Schuhlänge anheben','Bauch: Crunches aus der Rückenlage, Arme vor der Brust gekreuzt, Knie angewinkelt','Rücken: aus dem Kniestand den Rumpf mit gestrecktem Rücken aufrichten','Seitlicher Rumpf: Seitstütz auf dem Ellbogen, Becken anheben, bis der Rumpf gestreckt ist','Äußere Hüfte: in Seitlage das gestreckte obere Bein abspreizen','Hintere Oberschenkel und Hüfte: Rückenlage, ein Bein aufgestellt, das andere gestreckt nach oben – Becken hochdrücken','Arme, Brust, Schultern: Liegestütz aus dem Vierfüßlerstand (schwerer: klassischer Liegestütz)','Innere Hüfte: im Sitz die Knie gegen den Unterarm als „Klemme“ zusammendrücken'],
+    why:'Laufen trainiert vor allem den Unterkörper und tut wenig für den Oberkörper. Regelmäßige Kräftigung stärkt auch die Muskeln, die beim Laufen wenig beansprucht werden, und stabilisiert den Rumpf. Am besten an Pausentagen oder vor leichtem Training – nicht vor oder nach harten Einheiten (Tempodauerlauf, Wiederholungsläufe) und nicht vor einem Wettkampf. Deshalb steht es freitags, vor dem lockeren langen Lauf.',
+    feel:'', src:'Aderhold, 2018, S. 154 f.; Beck, 2024, S. 162' }
 };
 
 /* Literatur – APA 7 */
@@ -531,6 +536,9 @@ const FACTS = [
   { id:'50km', cat:'training', fun:true, title:'Mehr ist nicht immer gesünder',
     de:'Mehr als 50 Laufkilometer pro Woche scheinen keinen zusätzlichen gesundheitlichen Effekt zu bringen.',
     en:'More than 50 km a week does not seem to add further health benefits.', src:'Aderhold, 2018, S. 141' },
+  { id:'kraft', cat:'training', title:'Krafttraining ohne Studio',
+    de:'Für das Muskeltraining musst du nicht ins Fitnessstudio – Übungen gegen den eigenen Körperwiderstand oder mit einfachen Hilfsmitteln wie einem Gymnastikband reichen. Krafttraining sollte ganzjährig zum Trainingsprogramm gehören, am besten an Pausentagen oder vor leichtem Training.',
+    en:'You do not need a gym: bodyweight exercises are enough. Strength training belongs in your programme all year round.', src:'Aderhold, 2018, S. 154 f.' },
   { id:'endorphin', cat:'training', fun:true, title:'Das gute Gefühl danach',
     de:'Endorphine sorgen für das gute Gefühl nach dem Training und sollen schmerzhemmend wirken.',
     en:'Endorphins are behind that good feeling after training.', src:'Aderhold, 2018' }
@@ -584,6 +592,7 @@ function parseSession(tok){
 }
 function sessionLabel(s){
   if (s.code==='HM') return 'Halbmarathon (21,1 km)';
+  if (s.code==='KT') return 'Krafttraining (ca. 30–45 Min.)';
   if (s.code==='RW') { const [a,b]=s.arg.split('x'); return a+' × '+b+' min laufen, je 1 min gehen'; }
   if (s.code==='LAUF') return s.arg+' min am Stück laufen';
   if (s.code.startsWith('WHL')) { const [a,b]=s.arg.split('x'); return a+' × '+b+' km '+s.code; }
@@ -641,11 +650,30 @@ function fitWeeks(canon, from, n){
   return { list: pre.concat(hmIdx), notes };
 }
 
+/* Vorgabe der Kursleitung: höchstens 3 Läufe pro Woche, in der Regel max. 25 km, in den Wochen mit dem längsten Lauf max. 30 km.
+   Es bleiben die zentralen Einheiten Tempo-/Dauerlauf (Mo), Wiederholungsläufe/Fahrtspiel (Mi) und langer Lauf (Sa) –
+   dieser Rahmen muss laut Aderhold (2018, S. 138 f.) erhalten bleiben. Gekürzt wird zuerst der Montagslauf, dann das Fahrtspiel, zuletzt der lange Lauf.
+   Dazu einmal pro Woche Krafttraining am Freitag (Pausentag vor lockerem Training; Aderhold, 2018, S. 154 f.). */
+const RUN_DAYS = [0,2,5,6], WEEK_KM = 25, PEAK_KM = 30, MIN_RUN = 5;
 function makeWeek(monday, c, flag){
   const P = PLANS[c.b]; const row = P.weeks[c.i];
-  const sessions=[];
-  row.forEach((tok,d)=>{ const s=parseSession(tok); if(s) sessions.push(Object.assign(s,{day:d, date:addDays(monday,d), done:false, skipped:false, kmDone:null})); });
-  return { monday, b:c.b, i:c.i, title:P.title, src:P.src, rest:row.map(t=>t), sessions, flag: flag||null };
+  let sessions=[];
+  row.forEach((tok,d)=>{ const s=parseSession(tok); if(s && RUN_DAYS.includes(d)) sessions.push(Object.assign(s,{day:d, date:addDays(monday,d), done:false, skipped:false, kmDone:null})); });
+  const race = sessions.some(s=>s.code==='HM');
+  if (!race){
+    const longs = P.weeks.map(r=>{ const x=parseSession(r[5]); return x&&x.km ? x.km : 0; });
+    const peak = !c.pre && longs[c.i] > 0 && longs[c.i] === Math.max(...longs);
+    const limit = peak ? PEAK_KM : WEEK_KM;
+    const tot = () => sessions.reduce((a,x)=>a+(x.km||0),0);
+    const cut = (x, min) => { if (!x || !x.km || tot()<=limit) return; const r = Math.min(x.km-min, tot()-limit); if (r<=0) return; x.orig = x.orig||x.km; x.km -= r; x.arg = String(x.km); };
+    cut(sessions.find(x=>x.day===0 && !x.code.startsWith('WHL')), MIN_RUN);
+    cut(sessions.find(x=>x.day===2 && x.code==='FS'), MIN_RUN);
+    cut(sessions.find(x=>x.day===5), 8);
+    sessions.push({ code:'KT', arg:'', km:null, day:4, date:addDays(monday,4), done:false, skipped:false, kmDone:null, wk: (row[5]||'').startsWith('EDL/WK') });
+    sessions.sort((a,b)=>a.day-b.day);
+  }
+  const rest = [0,1,2,3,4,5,6].map(d=> sessions.some(x=>x.day===d) ? 'x' : '-');
+  return { monday, b:c.b, i:c.i, title:P.title, src:P.src+' · angepasst: max. 3 Läufe pro Woche', rest, sessions, flag: flag||null };
 }
 
 /* kompletter Neuaufbau */
@@ -890,7 +918,7 @@ const GT = {
   bossLocked:'Der Bosskampf öffnet sich in den letzten Tagen vor dem Halbmarathon – ab', specialLocked:'Freigeschaltet ab',
   pretzels:'Brezeln', gifts:'Geschenke', sparklers:'Wunderkerzen', time:'Zeit', funfact:'Fun Fact', drink:'Trinken', gel:'Gel',
   excuses:['Zu kalt!','Morgen!','Keine Zeit!','Regen!','Zu müde!','Sofa!','Später!','Ach, nö!'],
-  gearTitle:'Deine Ausrüstung', story:'Geschichte', lang:'Sprache', controls:'Steuerung: ◀ ▶ laufen, ⤒ springen, 🥨 Brezel werfen (Tastatur: Pfeile, Leertaste, X)',
+  gearTitle:'Deine Ausrüstung', story:'Geschichte', lang:'Sprache', controls:'Steuerung: ◀ ▶ laufen, ⤒ springen, 🥨 Brezel werfen (Tastatur: ← → laufen, ↑ springen, Leertaste oder X werfen)',
   bossGear:'So hilft dir deine Ausrüstung im Bosskampf:', start:'Start', level:'Level', hp:'Schweinehund',
   advent:'Adventskalender', door:'Türchen', openFrom:'öffnet am', funFact:'Fun Fact', realFact:'Echter Fakt', bonus:'Bonus-Minispiel', source:'Quelle'
  },
@@ -919,7 +947,7 @@ const GT = {
   bossLocked:'The boss fight opens in the last days before the half marathon – from', specialLocked:'Unlocks on',
   pretzels:'Pretzels', gifts:'Presents', sparklers:'Sparklers', time:'Time', funfact:'Fun fact', drink:'Drink', gel:'Gel',
   excuses:['Too cold!','Tomorrow!','No time!','Rain!','Too tired!','Couch!','Later!','Nah!'],
-  gearTitle:'Your gear', story:'Story', lang:'Language', controls:'Controls: ◀ ▶ run, ⤒ jump, 🥨 throw a pretzel (keyboard: arrows, space, X)',
+  gearTitle:'Your gear', story:'Story', lang:'Language', controls:'Controls: ◀ ▶ run, ⤒ jump, 🥨 throw a pretzel (keyboard: ← → run, ↑ jump, space or X to throw)',
   bossGear:'How your gear helps in the boss fight:', start:'Start', level:'Level', hp:'Couch beast',
   advent:'Advent calendar', door:'Door', openFrom:'opens on', funFact:'Fun fact', realFact:'Real fact', bonus:'Bonus mini-game', source:'Source'
  }
@@ -968,7 +996,7 @@ const Music = (() => {
           [['C5',3],['Bb4',1],['G4',2],['Eb4',2]],[['F4',2],['Eb4',1],['D4',1],['C4',4]],[['Db4',2],['F4',2],['Ab4',2],['Db5',2]],[['B4',4],['D5',2],['G4',2]]] };
 
   function scheduleRetro(t, s8, bar){ const tr=RETRO, e8=60/tr.bpm/2;
-    if (s8===0){ let pos=0; tr.lead[bar].forEach(([n,d])=>{ if (n) note(master,'p25',N(n),t+pos*e8,d*e8*0.9,0.11,{hold:0.6}); pos+=d; }); }
+    if (s8===0){ let pos=0; tr.lead[bar].forEach(([n,d])=>{ if (n) note(master,'p25',N(n)/2,t+pos*e8,d*e8*0.9,0.13,{hold:0.6}); pos+=d; }); }
     note(master,'triangle', N(s8%2 ? tr.fifth[bar] : tr.bass[bar]), t, e8*0.8, 0.28, {hold:0.7});
     const ch=tr.chords[bar]; note(master,'p12', N(ch[s8%3])*2, t, e8*0.45, 0.035); note(master,'p12', N(ch[(s8+1)%3])*2, t+e8/2, e8*0.4, 0.03);
     noise(master, t, 0.03, 0.05, 7000);
@@ -1122,7 +1150,7 @@ const Game = (() => {
     G = { cfg, theme, lv, t:0, cam:0, coins:0, totalCoins: lv.ents.filter(e=>e.t==='coin').length, hearts:maxH, maxH,
       p:{ x:2*T, y:(boss?10:9)*T-18, w:12, h:18, vx:0, vy:0, on:false, face:1, inv:0, coy:0, buf:0, anim:0 },
       spawn:{ x:2*T, y:7*T }, parts:[], shots:[], pretz:[], cool:0, sparks:[], snow:[], shake:0, state:'play', gotItem:false,
-      ammo: boss ? Math.min(30, Object.values(S.game.best||{}).reduce((a,b)=>a+b,0) || (isCreator()?30:0)) : 0,
+      ammo: mode==='level' ? 0 : Math.min(30, Object.values(S.game.best||{}).reduce((a,b)=>a+b,0) || (isCreator()?30:0)),
       shield: boss && gearN.cap ? 1 : 0, drink: boss && gearN.bottle ? 1 : 0, gelUse: boss && gearN.gel ? 1 : 0, turbo:0,
       boss: boss ? { x:15*T, y:10*T-44, w:52, h:44, vx:0, vy:0, hp:6, st:'intro', tm:70, face:-1, on:true, flash:0 } : null };
     document.getElementById('gBossBtns').style.display = boss ? 'flex' : 'none';
@@ -1182,7 +1210,7 @@ const Game = (() => {
     for (const e of lv.ents){ if (e.t==='enemy' && !e.alive && e.ko>0){ e.ko--; e.y+=e.vy; e.vy+=0.3; e.spin+=0.25; } }
 
     for (const e of lv.ents){
-      if (e.t==='coin' && !e.got && hit(p,e)){ e.got=true; G.coins++; G.ammo++; Music.sfx('coin'); puff(e.x+6,e.y+6,'#ffd23f',5); }
+      if (e.t==='coin' && !e.got && hit(p,e)){ e.got=true; G.coins++; if (G.cfg.mode==='level' || G.cfg.collect==='🥨') G.ammo++; Music.sfx('coin'); puff(e.x+6,e.y+6,'#ffd23f',5); }
       else if (e.t==='item' && !e.got && hit(p,e)){ e.got=true; G.gotItem=true; Music.sfx('item'); puff(e.x+8,e.y+8,'#fff',20); toast(GEAR[e.gear].icon+' '+GEAR[e.gear][S.game.lang]+'!'); }
       else if (e.t==='check' && !e.on && p.x > e.x){ e.on=true; G.spawn={ x:e.x, y:e.y-10 }; }
       else if (e.t==='goal' && p.x+p.w > e.x+16){ endGame(true); return; }
@@ -1246,7 +1274,7 @@ const Game = (() => {
     }
     G.sparks.forEach(s=>{ ctx.fillStyle='#ffdd55'; ctx.beginPath(); ctx.arc(s.x+4,s.y+4,3+Math.random()*1.5,0,7); ctx.fill(); ctx.fillStyle='rgba(255,120,40,.6)'; ctx.fillRect(s.x+3,s.y-8,2,8); });
     if (G.boss) drawBoss(G.boss);
-    G.pretz.forEach(b=>{ ctx.save(); ctx.translate(b.x+4.5,b.y+4.5); ctx.rotate(b.rot); emoji(G.cfg.mode==='boss'?'🥨':G.cfg.collect,0,0,10); ctx.restore(); });
+    G.pretz.forEach(b=>{ ctx.save(); ctx.translate(b.x+4.5,b.y+4.5); ctx.rotate(b.rot); emoji('🥨',0,0,10); ctx.restore(); });
     if (G.klonk && G.boss){ ctx.fillStyle='#fff'; ctx.font='bold 9px system-ui'; ctx.textAlign='center'; ctx.fillText(S.game.lang==='de'?'Klonk! Erst wenn er benommen ist!':'Clonk! Only when it is dazed!', G.boss.x+G.boss.w/2, G.boss.y-28); }
     G.shots.forEach(s=>{ ctx.fillStyle='#8e2433'; rr(s.x,s.y,12,9,3); ctx.fill(); ctx.strokeStyle='#d9a640'; ctx.lineWidth=1; ctx.stroke(); ctx.fillStyle='#4a0f1a'; ctx.beginPath(); ctx.arc(s.x+6,s.y+4.5,1,0,7); ctx.fill(); });
     drawPlayer(G.p);
@@ -1388,29 +1416,64 @@ const Game = (() => {
     const sky = (sc, base, par, col, lights) => { const W=640*sc, off=(cam*par)%W; ctx.save(); ctx.translate(0, base-186*sc); ctx.scale(sc,sc); for (let k=-1;k<3;k++) skyline(ctx, (k*W-off)/sc, col||city); ctx.restore();
       if (lights){ ctx.fillStyle='rgba(255,215,120,.8)'; for (let k=-1;k<3;k++) for (let i=0;i<24;i++){ ctx.fillRect(k*W-off+(260+hash(i)*370)*sc, base-2-hash(i+5)*14*sc, 1.4, 1.4); } } };
     const river = (y, h) => { ctx.fillStyle = night ? '#1d3a6b' : '#5d9bc9'; ctx.fillRect(0,y,VW,h); ctx.fillStyle='rgba(255,255,255,.35)'; for(let i=0;i<12;i++){ const xx=((i*41 - cam*0.25 + G.t*0.3)%VW+VW)%VW; ctx.fillRect(xx, y+3+(i%3)*(h/4), 9, 1.2); } };
-    if (kind==='meadow'){ hills(cam*0.15, farHill, 120, 30, 1); sky(0.55, 166, 0.2); river(166, 14);           // Neckarwiese: Blick über den Neckar auf Altstadt und Schloss
+    if (kind==='meadow'){ hills(cam*0.15, farHill, 120, 30, 1); hills(cam*0.3, night?'#18234a':G.theme.snow?'#b3c7d8':'#6f9d5f', 150, 22, 2); river(166, 14);           // Neckarwiese: Blick über den Neckar auf Altstadt und Schloss
       ctx.fillStyle='#8cbf5a'; ctx.fillRect(0,180,VW,60); layer(0.55, 70, (x,i)=>{ if(hash(i)<0.45) tree(x, 188, 0.8+hash(i+1)*0.5, '#3f8a3a'); else if (hash(i)<0.7){ ctx.fillStyle=['#d9534f','#5bc0de','#f0ad4e'][i%3]; ctx.fillRect(x+10,190,16,6); } }); }
-    if (kind==='bridge'){ hills(cam*0.15, farHill, 120, 30, 1); sky(0.42, 148, 0.12); river(148, 92);              // Alte Brücke mit Brückentor und Brückenaffe
-      layer(0.4, 420, (x)=>{ bridge(x+40, 150); ctx.fillStyle='#6b5a4a'; ctx.beginPath(); ctx.arc(x+28,136,4,0,7); ctx.fill(); ctx.fillRect(x+25,139,6,7); ctx.beginPath(); ctx.arc(x+28,133,2.2,0,7); ctx.fill(); }); }
-    if (kind==='hills'){ hills(cam*0.12, farHill, 105, 28, 1); river(146, 8); sky(0.5, 146, 0.15);              // Philosophenweg: Blick hinunter auf Neckar, Altstadt und Schloss
-      ctx.fillStyle = '#7fae66'; ctx.beginPath(); ctx.moveTo(0,VH); ctx.lineTo(0,168); for(let x=0;x<=VW;x+=20) ctx.lineTo(x, 168 - 10*Math.sin((x+cam*0.5)/70)); ctx.lineTo(VW,VH); ctx.fill();
-      layer(0.5, 40, (x,i)=>{ ctx.fillStyle='rgba(150,130,100,.55)'; ctx.fillRect(x,176+(i%3)*9,38,2.5); ctx.strokeStyle='rgba(70,110,50,.6)'; ctx.beginPath(); for(let v=0;v<5;v++){ ctx.moveTo(x+4+v*8,184); ctx.lineTo(x+4+v*8,176); } ctx.stroke(); if(hash(i)<0.25) tree(x+20,178,0.9,'#4d8a45'); }); }
-    if (kind==='oldtown'){ hills(cam*0.15, farHill, 115, 30, 1); layer(0.3, 640, (x)=>churchTower(x+300, 200, 1.5)); layer(0.5, 52, (x,i)=>house(x, 196, i, false, true)); } // Hauptstraße
-    if (kind==='castle'){ hills(cam*0.15, farHill, 120, 30, 1); layer(0.22, 560, (x)=>castle(x+150, 118));      // Schlossgarten
+    if (kind==='bridge'){ hills(cam*0.15, farHill, 120, 30, 1); hills(cam*0.3, night?'#18234a':G.theme.snow?'#b3c7d8':'#6f9d5f', 140, 20, 2); river(148, 92);   // Alte Brücke
+      { const sx = VW + 120 - ((G.t*0.45) % (VW + 320)), sy = 176;                                                                    // Ausflugsschiff auf dem Neckar
+        ctx.fillStyle='#fdfdf8'; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx+110, sy); ctx.lineTo(sx+100, sy+12); ctx.lineTo(sx+8, sy+12); ctx.closePath(); ctx.fill();
+        ctx.fillStyle='#2f5f9e'; ctx.fillRect(sx+6, sy+5, 98, 3); ctx.fillStyle='#fdfdf8'; ctx.fillRect(sx+18, sy-12, 70, 12); ctx.fillStyle='#6fa8dc'; for(let w=0;w<8;w++) ctx.fillRect(sx+21+w*8.4, sy-9, 6, 5);
+        ctx.fillStyle='#e8e2d6'; ctx.fillRect(sx+30, sy-20, 26, 8); ctx.fillStyle='#333'; ctx.fillRect(sx+82, sy-26, 1.5, 14); ctx.fillStyle='#d64545'; ctx.fillRect(sx+83.5, sy-26, 8, 5);
+        ctx.fillStyle='rgba(255,255,255,.5)'; for(let k=0;k<4;k++) ctx.fillRect(sx+112+k*7, sy+10+(k%2), 5, 1.4); }
+      const bc = '#c98e6c', bd = '#b07656';
+      layer(0.4, 50, (x)=>{ ctx.fillStyle=bc; ctx.fillRect(x-1, 140, 52, 12); ctx.fillStyle=bd; ctx.fillRect(x-1, 138, 52, 3);                      // durchgehende Fahrbahn + Brüstung
+        ctx.fillStyle=bc; ctx.beginPath(); ctx.moveTo(x, 152); ctx.lineTo(x+50, 152); ctx.lineTo(x+50, 186); ctx.lineTo(x+44, 186); ctx.lineTo(x+44, 176); ctx.arc(x+25, 176, 19, 0, Math.PI, true); ctx.lineTo(x+6, 186); ctx.lineTo(x, 186); ctx.closePath(); ctx.fill();
+        ctx.fillStyle=bd; ctx.fillRect(x-3, 176, 9, 12); ctx.beginPath(); ctx.moveTo(x-3,186); ctx.lineTo(x+1.5,192); ctx.lineTo(x+6,186); ctx.fill(); });
+      layer(0.4, 600, (x)=>{ ctx.fillStyle='#b77a5c'; ctx.fillRect(x-14, 100, 13, 52); ctx.fillRect(x+3, 100, 13, 52); ctx.fillRect(x-14, 118, 30, 34);                              // Brückentor
+        ctx.fillStyle=G.theme.sky[1]; ctx.beginPath(); ctx.moveTo(x-6,152); ctx.lineTo(x-6,136); ctx.arc(x+1,136,7,Math.PI,0); ctx.lineTo(x+8,152); ctx.fill();
+        ctx.fillStyle='#4f6b5a'; [x-7.5, x+9.5].forEach(tx=>{ ctx.beginPath(); ctx.ellipse(tx,98,8,6,0,0,7); ctx.fill(); ctx.beginPath(); ctx.moveTo(tx-2,95); ctx.lineTo(tx,84); ctx.lineTo(tx+2,95); ctx.fill(); });
+        ctx.fillStyle='#6b5a4a'; ctx.beginPath(); ctx.arc(x+30,130,4,0,7); ctx.fill(); ctx.fillRect(x+27,133,6,6); ctx.beginPath(); ctx.arc(x+30,127,2.2,0,7); ctx.fill(); });   // Brückenaffe
+}
+    if (kind==='hills'){ hills(cam*0.1, farHill, 98, 22, 1);                                                              // Philosophenweg: Blick über den Neckar
+      ctx.fillStyle = '#86ad74'; ctx.beginPath(); ctx.moveTo(0,148); for(let x=0;x<=VW;x+=10) ctx.lineTo(x, 128 - 14*Math.sin((x+cam*0.12)/120)); ctx.lineTo(VW,148); ctx.fill();   // Hang gegenüber
+      layer(0.12, 700, (x)=>{ ctx.save(); ctx.translate(x+260, 112); ctx.scale(0.3,0.3); castle(0,0); ctx.restore();                               // Schloss, klein am Hang
+        for (let h=0; h<9; h++){ const hx=x+80+h*13; ctx.fillStyle=['#f1e4cc','#e9c8a0','#efd9b4'][h%3]; ctx.fillRect(hx,138,12,10); ctx.fillStyle='#a3473a'; ctx.beginPath(); ctx.moveTo(hx-1,138); ctx.lineTo(hx+6,132); ctx.lineTo(hx+13,138); ctx.fill(); }
+        ctx.save(); ctx.translate(x+150, 148); ctx.scale(0.42,0.42); churchTower(0,0,1); ctx.restore(); });
+      river(146, 10);
+      ctx.fillStyle = '#7fae66'; ctx.beginPath(); ctx.moveTo(0,VH); ctx.lineTo(0,170); for(let x=0;x<=VW;x+=20) ctx.lineTo(x, 170 - 8*Math.sin((x+cam*0.5)/70)); ctx.lineTo(VW,VH); ctx.fill();
+      layer(0.5, 40, (x,i)=>{ ctx.strokeStyle='rgba(70,110,50,.55)'; ctx.lineWidth=1.2; ctx.beginPath(); for(let v=0;v<5;v++){ ctx.moveTo(x+4+v*8,192); ctx.lineTo(x+4+v*8,183); } ctx.stroke(); ctx.fillStyle='rgba(90,140,60,.6)'; for(let v=0;v<5;v++){ ctx.beginPath(); ctx.arc(x+4+v*8,182,2.6,0,7); ctx.fill(); } });
+      layer(0.62, 64, (x,i)=>{ ctx.fillStyle='#b9a58c'; ctx.fillRect(x,184,64,10); ctx.strokeStyle='rgba(90,70,50,.45)'; ctx.lineWidth=0.8; for(let r=0;r<2;r++) for(let k=0;k<5;k++) ctx.strokeRect(x+k*13+(r?6:0),184+r*5,13,5);    // Natursteinmauer
+        if (i%4===0){ ctx.fillStyle='#6b4a2b'; ctx.fillRect(x+18,176,22,3); ctx.fillRect(x+20,179,2,5); ctx.fillRect(x+36,179,2,5); ctx.fillRect(x+18,171,22,2); }                                                  // Bank
+        if (i%4===2){ ctx.fillStyle='#333'; ctx.fillRect(x+30,160,2,24); ctx.fillStyle='#4a4a4a'; ctx.fillRect(x+27,156,8,5); ctx.fillStyle='rgba(255,236,170,.9)'; ctx.fillRect(x+28,157,6,3); }                // Laterne
+        if (i%5===1) tree(x+40,186,0.9,'#4d8a45'); }); }
+    if (kind==='oldtown'){ hills(cam*0.15, farHill, 115, 30, 1); layer(0.3, 640, (x)=>churchTower(x+300, 196, 1.0)); layer(0.5, 52, (x,i)=>house(x, 196, i, false, true)); } // Hauptstraße
+    if (kind==='castle'){ hills(cam*0.15, farHill, 120, 30, 1); layer(0.22, 620, (x)=>{ ctx.save(); ctx.translate(x+130, 128); ctx.scale(0.8,0.8); castle(0, 0); ctx.restore(); }); tourists(cam);      // Schlossgarten
       layer(0.55, 48, (x,i)=>{ ctx.fillStyle='#4f8a43'; rr(x+4,176,40,16,8); ctx.fill(); ctx.fillStyle='rgba(255,255,255,.15)'; rr(x+8,178,32,4,2); ctx.fill(); if (i%5===0){ ctx.fillStyle='#d9cbb5'; ctx.fillRect(x+20,166,8,24); ctx.beginPath(); ctx.arc(x+24,166,6,0,7); ctx.fill(); } }); }
-    if (kind==='forest'){ hills(cam*0.15, farHill, 110, 30, 1); sky(0.3, 150, 0.08);                             // Himmelsleiter: Steinstufen durch den Wald
+    if (kind==='forest'){ hills(cam*0.15, farHill, 110, 30, 1); hills(cam*0.3, night?'#18234a':G.theme.snow?'#b3c7d8':'#6f9d5f', 145, 26, 2);                             // Himmelsleiter: Steinstufen durch den Wald
       layer(0.4, 300, (x)=>{ ctx.fillStyle='#8f8372'; for(let k=0;k<14;k++){ ctx.fillRect(x+k*14, 196-k*6, 14, 4); } ctx.fillStyle='rgba(90,80,70,.35)'; for(let k=0;k<14;k++) ctx.fillRect(x+k*14, 199-k*6, 14, 1.2); });
+      layer(0.33, 560, (x)=>{ const x0=x+250, y0=200, x1=x+470, y1=78;                                                // Heidelberger Bergbahn
+        ctx.strokeStyle='#5a4a3a'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.moveTo(x0+5,y0+3); ctx.lineTo(x1+5,y1+3); ctx.stroke();
+        ctx.lineWidth=1; for(let k=0;k<=20;k++){ const f=k/20; ctx.beginPath(); ctx.moveTo(x0+(x1-x0)*f-1,y0+(y1-y0)*f-1); ctx.lineTo(x0+(x1-x0)*f+6,y0+(y1-y0)*f+4); ctx.stroke(); }
+        ctx.fillStyle='#8a7a68'; ctx.fillRect(x1-6,y1-16,30,16); ctx.fillStyle='#a3473a'; ctx.beginPath(); ctx.moveTo(x1-9,y1-16); ctx.lineTo(x1+9,y1-24); ctx.lineTo(x1+27,y1-16); ctx.fill();
+        const f = 0.5 + 0.45*Math.sin(G.t/260), cx = x0+(x1-x0)*f, cy = y0+(y1-y0)*f, ang = Math.atan2(y1-y0, x1-x0);
+        ctx.save(); ctx.translate(cx, cy); ctx.rotate(ang); ctx.fillStyle='#8e2433'; rr(-14,-12,28,11,2); ctx.fill(); ctx.fillStyle='#f3e6cf'; for(let w=0;w<4;w++) ctx.fillRect(-12+w*6.5,-10,4.5,4); ctx.fillStyle='#4a0f1a'; ctx.fillRect(-14,-2,28,1.5); ctx.restore(); });
       layer(0.55, 30, (x,i)=>tree(x, 190, 0.9+hash(i)*0.7, i%2?'#2f6b34':'#3d7f3f')); }
-    if (kind==='forest2'){ hills(cam*0.15, farHill, 115, 30, 1); sky(0.3, 155, 0.08);                            // Heiligenberg: Thingstätte und Klosterruine
+    if (kind==='forest2'){ hills(cam*0.15, farHill, 115, 30, 1); hills(cam*0.3, night?'#18234a':G.theme.snow?'#b3c7d8':'#6f9d5f', 148, 24, 2);                            // Heiligenberg: Thingstätte und Klosterruine
       layer(0.35, 600, (x)=>{ ctx.strokeStyle='rgba(150,135,115,.85)'; ctx.lineWidth=2; for(let k=0;k<5;k++){ ctx.beginPath(); ctx.ellipse(x+120,170,64-k*10,18-k*3,0,Math.PI,0); ctx.stroke(); } ctx.lineWidth=1;
         ctx.fillStyle='#a89a88'; ctx.fillRect(x+330,136,90,44); ctx.fillStyle= G.theme.sky[1]; for(let k=0;k<4;k++){ ctx.beginPath(); ctx.moveTo(x+340+k*20,180); ctx.lineTo(x+340+k*20,152); ctx.arc(x+345+k*20,152,5,Math.PI,0); ctx.lineTo(x+350+k*20,180); ctx.fill(); } ctx.fillStyle='#a89a88'; ctx.fillRect(x+398,116,14,22); });
       layer(0.55, 36, (x,i)=>{ if(hash(i)<0.7) tree(x, 192, 0.9+hash(i)*0.6, i%2?'#2f6b34':'#3d7f3f'); }); }
     if (kind==='night'){ layer(0.25, 300, (x)=>{ ctx.fillStyle='#2b2f45'; ctx.fillRect(x+40,110,120,90); for(let r=0;r<6;r++) for(let c=0;c<8;c++){ ctx.fillStyle = hash(r*8+c+x)<0.55?'#ffd77a':'#22263a'; ctx.fillRect(x+48+c*14,118+r*13,8,7); } }); // Bismarckplatz
       layer(0.5, 48, (x,i)=>house(x, 200, i, true));
       { const tx = ((G.t*0.8 - cam*0.6) % 900 + 900) % 900 - 200; ctx.fillStyle='#3d6fb6'; rr(tx,176,150,22,5); ctx.fill(); ctx.fillStyle='#e9eef5'; ctx.fillRect(tx,192,150,3); for(let w=0;w<8;w++){ ctx.fillStyle='#ffe9a8'; ctx.fillRect(tx+8+w*17,180,11,8); } ctx.strokeStyle='#222'; ctx.beginPath(); ctx.moveTo(tx+70,176); ctx.lineTo(tx+80,160); ctx.lineTo(tx+90,160); ctx.stroke(); }
+      { const bx = VW + 60 - ((G.t*1.6 + cam*0.2) % (VW + 160)), by = 196, wh = Math.sin(G.t/4);           // Fahrrad fährt durch
+        ctx.strokeStyle='#1d2233'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(bx,by,6,0,7); ctx.arc(bx+18,by,6,0,7); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(bx+7,by-9); ctx.lineTo(bx+15,by-9); ctx.lineTo(bx+18,by); ctx.moveTo(bx+7,by-9); ctx.lineTo(bx+9,by); ctx.lineTo(bx+15,by-9); ctx.moveTo(bx+5,by-12); ctx.lineTo(bx+9,by-12); ctx.moveTo(bx+15,by-9); ctx.lineTo(bx+17,by-14); ctx.stroke();
+        ctx.strokeStyle='#3a3f5e'; ctx.lineWidth=2.4; ctx.beginPath(); ctx.moveTo(bx+8,by-13); ctx.lineTo(bx+13,by-24); ctx.lineTo(bx+17,by-15); ctx.moveTo(bx+8,by-13); ctx.lineTo(bx+9+wh*2,by-4); ctx.stroke();
+        ctx.fillStyle='#f1c9a5'; ctx.beginPath(); ctx.arc(bx+13,by-28,3,0,7); ctx.fill(); ctx.fillStyle='#c0392b'; ctx.beginPath(); ctx.arc(bx+13,by-29,3.2,Math.PI,0); ctx.fill();
+        ctx.fillStyle='rgba(255,240,170,.95)'; ctx.beginPath(); ctx.arc(bx-1,by-8,1.8,0,7); ctx.fill(); ctx.fillStyle='rgba(255,240,170,.25)'; ctx.beginPath(); ctx.moveTo(bx-1,by-8); ctx.lineTo(bx-30,by-14); ctx.lineTo(bx-30,by-1); ctx.fill();
+        ctx.fillStyle='#e53935'; ctx.fillRect(bx+19,by-9,2,2); }
       layer(0.8, 90, (x)=>{ ctx.fillStyle='#333'; ctx.fillRect(x,150,2,60); ctx.fillStyle='rgba(255,230,140,.9)'; ctx.beginPath(); ctx.arc(x+1,150,4,0,7); ctx.fill(); }); }
-    if (kind==='xmas'){ hills(cam*0.15, farHill, 115, 30, 1); layer(0.3, 640, (x)=>churchTower(x+260, 196, 1.5)); layer(0.5, 52, (x,i)=>house(x, 190, i)); layer(0.7, 120, (x,i)=>stall(x, 196, i)); } // Weihnachtsmarkt am Marktplatz
-    if (kind==='nye'){ hills(cam*0.15, farHill, 120, 30, 1); river(160, 80); sky(0.5, 160, 0.15, '#2a3058', true); layer(0.3, 500, (x)=>bridge(x+60, 172, true)); fireworks(); }
+    if (kind==='xmas'){ hills(cam*0.15, farHill, 115, 30, 1); layer(0.3, 640, (x)=>churchTower(x+260, 192, 1.0)); layer(0.5, 52, (x,i)=>house(x, 190, i)); layer(0.7, 120, (x,i)=>stall(x, 196, i)); } // Weihnachtsmarkt am Marktplatz
+    if (kind==='nye'){ hills(cam*0.15, farHill, 120, 30, 1); river(160, 80); layer(0.3, 500, (x)=>bridge(x+60, 172, true)); fireworks(); }
     if (kind==='finish'){ layer(0.0, 60, (x,i)=>house(x, 200, i)); sofa(250,182); ctx.fillStyle='rgba(0,0,0,.35)'; for(let i=0;i<40;i++){ const hx=i*11; ctx.beginPath(); ctx.arc(hx, 192+Math.sin(G.t/8+i)*2, 5,0,7); ctx.fill(); }
       ctx.fillStyle='#8e2433'; ctx.fillRect(110,40,200,18); ctx.fillStyle='#fff'; ctx.font='bold 11px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('ATOS HALBMARATHON 2027',210,49); }
   }
@@ -1454,15 +1517,37 @@ const Game = (() => {
   function stall(x,y,i){ ctx.fillStyle='#7a4a2a'; ctx.fillRect(x,y-22,44,22); ctx.fillStyle = i%2?'#c62828':'#2e7d32'; ctx.beginPath(); ctx.moveTo(x-4,y-22); ctx.lineTo(x+22,y-34); ctx.lineTo(x+48,y-22); ctx.fill(); ctx.fillStyle='#ffd77a'; ctx.fillRect(x+4,y-18,36,6); }
   function bridge(x,y,night){ ctx.fillStyle = night?'#2a2f4a':'#c98e6c'; ctx.fillRect(x, y-8, 300, 10); for (let k=0;k<6;k++){ ctx.beginPath(); ctx.arc(x+25+k*50, y+30, 22, Math.PI, 0); ctx.lineTo(x+47+k*50,y+2); ctx.lineTo(x+3+k*50,y+2); ctx.fill(); }
     ctx.fillStyle = night?'#323856':'#b77a5c'; ctx.fillRect(x-30, y-46, 14, 48); ctx.fillRect(x-12, y-46, 14, 48); ctx.fillStyle=night?'#262a40':'#7c5a48'; ctx.beginPath(); ctx.moveTo(x-32,y-46); ctx.lineTo(x-23,y-60); ctx.lineTo(x-14,y-46); ctx.moveTo(x-14,y-46); ctx.lineTo(x-5,y-60); ctx.lineTo(x+4,y-46); ctx.fill(); }
-  function castle(x,y){ const c1='#c8735a', c2='#a85a44', win='#6a3426';
-    ctx.fillStyle='#7fae66'; ctx.beginPath(); ctx.moveTo(x-120,VH); ctx.bezierCurveTo(x-60,y+30,x,y+40,x+60,y+44); ctx.bezierCurveTo(x+180,y+46,x+240,y+60,x+300,VH); ctx.fill();
-    ctx.fillStyle=c1; ctx.fillRect(x,y,150,46);
-    for (let g=0; g<4; g++){ const gx=x+8+g*36; ctx.beginPath(); ctx.moveTo(gx,y); ctx.lineTo(gx,y-8); ctx.lineTo(gx+5,y-8); ctx.lineTo(gx+5,y-15); ctx.lineTo(gx+10,y-15); ctx.lineTo(gx+10,y-22); ctx.lineTo(gx+16,y-22); ctx.lineTo(gx+16,y-15); ctx.lineTo(gx+21,y-15); ctx.lineTo(gx+21,y-8); ctx.lineTo(gx+26,y-8); ctx.lineTo(gx+26,y); ctx.fill(); }
-    ctx.fillStyle=c2; ctx.fillRect(x-30,y-12,30,58); for(let m=0;m<5;m++) ctx.fillRect(x-30+m*7,y-18,4,6);
-    ctx.fillStyle=c1; ctx.fillRect(x+150,y-40,18,86); ctx.fillStyle='#5a6b5a'; ctx.beginPath(); ctx.moveTo(x+147,y-40); ctx.lineTo(x+159,y-58); ctx.lineTo(x+171,y-40); ctx.fill();
-    ctx.fillStyle=c2; ctx.beginPath(); ctx.moveTo(x+172,y+46); ctx.lineTo(x+172,y-6); ctx.lineTo(x+178,y-12); ctx.lineTo(x+183,y-4); ctx.lineTo(x+189,y-14); ctx.lineTo(x+196,y-2); ctx.lineTo(x+196,y+46); ctx.fill();
-    ctx.fillStyle=win; for(let r=0;r<2;r++) for(let k=0;k<9;k++) ctx.fillRect(x+8+k*16,y+8+r*18,6,10);
-    ctx.fillStyle='rgba(255,255,255,.15)'; ctx.fillRect(x-30,y-12,30,3); }
+  function castle(x,y){ // Heidelberger Schloss: Dicker Turm, Englischer Bau (Ruine), Friedrichsbau, Ottheinrichsbau (Ruine), Glockenturm, gesprengter Pulverturm
+    const st='#b8574a', st2='#c8735a', dk='#5a2a22', skyc=G.theme.sky[1], cu='#5d7f6a';
+    ctx.fillStyle='#6f9d5f'; ctx.beginPath(); ctx.moveTo(x-140,VH); ctx.bezierCurveTo(x-80,y+34,x-10,y+44,x+80,y+46); ctx.bezierCurveTo(x+200,y+48,x+270,y+56,x+380,VH); ctx.fill();
+    ctx.fillStyle=st; ctx.fillRect(x-10,y+40,290,10);                                                                  // Sockel/Terrasse
+    ctx.fillRect(x-10,y-14,44,56); ctx.beginPath(); ctx.ellipse(x+12,y-14,22,5,0,0,7); ctx.fill();                       // Dicker Turm (rund)
+    ctx.fillStyle=skyc; ctx.beginPath(); ctx.moveTo(x-6,y-16); ctx.lineTo(x+4,y-8); ctx.lineTo(x+12,y-17); ctx.lineTo(x+22,y-9); ctx.lineTo(x+30,y-16); ctx.lineTo(x+30,y-20); ctx.lineTo(x-6,y-20); ctx.fill();
+    ctx.fillStyle=dk; for(let k=0;k<3;k++) ctx.fillRect(x+k*12,y+8,5,9);
+    ctx.fillStyle=st2; ctx.fillRect(x+34,y,52,42); ctx.fillStyle=skyc; for(let r=0;r<2;r++) for(let k=0;k<4;k++) ctx.fillRect(x+38+k*12,y+5+r*17,6,10); // Englischer Bau (Ruine, Fenster offen)
+    ctx.fillStyle=st; ctx.fillRect(x+86,y-6,62,48);                                                                    // Friedrichsbau
+    [x+88,x+118].forEach(gx=>{ ctx.beginPath(); ctx.moveTo(gx,y-6); ctx.lineTo(gx,y-14); ctx.quadraticCurveTo(gx+3,y-20,gx+6,y-20); ctx.lineTo(gx+6,y-26); ctx.quadraticCurveTo(gx+9,y-32,gx+13,y-38); ctx.quadraticCurveTo(gx+17,y-32,gx+20,y-26); ctx.lineTo(gx+20,y-20); ctx.quadraticCurveTo(gx+23,y-20,gx+26,y-14); ctx.lineTo(gx+26,y-6); ctx.fill(); });
+    ctx.fillStyle='#7a3328'; ctx.fillRect(x+86,y-8,62,3);
+    ctx.fillStyle=dk; for(let r=0;r<3;r++) for(let k=0;k<5;k++) ctx.fillRect(x+90+k*12,y-1+r*13,6,8);
+    ctx.fillStyle='#3d1d18'; for(let k=0;k<5;k++){ ctx.beginPath(); ctx.arc(x+93+k*12,y-3,1.3,0,7); ctx.fill(); }          // Statuennischen
+    ctx.fillStyle=st2; ctx.fillRect(x+148,y+2,50,40); ctx.beginPath(); ctx.moveTo(x+148,y+2); ctx.lineTo(x+156,y-3); ctx.lineTo(x+170,y+1); ctx.lineTo(x+184,y-4); ctx.lineTo(x+198,y+2); ctx.fill(); // Ottheinrichsbau (ohne Dach)
+    ctx.fillStyle=skyc; for(let r=0;r<2;r++) for(let k=0;k<4;k++) ctx.fillRect(x+152+k*11,y+7+r*16,6,10);
+    ctx.fillStyle=st; ctx.fillRect(x+198,y-34,16,76);                                                                   // Glockenturm
+    ctx.fillStyle=cu; ctx.beginPath(); ctx.moveTo(x+196,y-34); ctx.lineTo(x+206,y-44); ctx.lineTo(x+216,y-34); ctx.fill(); ctx.fillRect(x+203,y-52,6,9); ctx.beginPath(); ctx.moveTo(x+202,y-52); ctx.lineTo(x+206,y-60); ctx.lineTo(x+210,y-52); ctx.fill();
+    ctx.fillStyle=dk; ctx.fillRect(x+203,y-24,5,8);
+    ctx.fillStyle=st2; ctx.beginPath(); ctx.moveTo(x+226,y+42); ctx.lineTo(x+226,y-6); ctx.lineTo(x+246,y-12); ctx.lineTo(x+256,y+10); ctx.lineTo(x+256,y+42); ctx.fill();   // gesprengter Pulverturm
+    ctx.save(); ctx.translate(x+262,y+30); ctx.rotate(0.5); ctx.fillStyle=st; ctx.fillRect(-10,-12,22,22); ctx.restore();       // abgesprengtes Stück
+    ctx.fillStyle='rgba(255,255,255,.12)'; ctx.fillRect(x-10,y-14,44,3);
+  }
+  function tourists(cam){ for (let k=0;k<3;k++){ const per = 900, ph = (G.t + k*330) % per; if (ph > 520) continue;      // ab und zu Touristen
+      const dir = k%2 ? -1 : 1, tx = dir>0 ? -20 + ph*0.55 : VW+20 - ph*0.55, ty = 190 + k*2, leg = Math.sin(G.t/6+k)*2.5;
+      ctx.save(); ctx.translate(tx, ty); ctx.scale(dir,1);
+      ctx.strokeStyle='#3b2a20'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(0,-6); ctx.lineTo(leg,0); ctx.moveTo(0,-6); ctx.lineTo(-leg,0); ctx.stroke();
+      ctx.fillStyle=['#5b6fa8','#e0a33a','#4f8a43'][k]; ctx.fillRect(-2.5,-14,5,8);
+      ctx.fillStyle='#e8ad86'; ctx.beginPath(); ctx.arc(0,-16.5,2.4,0,7); ctx.fill();
+      ctx.fillStyle=['#f2e2b0','#c0392b','#2f2f2f'][k]; ctx.fillRect(-3.5,-19.5,7,1.6); ctx.fillRect(-2,-21,4,2);              // Hut/Kappe
+      ctx.fillStyle='#222'; ctx.fillRect(2.5,-13,3,2.2); if (k===1 && Math.floor(G.t/40)%3===0){ ctx.fillStyle='rgba(255,255,220,.9)'; ctx.beginPath(); ctx.arc(6,-12,2.5,0,7); ctx.fill(); } // Kamera + Blitz
+      ctx.restore(); } }
   function fireworks(){ for (let k=0;k<3;k++){ const ph=(G.t+k*53)%160; if (ph>80) continue; const cx=80+((k*137+Math.floor((G.t+k*53)/160)*91)%260), cy=40+k*18; const col=['#ff5a8a','#ffd23f','#7cd6ff'][k];
       for (let i=0;i<14;i++){ const an=i/14*6.283; ctx.fillStyle=col; ctx.globalAlpha=1-ph/80; ctx.fillRect(cx+Math.cos(an)*ph*0.5, cy+Math.sin(an)*ph*0.5+ph*0.08, 2, 2); } ctx.globalAlpha=1; } }
   function confetti(){ if (G.t%2) return; for (let i=0;i<3;i++) G.parts.push({ x:G.cam+Math.random()*VW, y:-4, vx:(Math.random()-0.5), vy:1+Math.random(), life:120, c:['#ff5a8a','#ffd23f','#7cd6ff','#3ccf6e'][i%4] }); }
@@ -1486,7 +1571,7 @@ const Game = (() => {
   function init(){
     cv = document.getElementById('gc'); ctx = cv.getContext('2d');
     bindTouch('gL','left'); bindTouch('gR','right'); bindTouch('gJ','jump'); bindTouch('gS','shoot'); bindTouch('gDrink','drink'); bindTouch('gGel','gel');
-    const km = { ArrowLeft:'left', ArrowRight:'right', ArrowUp:'jump', ' ':'jump', a:'left', d:'right', w:'jump', x:'shoot', X:'shoot', f:'shoot', Enter:'shoot' };
+    const km = { ArrowLeft:'left', ArrowRight:'right', ArrowUp:'jump', a:'left', d:'right', w:'jump', ' ':'shoot', x:'shoot', X:'shoot', f:'shoot', Enter:'shoot' };
     addEventListener('keydown', e=>{ if (!G) return; if (km[e.key]){ keys[km[e.key]]=true; e.preventDefault(); } if (e.key==='1') keys.drink=true; if (e.key==='2') keys.gel=true; });
     addEventListener('keyup', e=>{ if (km[e.key]) keys[km[e.key]]=false; });
     addEventListener('resize', resize);
@@ -1574,22 +1659,29 @@ const Advent = (() => {
 
   /* --- Fangen --- */
   function catchGame(d, v){
-    modal(`<div class="doorhead">${g().door} ${d} · ${g().bonus}</div><h3>🥤 ${m().catch}</h3><p>${m().catchHelp}</p>
-      <canvas id="cg" width="300" height="300" class="mgcv"></canvas><div class="row"><button class="btn sm" id="cgl">◀</button><b id="cgs">0</b><button class="btn sm" id="cgr">▶</button></div><button class="btn ghost" onclick="Advent.close()">${g().close}</button>`);
-    const c=document.getElementById('cg'), x=c.getContext('2d'); let px=150, score=0, t=0, items=[], dir=0, over=false;
-    const good = v==='xmas' ? ['🍪','🎁','🥤'] : ['🥤','🥨','⚡'];
+    const de = lang()==='de';
+    modal(`<div class="doorhead">${g().door} ${d} · ${g().bonus}</div><h3>🥤 ${m().catch}</h3><p>${m().catchHelp} ${de?'Mit 🥨 wirfst du Brezeln nach oben und schießt kleine Schweinehunde k.o. (+2).':'Use 🥨 to throw pretzels upwards and knock out little couch beasts (+2).'}</p>
+      <canvas id="cg" width="300" height="300" class="mgcv"></canvas><div class="row"><button class="btn sm" id="cgl">◀</button><b id="cgs">0</b><button class="btn sm" id="cgf">🥨</button><button class="btn sm" id="cgr">▶</button></div><button class="btn ghost" onclick="Advent.close()">${g().close}</button>`);
+    const c=document.getElementById('cg'), x=c.getContext('2d'); let px=150, score=0, t=0, items=[], shots=[], dir=0, over=false;
+    let ammo = Math.min(15, Object.values(S.game.best||{}).reduce((a,b)=>a+b,0) || (isCreator()?15:3));
+    const good = v==='xmas' ? ['🍪','🎁','🥨'] : ['🥤','🥨','⚡'];
     const move = e => { const r=c.getBoundingClientRect(); px = (e.clientX-r.left)/r.width*300; };
     c.onpointermove = e => { if (e.buttons||e.pointerType==='touch') move(e); }; c.onpointerdown = move;
     const hold=(id,v2)=>{ const b=document.getElementById(id); b.onpointerdown=()=>dir=v2; b.onpointerup=b.onpointerleave=()=>dir=0; }; hold('cgl',-1); hold('cgr',1);
+    const fire = () => { if (over || ammo<=0) return; ammo--; shots.push({ x:px, y:248 }); Music.sfx('throw'); };
+    document.getElementById('cgf').onclick = fire;
+    const kd = e => { if (e.key==='x'||e.key==='X'||e.key===' ') { e.preventDefault(); fire(); } }; addEventListener('keydown', kd); timers.push(setTimeout(()=>removeEventListener('keydown', kd), 40000));
+    function pig(px2, py){ x.fillStyle='#7b3f8c'; x.beginPath(); x.moveTo(px2-8,py-5); x.lineTo(px2-10,py-14); x.lineTo(px2-2,py-9); x.moveTo(px2+8,py-5); x.lineTo(px2+10,py-14); x.lineTo(px2+2,py-9); x.fill(); x.fillStyle='#9d5cb1'; x.beginPath(); x.arc(px2,py,10,0,7); x.fill(); x.fillStyle='#e58aa0'; x.beginPath(); x.ellipse(px2,py+3,5,4,0,0,7); x.fill(); x.fillStyle='#2b1622'; x.fillRect(px2-2,py+2,1.4,2); x.fillRect(px2+1,py+2,1.4,2); x.fillRect(px2-5,py-4,2,2); x.fillRect(px2+3,py-4,2,2); }
     function frame(){ if (over) return; rafId=requestAnimationFrame(frame); t++; px=Math.max(15,Math.min(285,px+dir*4));
-      if (t%28===0) items.push({ x:15+Math.random()*270, y:-10, v:1.6+t/900, bad: Math.random()<0.28, e: good[Math.floor(Math.random()*3)] });
+      if (t%28===0) items.push({ x:15+Math.random()*270, y:-10, v:1.6+t/900, bad: Math.random()<0.3, e: good[Math.floor(Math.random()*3)] });
       x.fillStyle='#eaf4ff'; x.fillRect(0,0,300,300); x.fillStyle='#cfe3c9'; x.fillRect(0,270,300,30);
-      items.forEach(i=>{ i.y+=i.v; if (i.bad){ x.fillStyle='#7b3f8c'; x.beginPath(); x.moveTo(i.x-8,i.y-5); x.lineTo(i.x-10,i.y-14); x.lineTo(i.x-2,i.y-9); x.moveTo(i.x+8,i.y-5); x.lineTo(i.x+10,i.y-14); x.lineTo(i.x+2,i.y-9); x.fill(); x.fillStyle='#9d5cb1'; x.beginPath(); x.arc(i.x,i.y,10,0,7); x.fill(); x.fillStyle='#e58aa0'; x.beginPath(); x.ellipse(i.x,i.y+3,5,4,0,0,7); x.fill(); x.fillStyle='#2b1622'; x.fillRect(i.x-2,i.y+2,1.4,2); x.fillRect(i.x+1,i.y+2,1.4,2); x.fillRect(i.x-5,i.y-4,2,2); x.fillRect(i.x+3,i.y-4,2,2); }
-        else { x.font='20px sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(i.e,i.x,i.y); }
-        if (i.y>250 && i.y<275 && Math.abs(i.x-px)<24){ i.hit=true; score += i.bad?-3:1; } });
+      shots.forEach(s=>{ s.y-=6; items.forEach(i=>{ if (i.bad && !i.hit && Math.abs(i.x-s.x)<14 && Math.abs(i.y-s.y)<14){ i.hit=true; s.dead=true; score+=2; Music.sfx('ko'); } }); x.font='16px sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText('🥨', s.x, s.y); });
+      shots = shots.filter(s=>!s.dead && s.y>-10);
+      items.forEach(i=>{ i.y+=i.v; if (i.bad) pig(i.x,i.y); else { x.font='20px sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(i.e,i.x,i.y); }
+        if (!i.hit && i.y>250 && i.y<275 && Math.abs(i.x-px)<24){ i.hit=true; if (i.bad){ score-=3; Music.sfx('hurt'); } else { score++; if (i.e==='🥨') ammo++; Music.sfx('coin'); } } });
       items = items.filter(i=>!i.hit && i.y<310);
-      x.fillStyle='#b5574b'; x.fillRect(px-22,262,44,10); x.font='22px sans-serif'; x.textAlign='center'; x.fillText('🏃',px,250);
-      x.fillStyle='#233'; x.font='bold 13px system-ui'; x.textAlign='left'; x.fillText('⏱ '+Math.max(0,30-Math.floor(t/60))+' s',8,16);
+      x.fillStyle='#8e2433'; x.fillRect(px-22,262,44,10); x.font='22px sans-serif'; x.textAlign='center'; x.fillText('🏃',px,250);
+      x.fillStyle='#233'; x.font='bold 13px system-ui'; x.textAlign='left'; x.fillText('⏱ '+Math.max(0,30-Math.floor(t/60))+' s',8,16); x.textAlign='right'; x.fillText('🥨 × '+ammo, 292, 16);
       document.getElementById('cgs').textContent = m().points+': '+score;
       if (t>=30*60){ over=true; x.fillStyle='rgba(255,255,255,.85)'; x.fillRect(0,110,300,70); x.fillStyle='#233'; x.font='bold 18px system-ui'; x.textAlign='center'; x.fillText(m().done+' '+score+' '+m().points,150,145); } }
     frame();
@@ -1643,7 +1735,7 @@ const $ = (s, r=document) => r.querySelector(s);
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const isCreator = () => !!(Store.user && Store.user.creator);
 
-function blank(){ return { v:2, profile:null, weeks:[], canon:[], notices:[], pauses:[], extra:[], dev:{ testDate:null },
+function blank(){ return { v:3, profile:null, weeks:[], canon:[], notices:[], pauses:[], extra:[], dev:{ testDate:null },
   game:{ lang:'de', gear:{}, done:{}, best:{}, unlocked:{}, thresholds:[], bossWon:false, xmasWon:false, nyeWon:false, advent:{}, seenIntro:false } }; }
 function normalize(s){ const b=blank(); if(!s) return b; s.game = Object.assign(b.game, s.game||{}); s.dev = Object.assign(b.dev, s.dev||{}); s.extra=s.extra||[]; s.pauses=s.pauses||[]; return s; }
 function save(){ if (S) Store.saveData(S); }
@@ -1692,6 +1784,7 @@ function renderLogin(mode){
 }
 function togglePw(b){ const i=b.previousElementSibling; const show = i.type==='password'; i.type = show?'text':'password'; b.textContent = show?'verbergen':'anzeigen'; }
 async function afterLogin(){ S = normalize(await Store.loadData()); applyTestDate();
+  if (S.profile && S.weeks.length && (S.v||1) < 3){ replanFromNow(S); S.v = 3; save(); }
   if (S.profile && S.weeks.length){ syncUnlocks(); renderApp('today'); } else renderSetup(); }
 async function logout(){ closeSheet(); await Store.logout(); S=null; renderLogin('login'); }
 
@@ -1776,17 +1869,19 @@ function sessionHTML(wi, si){
       <div class="sl">${esc(sessionLabel(s))}</div>
       <div class="sm"><a href="#" data-act="info">${esc(T0.name||'')} ⓘ</a>${pace?' · '+esc(pace):''}</div>
       ${intensity(s.code)?`<div class="sm">${esc(intensity(s.code))}</div>`:''}
+      ${s.orig?`<div class="sm">Im Buch ${s.orig} km – gekürzt für den 3-Läufe-Plan.</div>`:''}
+      ${s.code==='KT'?`<div class="sm">8 Übungen mit dem eigenen Körpergewicht – tippe auf „Krafttraining ⓘ“.${s.wk?' Läufst du am Samstag einen 10-km-Wettkampf, lass es diese Woche weg.':''}</div>`:''}
       ${S.weeks[wi].flag==='reentry'?'<div class="sm warn">Wiedereinstieg: Tempo bewusst ruhiger, auf dein Körpergefühl achten.</div>':''}
       ${s.done ? `<div class="logsum">${esc(logSummary(s))||'Daten eintragen'} <a href="#" data-act="log">✎ bearbeiten</a></div>`:''}
     </div>
     <button class="skip" data-act="skip" title="ausgefallen">${s.skipped?'↺':'✕'}</button></div>`;
 }
 function weekSessions(wi){ const w=S.weeks[wi]; const rest = w.rest.map((t,d)=>t==='-'||t==='P'?WD[d]:null).filter(Boolean);
-  return `<div class="sessions">${w.sessions.map((s,si)=>sessionHTML(wi,si)).join('')}</div>${rest.length?`<p class="muted small">Ruhetage (${rest.join(', ')}): Pause oder leichter Ausgleichssport.</p>`:''}`; }
+  return `<div class="sessions">${w.sessions.map((s,si)=>sessionHTML(wi,si)).join('')}</div>${rest.length?`<p class="muted small">Ruhetage (${rest.join(', ')}): Pause oder leichter Ausgleichssport wie Radfahren oder Schwimmen.</p>`:''}`; }
 function bindSessions(){
   document.querySelectorAll('.sess').forEach(el=>{
     const s = S.weeks[+el.dataset.w].sessions[+el.dataset.s];
-    el.querySelector('[data-act=done]').onclick = () => { if (s.done){ const before=totalKm(S); s.done=false; save(); afterKm(before); } else openLog(s); };
+    el.querySelector('[data-act=done]').onclick = () => { if (s.code==='KT'){ s.done=!s.done; if (s.done) s.skipped=false; save(); renderApp(); if (s.done) toastMsg('💪 Krafttraining erledigt!'); return; } if (s.done){ const before=totalKm(S); s.done=false; save(); afterKm(before); } else openLog(s); };
     el.querySelector('[data-act=skip]').onclick = () => { s.skipped=!s.skipped; if (s.skipped) s.done=false; save(); renderApp(); };
     el.querySelector('[data-act=info]').onclick = e => { e.preventDefault(); typeInfo(s.code); };
     const lg = el.querySelector('[data-act=log]'); if (lg) lg.onclick = e => { e.preventDefault(); openLog(s); };
@@ -1812,7 +1907,7 @@ function afterKm(before){
   else if (after>before) toastMsg(MOTIVATION[(dayIndex()+Math.floor(after))%MOTIVATION.length].t);
 }
 function typeInfo(code){ const t=TYPES[code]; if(!t) return;
-  sheet(`<h3>${esc(t.name)}</h3><p>${esc(t.what)}</p><p><b>Wofür?</b> ${esc(t.why)}</p>${t.hf?`<p><b>Mit Pulsmessung:</b> ${esc(t.hf)}</p>`:''}${t.feel?`<p><b>Ohne Pulsmessung:</b> ${esc(t.feel)}</p>`:''}
+  sheet(`<h3>${esc(t.name)}</h3><p>${esc(t.what)}</p>${t.list?`<ol class="small">${t.list.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`:''}<p><b>Wofür?</b> ${esc(t.why)}</p>${t.hf?`<p><b>Mit Pulsmessung:</b> ${esc(t.hf)}</p>`:''}${t.feel?`<p><b>Ohne Pulsmessung:</b> ${esc(t.feel)}</p>`:''}
     ${isCreator()&&t.dev?`<p class="devnote">🛠 ${esc(t.dev)}</p>`:''}<p class="src">${esc(t.src)}</p><p class="small muted">${esc(HF_NOTE)}</p><button class="btn" onclick="closeSheet()">OK</button>`); }
 
 /* ---------- Plan ---------- */
@@ -1830,6 +1925,7 @@ function renderPlan(){
       ${ambitious?`<p class="warnbox">Dein Ziel ist ehrgeizig: Dieser Plan setzt etwa 10 km in ${fmtTime(HM_REQ[hmKey])} min voraus, nach deinen Angaben liegst du derzeit bei ca. ${fmtTime(p.tenK)} min. Die erreichbare Zeit realistisch einschätzen und lieber verhaltener angehen (Aderhold, 2018, S. 141).</p>`:''}
       <details class="gl"><summary class="small"><b>So schätzt die App dein Niveau</b></summary><p class="small">Dein <b>Wohlfühltempo</b> wird als extensiver Dauerlauf gewertet: Aderhold beschreibt die Belastung, bei der man sich wohlfühlt und noch unterhalten kann, mit 60–75 % der maximalen Herzfrequenz – das entspricht etwa dem regenerativen bis extensiven Dauerlauf (Aderhold, 2018, S. 138 f.). Dass dein <b>Durchschnittstempo</b> zwischen extensivem und intensivem Dauerlauf liegt, ist eine <b>Annahme der App</b>, die so nicht in den Büchern steht. Aus beidem berechnet die App mit Aderholds Tempoformeln (S. 89) deine 10-km-Leistung und nimmt vorsichtshalber den langsameren Wert.</p></details>
       <p class="src">Pläne: Aderhold, 2018, S. 468–481</p></section>
+    <section class="card note"><p class="small">🏃 <b>Höchstens 3 Läufe pro Woche</b> mit meist bis zu 25 km, in den Wochen mit dem längsten Lauf bis zu 30 km. Dazu einmal pro Woche <b>Krafttraining</b>. Die Einheiten stammen aus Aderholds Plänen. Erhalten bleiben die zentralen Einheiten Tempodauerlauf, Wiederholungsläufe und langer Lauf (Aderhold, 2018, S. 138 f.); gekürzt wird zuerst der Montagslauf, dann das Fahrtspiel, zuletzt der lange Lauf. Die Umfangsgrenze ist eine Vorgabe der Kursleitung, sie steht nicht in den Büchern.</p></section>
     <p class="muted small">Die Wochentage sind Vorschläge – verschiebe Einheiten, wie es in deinen Alltag passt, und lass zwischen fordernden Einheiten Ruhetage. Tippe auf eine Trainingsform (ⓘ) für die Erklärung.</p>
     ${S.notices.length?`<div class="card note">${S.notices.map(n=>`<p>ℹ️ ${esc(n)}</p>`).join('')}</div>`:''}
     ${S.pauses.length?`<div class="card"><b>Eingetragene Pausen</b>${S.pauses.map(x=>`<p class="small">${niceD(x.from)} – ${niceD(x.to)} (${({fieber:'Krankheit mit Fieber',erkaeltung:'Erkältung',verletzung:'Verletzung',sonst:'Sonstiges'})[x.reason]})</p>`).join('')}</div>`:''}
@@ -1976,11 +2072,11 @@ async function renderRank(){
 
 /* ---------- Wissen ---------- */
 function renderKnow(){
-  const P = myPaces(); const used = ['RDL','R-EDL','EDL','EDL+ST','EDL/WK','IDL','I-TDL','TDL','TDL/EDL','FS','WHL','WHL/WKT','-'];
+  const P = myPaces(); const used = ['RDL','R-EDL','EDL','EDL+ST','EDL/WK','IDL','I-TDL','TDL','TDL/EDL','FS','WHL','WHL/WKT','KT','-'];
   $('#view').innerHTML = `<h2>Wissen & Rechner</h2>
     <section class="card"><h3>🏃 Die Trainingsformen</h3><p class="muted small">Mit Pulsuhr orientierst du dich an der Herzfrequenz, ohne Pulsmessung an deinem Gefühl beim Sprechen.</p>
       ${used.map(k=>{ const t=TYPES[k]; return `<details class="gl"><summary><b>${esc(t.name)}</b> <span class="muted small">${esc(k==='-'?'P/AT':k)}</span></summary>
-        <p>${esc(t.what)}</p><p><b>Wofür?</b> ${esc(t.why)}</p>${t.hf?`<p>❤️ <b>Mit Puls:</b> ${esc(t.hf)}</p>`:''}${t.feel?`<p>🗣️ <b>Nach Gefühl:</b> ${esc(t.feel)}</p>`:''}${P&&paceFor(k,'1x1',P)&&k!=='WHL'?`<p>⏱️ <b>Dein Tempo:</b> ${esc(paceFor(k,'',P))}</p>`:''}
+        <p>${esc(t.what)}</p>${t.list?`<ol class="small">${t.list.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`:''}<p><b>Wofür?</b> ${esc(t.why)}</p>${t.hf?`<p>❤️ <b>Mit Puls:</b> ${esc(t.hf)}</p>`:''}${t.feel?`<p>🗣️ <b>Nach Gefühl:</b> ${esc(t.feel)}</p>`:''}${P&&paceFor(k,'1x1',P)&&k!=='WHL'?`<p>⏱️ <b>Dein Tempo:</b> ${esc(paceFor(k,'',P))}</p>`:''}
         ${isCreator()&&t.dev?`<p class="devnote">🛠 ${esc(t.dev)}</p>`:''}<span class="src">${esc(t.src)}</span></details>`; }).join('')}
       <div class="ffbox light"><b>Ohne Pulsuhr – die Sprech-Regel</b><p class="small">Kannst du während des Laufens noch gut sprechen, bist du im langsamen Dauerlauf (ca. 70 % HFmax). Kannst du gerade noch sprechen, im lockeren Dauerlauf (75–80 %). Den schnellen Dauerlauf läufst du so, dass du die ganze Einheit mit maximaler, aber konstanter Geschwindigkeit schaffst.</p><span class="src">Beck, 2024, S. 162</span></div>
       <p class="small muted">${esc(HF_NOTE)}</p></section>
