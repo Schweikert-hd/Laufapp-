@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6efe4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HM Heidelberg">
+<title>Halbmarathon Heidelberg 2027 – Trainings-App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%83%3C/text%3E%3C/svg%3E">
+<style>:root{ --bg:#f6efe4; --card:#fffaf2; --ink:#21262e; --muted:#6c6a66; --red:#b5574b; --red2:#97443a; --blue:#1f5f8b; --dark:#1f2b3a; --green:#2f9e6a; --line:#e7dccb; --gold:#e9b44c;
+  --r:18px; --font:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; --head:'Fraunces',Georgia,serif; }
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 var(--font); }
+body.noscroll{ overflow:hidden; }
+#app{ max-width:720px; margin:0 auto; padding:0 16px calc(90px + env(safe-area-inset-bottom)); min-height:100vh; }
+h1,h2,h3,h4{ font-family:var(--head); font-weight:650; line-height:1.15; margin:.2em 0 .5em; letter-spacing:-.01em; }
+h1{ font-size:2.3rem; } h2{ font-size:1.55rem; } h3{ font-size:1.15rem; }
+p{ margin:.4em 0; }
+.muted{ color:var(--muted); } .small{ font-size:.86rem; } .mt{ margin-top:1.2em; }
+.src{ color:var(--muted); font-size:.78rem; font-style:italic; }
+.kicker{ text-transform:uppercase; letter-spacing:.12em; font-size:.7rem; font-weight:700; color:var(--red); }
+.kicker.light{ color:#f3b9a7; }
+.card{ background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:16px; margin:14px 0; box-shadow:0 1px 0 rgba(0,0,0,.02); }
+.card.dark{ background:var(--dark); color:#f4efe7; border:none; }
+.card.note{ background:#fff4dc; border-color:#f0dcae; }
+.row{ display:flex; gap:10px; align-items:center; margin-top:10px; } .row.wrap{ flex-wrap:wrap; }
+.btn{ appearance:none; border:none; background:var(--red); color:#fff; font:600 .95rem var(--font); padding:11px 16px; border-radius:12px; cursor:pointer; }
+.btn:active{ transform:translateY(1px); } .btn.big{ width:100%; padding:14px; font-size:1.05rem; margin-top:8px; }
+.btn.ghost{ background:transparent; color:var(--red2); border:1.5px solid #e2c6bc; } .btn.sm{ padding:7px 12px; font-size:.85rem; }
+.btn.danger{ background:#b3261e; } .btn:disabled{ opacity:.4; }
+label{ display:block; font-weight:600; font-size:.88rem; margin:12px 0 4px; }
+input,select,textarea{ width:100%; font:16px var(--font); padding:11px 12px; border:1.5px solid var(--line); border-radius:12px; background:#fff; color:var(--ink); margin-top:5px; }
+label small{ display:block; font-weight:400; color:var(--muted); margin-top:4px; }
+label.radio{ display:flex; gap:10px; align-items:flex-start; font-weight:500; margin:8px 0; } label.radio input{ width:auto; margin-top:3px; }
+fieldset{ border:none; padding:0; margin:14px 0 0; } legend{ font-weight:700; font-size:.88rem; }
+hr{ border:none; border-top:1px solid var(--line); margin:16px 0; }
+/* Setup */
+.setup .hero{ padding:40px 4px 6px; } .setup .hero p{ color:var(--muted); font-size:1.02rem; }
+.setup .hero h1{ background:linear-gradient(90deg,var(--red),#d7845e); -webkit-background-clip:text; background-clip:text; color:transparent; }
+/* Header & Tabs */
+.top{ display:flex; justify-content:space-between; align-items:center; padding:calc(14px + env(safe-area-inset-top)) 0 4px; }
+.hello{ font-family:var(--head); font-size:1.35rem; font-weight:650; }
+.icon{ background:var(--card); border:1px solid var(--line); border-radius:12px; width:42px; height:42px; font-size:1.1rem; cursor:pointer; }
+.tabs{ position:fixed; left:0; right:0; bottom:0; display:flex; justify-content:center; background:rgba(255,250,242,.94); backdrop-filter:blur(10px); border-top:1px solid var(--line); padding:6px 6px calc(6px + env(safe-area-inset-bottom)); z-index:20; }
+.tabs button{ flex:1; max-width:140px; background:none; border:none; font:600 .72rem var(--font); color:var(--muted); display:flex; flex-direction:column; align-items:center; gap:2px; padding:4px; cursor:pointer; border-radius:10px; }
+.tabs button span{ font-size:1.25rem; } .tabs button.on{ color:var(--red); background:#f6e3dc; }
+/* Countdown */
+.countdown{ display:flex; gap:18px; align-items:center; }
+.ring{ --p:0; flex:0 0 104px; height:104px; border-radius:50%; background:conic-gradient(var(--gold) calc(var(--p)*1%), rgba(255,255,255,.12) 0); display:grid; place-items:center; }
+.ring>div{ width:84px; height:84px; border-radius:50%; background:var(--dark); display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.ring b{ font-family:var(--head); font-size:1.8rem; line-height:1; } .ring span{ font-size:.72rem; opacity:.8; }
+.cd-txt h2{ margin:.15em 0 .1em; font-size:1.3rem; } .cd-txt p{ margin:0; opacity:.85; font-size:.9rem; }
+.stats{ display:flex; gap:14px; margin-top:10px; } .stats div{ display:flex; flex-direction:column; } .stats b{ font-size:1.1rem; } .stats span{ font-size:.7rem; opacity:.75; }
+@media (max-width:420px){ .countdown{ flex-direction:column; align-items:flex-start; } }
+.sec-h{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:16px; } .sec-h h2,.sec-h h3{ margin:0; }
+/* Sessions */
+.sessions{ display:flex; flex-direction:column; gap:8px; margin:8px 0; }
+.sess{ display:flex; gap:12px; align-items:flex-start; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; }
+.sess.today{ border-color:var(--red); box-shadow:0 0 0 2px #f2d4ca; } .sess.race{ background:#fff1d6; border-color:var(--gold); }
+.sess.done{ background:#eef8f1; border-color:#bfe3cc; } .sess.skipped{ opacity:.5; } .sess.skipped .sl{ text-decoration:line-through; }
+.chk{ flex:0 0 32px; height:32px; border-radius:50%; border:2px solid #cdbfae; background:#fff; color:#fff; font-weight:800; cursor:pointer; }
+.sess.done .chk{ background:var(--green); border-color:var(--green); }
+.sx{ flex:1; min-width:0; } .sd{ font-size:.75rem; color:var(--muted); } .sl{ font-weight:650; } .sm{ font-size:.8rem; color:var(--muted); } .sm.warn{ color:#a3561e; }
+.kmrow{ font-size:.82rem; margin-top:6px; display:flex; align-items:center; gap:6px; } .kmrow input{ width:84px; padding:5px 8px; margin:0; font-size:15px; }
+.skip{ background:none; border:none; color:#b9aa98; font-size:1rem; cursor:pointer; padding:4px; }
+.block-h{ margin:22px 0 6px; } .block-h h3{ margin:0; }
+details.week{ background:var(--card); border:1px solid var(--line); border-radius:14px; margin:6px 0; padding:0 12px; }
+details.week.cur{ border-color:var(--red); } details.week.reentry{ border-left:4px solid #e3a35b; }
+details.week summary{ list-style:none; display:flex; gap:10px; align-items:center; padding:12px 0; cursor:pointer; font-size:.9rem; }
+details.week summary::-webkit-details-marker{ display:none; }
+.wn{ font-weight:800; color:var(--red); width:34px; } .wd{ color:var(--muted); width:46px; } .wt{ flex:1; } .wk{ color:var(--muted); } .wdn{ background:#efe6d8; border-radius:10px; padding:1px 8px; font-size:.78rem; }
+/* Teaser */
+.game-teaser{ display:flex; gap:14px; align-items:center; cursor:pointer; background:linear-gradient(135deg,#23324a,#3b4f73); color:#fff; border:none; }
+.game-teaser p{ opacity:.85; font-size:.88rem; } .gt-ic{ font-size:2rem; }
+.bar{ height:8px; background:rgba(255,255,255,.2); border-radius:8px; overflow:hidden; margin-top:6px; } .bar i{ display:block; height:100%; background:var(--gold); }
+.boss-banner{ background:linear-gradient(135deg,#f7c6b7,#f3e0b4); cursor:pointer; border:none; }
+.advent-teaser{ background:linear-gradient(135deg,#1f4d3a,#2f6e52); color:#fff; border:none; cursor:pointer; }
+.quote p{ font-family:var(--head); font-size:1.2rem; font-style:italic; } .quote{ background:#fbeee7; border-color:#f0d6cb; }
+.fact{ border-left:5px solid var(--blue); }
+.quote-inline{ font-style:italic; margin-top:12px; }
+/* Sheet */
+.sheet{ position:fixed; inset:0; background:rgba(20,24,30,.45); z-index:50; display:flex; align-items:flex-end; justify-content:center; }
+.sheet .sbody{ background:var(--card); width:100%; max-width:560px; max-height:88vh; overflow:auto; border-radius:22px 22px 0 0; padding:20px 18px calc(22px + env(safe-area-inset-bottom)); }
+@media (min-width:700px){ .sheet{ align-items:center; } .sheet .sbody{ border-radius:22px; } }
+.hidden{ display:none !important; }
+#toast,#gToast{ position:fixed; left:50%; bottom:96px; transform:translate(-50%,20px); background:var(--dark); color:#fff; padding:10px 16px; border-radius:14px; opacity:0; transition:.3s; z-index:80; max-width:88vw; text-align:center; font-size:.9rem; pointer-events:none; }
+#toast.show,#gToast.show{ opacity:1; transform:translate(-50%,0); }
+#gToast{ bottom:auto; top:60px; }
+/* Spiel-Tab */
+.lang{ flex-shrink:0; display:flex; border:1.5px solid var(--line); border-radius:12px; overflow:hidden; } .lang button{ border:none; background:#fff; padding:6px 12px; font-weight:700; cursor:pointer; color:var(--muted); } .lang button.on{ background:var(--blue); color:#fff; }
+.story{ background:linear-gradient(160deg,#fff8ec,#f5e3cf); }
+.gear{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; } .gi{ text-align:center; padding:8px 4px; border-radius:12px; background:#f1e9dd; filter:grayscale(1); opacity:.45; }
+.gi span{ font-size:1.6rem; display:block; } .gi small{ font-size:.68rem; } .gi.got{ filter:none; opacity:1; background:#fff1d6; }
+.levels{ display:flex; flex-direction:column; gap:8px; margin:10px 0; }
+.lvl{ display:flex; align-items:center; gap:12px; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:10px 12px; cursor:pointer; font:inherit; color:inherit; }
+.lvl .ln{ flex:0 0 40px; height:40px; border-radius:12px; display:grid; place-items:center; background:var(--blue); color:#fff; font-weight:800; font-size:1.1rem; }
+.lvl .lt{ flex:1; display:flex; flex-direction:column; } .lvl .lt small{ color:var(--muted); } .lvl .lg{ font-size:1.4rem; }
+.lvl.locked{ opacity:.6; } .lvl.locked .ln{ background:#9a9389; } .lvl.done .ln{ background:var(--green); }
+.lvl.boss .ln{ background:#c96a8a; } .lvl.xmas .ln{ background:#2e7d4f; } .lvl.nye .ln{ background:#4b3c9e; }
+.advent{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+.door{ aspect-ratio:1; border:none; border-radius:14px; background:linear-gradient(145deg,#2f5e48,#1f4535); color:#fff; font:700 1.1rem var(--head); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; position:relative; box-shadow:inset 0 0 0 2px rgba(255,255,255,.12); }
+.door:nth-child(3n){ background:linear-gradient(145deg,#9c3b33,#7b2d27); } .door:nth-child(4n+1){ background:linear-gradient(145deg,#2b4f7a,#1d3657); }
+.door.big{ background:linear-gradient(145deg,#c99a2e,#9a7319); }
+.door .di{ font-size:.95rem; } .door.seen{ opacity:.75; } .door:not(.open){ filter:saturate(.6); }
+/* Overlays */
+.gov{ position:fixed; inset:0; background:#0e1424; z-index:60; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom); touch-action:none; }
+.gwrap{ position:relative; width:100%; max-width:1000px; display:flex; flex-direction:column; align-items:center; }
+#gc{ display:block; border-radius:10px; background:#000; image-rendering:auto; }
+#gclose{ position:absolute; top:-6px; right:8px; z-index:5; background:rgba(255,255,255,.15); color:#fff; border:none; width:38px; height:38px; border-radius:50%; font-size:1.1rem; cursor:pointer; }
+.gtouch{ display:flex; justify-content:space-between; width:100%; max-width:760px; padding:14px 14px 4px; gap:12px; user-select:none; -webkit-user-select:none; }
+.gtouch .grp{ display:flex; gap:12px; } .gtouch button{ width:72px; height:64px; border-radius:18px; border:none; background:rgba(255,255,255,.14); color:#fff; font-size:1.6rem; touch-action:none; }
+.gtouch button.on{ background:rgba(255,255,255,.35); } #gJ{ width:96px; background:rgba(233,180,76,.45); }
+#gBossBtns{ gap:10px; justify-content:center; padding-top:6px; } #gBossBtns button{ background:rgba(255,255,255,.14); color:#fff; border:none; border-radius:14px; padding:10px 14px; font:600 .9rem var(--font); }
+.gpanel{ position:fixed; inset:0; z-index:8; display:flex; flex-direction:column; justify-content:center; background:rgba(14,20,36,.97); color:#f4efe7; padding:calc(64px + env(safe-area-inset-top)) max(22px, calc(50vw - 300px)) 24px; overflow:auto; line-height:1.5; }
+.gpanel h3{ color:#fff; } .gpanel .kicker{ color:var(--gold); } .gpanel .src{ color:#c9c3b8; } .gpanel .muted{ color:#bdb6aa; }
+.gpanel .btn.ghost{ color:#fff; border-color:rgba(255,255,255,.4); } .gpanel .btn{ align-self:flex-start; }
+.gearlist{ padding-left:18px; margin:6px 0 12px; font-size:.88rem; }
+.ffbox{ background:rgba(255,255,255,.08); border-radius:12px; padding:10px 12px; margin:10px 0; }
+.itembox{ display:flex; gap:12px; align-items:center; background:rgba(233,180,76,.18); border-radius:12px; padding:10px; margin:8px 0; } .itembox>span{ font-size:2rem; }
+@media (max-height:520px){ .gtouch{ position:absolute; bottom:0; padding:6px; pointer-events:none; } .gtouch .grp, #gBossBtns{ pointer-events:auto; } .gtouch button{ background:rgba(255,255,255,.18); } }
+/* Minispiele */
+.mg{ position:fixed; inset:0; background:rgba(14,20,36,.7); z-index:70; display:flex; align-items:center; justify-content:center; padding:14px; }
+.mgbody{ background:var(--card); border-radius:20px; padding:18px; max-width:420px; width:100%; max-height:92vh; overflow:auto; text-align:center; }
+.mgbody p.big{ font-size:1.12rem; } .doorhead{ font:700 .75rem var(--font); text-transform:uppercase; letter-spacing:.1em; color:var(--red); }
+.mgcv{ width:100%; max-width:300px; border-radius:12px; background:#eef4fa; touch-action:none; }
+.rx{ height:150px; border-radius:16px; background:var(--blue); color:#fff; display:grid; place-items:center; font:700 1.5rem var(--head); margin:12px 0; cursor:pointer; user-select:none; touch-action:manipulation; }
+.rx.wait{ background:#8a6d2f; } .rx.go{ background:var(--green); } .rx.bad{ background:#b3261e; }
+.mem{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:12px 0; }
+.card.up,.mem .card{ margin:0; } .mem .card{ aspect-ratio:1; padding:0; display:grid; place-items:center; font-size:1.7rem; cursor:pointer; background:var(--blue); border:none; border-radius:12px; }
+.mem .card span{ visibility:hidden; } .mem .card.up{ background:#fff; border:1px solid var(--line); } .mem .card.up span{ visibility:visible; } .mem .card.ok{ background:#e3f5ea; }
+.qo{ display:flex; flex-direction:column; gap:8px; margin:12px 0; } .q.right{ background:#e3f5ea; border-color:var(--green); color:var(--ink); } .q.wrong{ background:#fde2df; border-color:#b3261e; }
+.mgbody .row{ justify-content:center; } .mgbody .btn{ margin-top:8px; }
+/* Tabellen, Glossar, Literatur */
+.tbl{ width:100%; border-collapse:collapse; margin:10px 0; font-size:.9rem; } .tbl td{ padding:7px 4px; border-bottom:1px solid var(--line); } .tbl tr.hl td{ background:#fff1d6; }
+details.gl{ border-bottom:1px solid var(--line); padding:8px 0; } details.gl summary{ cursor:pointer; }
+.apa{ padding-left:2em; text-indent:-2em; font-size:1rem; }
+
+.rotate-hint{ display:none; color:#c9c3b8; font-size:.8rem; text-align:center; padding:8px; }
+@media (orientation:portrait){ .rotate-hint{ display:block; } }
+#gclose{ z-index:9; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="sheet" class="sheet hidden"><div class="sbody"></div></div>
+<div id="toast"></div>
+<div id="gov" class="gov hidden">
+  <div class="gwrap">
+    <button id="gclose" aria-label="Schließen">✕</button>
+    <div style="position:relative;display:inline-block;line-height:0"><canvas id="gc" width="840" height="480"></canvas><div id="gpanel" class="gpanel hidden"></div></div>
+    <div class="rotate-hint">📱↻ Tipp: Handy quer halten für ein größeres Spielfeld · Tip: rotate your phone</div>
+    <div id="gBossBtns" style="display:none"><button id="gDrink">🥤</button><button id="gGel">⚡</button></div>
+    <div class="gtouch"><div class="grp"><button id="gL" aria-label="links">◀</button><button id="gR" aria-label="rechts">▶</button></div><div class="grp"><button id="gJ" aria-label="springen">⤒</button></div></div>
+  </div>
+  <div id="gToast"></div>
+</div>
+<div id="mg" class="mg hidden"><div class="mgbody"></div></div>
+<script>/* ===================== DATEN: Pläne, Literatur, Fakten ===================== */
+const RACE_DEFAULT = '2027-04-25'; // Termin lt. Veranstalterangaben (hdsports.org) – bitte prüfen
+const RACE_NAME = 'ATOS Halbmarathon Heidelberg 2027';
+
+/* Abkürzungen im Plan: '-' = P/AT (Pause oder alternatives Training), 'P' = Pause */
+const PLANS = {
+  EIN: { title: 'Einsteiger: Laufen & Gehen', src: 'Aderhold, 2018, S. 140 f. (mod. nach Steffny, 2017)', days: [1,3,5],
+    weeks: [
+      ['-','RW 7x1','-','RW 7x1','-','RW 7x1','-'],
+      ['-','RW 10x1','-','RW 10x1','-','RW 10x1','-'],
+      ['-','RW 8x2','-','RW 8x2','-','RW 8x2','-'],
+      ['-','RW 7x3','-','RW 7x3','-','RW 7x3','-'],
+      ['-','RW 6x4','-','RW 6x4','-','RW 6x4','-'],
+      ['-','RW 5x5','-','RW 5x5','-','RW 5x5','-'],
+      ['-','RW 4x7','-','RW 4x7','-','RW 4x7','-'],
+      ['-','RW 3x10','-','RW 3x10','-','RW 3x10','-'],
+      ['-','RW 2x15','-','RW 2x15','-','RW 2x15','-'],
+      ['-','LAUF 30','-','LAUF 30','-','LAUF 30','-'] ] },
+  FG1: { title: 'Fortgeschrittene, 1. Zyklus', src: 'Aderhold, 2018, S. 468 (Tab. A.1)',
+    weeks: [
+      ['EDL 5','-','FS 5','-','-','R-EDL 6','-'],
+      ['EDL 5','-','FS 5','RDL 4','-','R-EDL 7','-'],
+      ['EDL 5','-','FS 5','RDL 4','-','R-EDL 8','-'],
+      ['EDL 5','-','EDL+ST 5','-','-','R-EDL 7','-'],
+      ['EDL 6','-','FS 6','RDL 5','-','R-EDL 8','-'],
+      ['EDL 6','-','FS 6','RDL 5','-','R-EDL 9','-'],
+      ['EDL 7','-','FS 7','RDL 6','-','R-EDL 10','-'],
+      ['EDL 6','-','EDL+ST 6','-','-','E-RDL 9','-'] ] },
+  FG2: { title: 'Fortgeschrittene, 2. Zyklus', src: 'Aderhold, 2018, S. 468 (Tab. A.2)',
+    weeks: [
+      ['EDL 7','-','FS 7','RDL 6','-','R-EDL 10','-'],
+      ['EDL 8','-','FS 8','RDL 6','-','R-EDL 10','-'],
+      ['EDL 8','-','FS 8','RDL 6','-','R-EDL 12','-'],
+      ['EDL 7','-','EDL+ST 7','-','-','R-EDL 10','-'],
+      ['EDL 8','-','FS 8','RDL 6','-','R-EDL 12','-'],
+      ['EDL 10','-','FS 8','RDL 6','-','R-EDL 14','-'],
+      ['EDL 10','-','FS 10','RDL 8','-','R-EDL 14','-'],
+      ['EDL 8','-','EDL+ST 8','-','-','E-RDL 12','-'] ] },
+  A65: { title: 'Aufbauplan bis Halbmarathon (10 km in 65:00)', src: 'Aderhold, 2018, S. 469 (Tab. A.3)',
+    weeks: [
+      ['IDL 5','-','FS 8','-','-','EDL 12','-'],
+      ['IDL 8','-','FS 10','-','-','EDL 12','-'],
+      ['IDL 10','-','FS 10','-','-','EDL 14','-'],
+      ['IDL 5','-','FS 10','-','-','EDL/WK 10','-'],
+      ['I-TDL 8','-','FS 8','-','-','EDL 12','-'],
+      ['I-TDL 8','-','FS 10','-','-','EDL 12','-'],
+      ['I-TDL 10','-','FS 10','-','-','EDL 10','-'],
+      ['IDL 8','-','FS 10','-','-','EDL/WK 10','-'] ] },
+  A60: { title: 'Aufbauplan bis Halbmarathon (10 km in 60:00)', src: 'Aderhold, 2018, S. 469 (Tab. A.4)',
+    weeks: [
+      ['IDL 8','-','FS 10','-','-','EDL 12','-'],
+      ['IDL 8','-','FS 8','-','EDL+ST 6','EDL 12','-'],
+      ['IDL 10','-','FS 10','-','EDL+ST 6','EDL 14','-'],
+      ['IDL 8','-','FS 10','-','EDL+ST 6/2','EDL/WK 10','-'],
+      ['I-TDL 8','-','FS 8','-','EDL+ST 6','EDL 12','-'],
+      ['I-TDL 8','-','FS 10','-','EDL+ST 6','EDL 14','-'],
+      ['I-TDL 10','-','FS 10','-','EDL+ST 6','EDL 14','-'],
+      ['IDL 8','-','FS 10','-','EDL+ST 6/2','EDL/WK 10','-'] ] },
+  A55: { title: 'Aufbauplan bis Halbmarathon (10 km in 55:00)', src: 'Aderhold, 2018, S. 470 (Tab. A.5)',
+    weeks: [
+      ['IDL 8','-','FS 10','-','-','EDL 12','-'],
+      ['IDL 8','-','FS 8','-','EDL+ST 8','EDL 12','-'],
+      ['IDL 10','-','FS 10','-','EDL+ST 8','EDL 14','-'],
+      ['IDL 8','-','FS 10','-','EDL+ST 8/2','EDL/WK 10','-'],
+      ['I-TDL 8','-','FS 8','-','EDL+ST 8','EDL 12','-'],
+      ['I-TDL 8','-','FS 10','-','EDL+ST 8','EDL 14','-'],
+      ['I-TDL 10','-','FS 10','-','EDL+ST 10','EDL 15','-'],
+      ['IDL 8','-','FS 10','-','EDL+ST 8/2','EDL/WK 10','-'] ] },
+  A50: { title: 'Aufbauplan bis Halbmarathon (10 km in 50:00)', src: 'Aderhold, 2018, S. 470 (Tab. A.6)',
+    weeks: [
+      ['IDL 8','-','FS 10','-','-','EDL 12','-'],
+      ['IDL 8','-','FS 10','-','EDL+ST 8','EDL 14','-'],
+      ['IDL 10','-','FS 10','-','EDL+ST 10','EDL 14','-'],
+      ['IDL 8','-','FS 10','-','EDL+ST 8/2','EDL/WK 12','-'],
+      ['I-TDL 8','-','FS 10','-','EDL+ST 8','EDL 14','-'],
+      ['I-TDL 8','-','FS 10','-','EDL+ST 10','EDL 14','-'],
+      ['I-TDL 10','-','FS 12','-','EDL+ST 12','EDL 16','-'],
+      ['IDL 8','-','FS 10','-','EDL+ST 8/2','EDL/WK 12','-'] ] },
+  A46: { title: 'Aufbauplan bis Halbmarathon (10 km in 46:00)', src: 'Aderhold, 2018, S. 471 (Tab. A.7)',
+    weeks: [
+      ['IDL 8','-','FS 10','-','EDL+ST 10','EDL 12','-'],
+      ['IDL 8','-','FS 10','-','EDL+ST 10','EDL 14','-'],
+      ['IDL 10','-','FS 10','-','EDL+ST 10','EDL 14','-'],
+      ['IDL 8','-','FS 10','-','EDL+ST 10/2','EDL/WK 14','-'],
+      ['I-TDL 8','-','FS 10','-','EDL+ST 10','EDL 12','-'],
+      ['I-TDL 10','-','FS 12','-','EDL+ST 10','EDL 14','-'],
+      ['I-TDL 10','-','FS 14','-','EDL+ST 12','EDL 18','-'],
+      ['IDL 8','-','FS 10','-','EDL+ST 8/2','EDL/WK 14','-'] ] },
+  H215: { title: 'Halbmarathon-Plan, Ziel 2:15–2:20 h', src: 'Aderhold, 2018, S. 480 (Tab. A.25)', target: '2:15–2:20 h',
+    weeks: [
+      ['IDL 10','-','WHL 4x1','-','EDL 6','EDL 14','-'],
+      ['TDL 8','-','WHL 2x2','-','EDL 6','EDL 16','-'],
+      ['TDL 8','-','WHL 2x3','-','EDL 6','EDL 18','-'],
+      ['IDL 10','-','FS 10','-','-','EDL/WK 15','-'],
+      ['TDL/EDL 8','-','WHL 2x2','-','EDL 6','EDL 16','-'],
+      ['TDL 8','-','WHL 2x3','-','EDL 6','EDL 18','-'],
+      ['TDL 8','-','WHL 2x2','-','EDL 6','EDL 16','-'],
+      ['WHL/WKT 2x3','P','WHL/WKT 2x2','P','EDL+ST 2','P','HM'] ] },
+  H200: { title: 'Halbmarathon-Plan, Ziel 2:00–2:05 h', src: 'Aderhold, 2018, S. 480 (Tab. A.26)', target: '2:00–2:05 h',
+    weeks: [
+      ['IDL 10','-','WHL 4x1','-','EDL 10','EDL 16','-'],
+      ['TDL 8','-','WHL 2x2','-','EDL 10','EDL 18','-'],
+      ['TDL 8','-','WHL 2x3','-','EDL 10','EDL 18','-'],
+      ['IDL 10','-','FS 10','-','EDL+ST 6/2','EDL/WK 14','-'],
+      ['TDL/EDL 8','-','WHL 2x2','-','EDL 10','EDL 18','-'],
+      ['TDL 8','-','WHL 2x3','-','EDL 10','EDL 18','-'],
+      ['TDL 8','-','WHL 2x2','-','EDL 10','EDL 16','-'],
+      ['WHL/WKT 2x3','P','WHL/WKT 2x2','P','EDL+ST 2','P','HM'] ] },
+  H150: { title: 'Halbmarathon-Plan, Ziel 1:50–1:52 h', src: 'Aderhold, 2018, S. 481 (Tab. A.27)', target: '1:50–1:52 h',
+    weeks: [
+      ['IDL 10','-','WHL 4x1','-','EDL 10','EDL 18','-'],
+      ['TDL 8','-','WHL 2x2','-','EDL 10','EDL 20','-'],
+      ['TDL 10','-','WHL 2x3','-','EDL 10','EDL 20','-'],
+      ['IDL 10','-','FS 10','-','EDL+ST 10/2','EDL/WK 15','-'],
+      ['TDL/EDL 10','-','WHL 2x2','-','EDL 10','EDL 20','-'],
+      ['TDL 10','-','WHL 2x3','-','EDL 10','EDL 20','-'],
+      ['TDL 10','-','WHL 2x2','-','EDL 10','EDL 18','-'],
+      ['WHL/WKT 2x3','P','WHL/WKT 2x2','P','EDL+ST 2','P','HM'] ] },
+  H145: { title: 'Halbmarathon-Plan, Ziel 1:45–1:47 h', src: 'Aderhold, 2018, S. 481 (Tab. A.28)', target: '1:45–1:47 h',
+    weeks: [
+      ['IDL 10','-','WHL 4x1','-','EDL 12','EDL 18','-'],
+      ['TDL 8','-','WHL 2x2','-','EDL 14','EDL 20','-'],
+      ['TDL 10','-','WHL 2x3','-','EDL 14','EDL 22','-'],
+      ['IDL 10','-','FS 10','-','EDL+ST 12/2','EDL/WK 18','-'],
+      ['TDL/EDL 10','-','WHL 2x2','-','EDL 12','EDL 20','-'],
+      ['TDL 10','-','WHL 2x3','-','EDL 14','EDL 22','-'],
+      ['TDL 10','-','WHL 2x2','-','EDL 14','EDL 18','-'],
+      ['WHL/WKT 2x3','P','WHL/WKT 2x2','P','EDL+ST 2','P','HM'] ] }
+};
+
+/* Einstiegsniveaus -> Blockfolge (Vorbereitung) + HM-Block */
+const LEVELS = {
+  ein: { label: 'Ich laufe (noch) nicht regelmäßig', pre: ['EIN','FG1','FG2','A65'], hm: 'H215' },
+  fg:  { label: 'Ich kann ca. 30 Minuten am Stück laufen', pre: ['FG1','FG2','A65'], hm: 'H215' },
+  k65: { label: '10 km in ca. 65 min', pre: ['A65'], hm: 'H215' },
+  k60: { label: '10 km in ca. 60 min', pre: ['A60'], hm: 'H215' },
+  k55: { label: '10 km in ca. 55 min', pre: ['A55'], hm: 'H200' },
+  k50: { label: '10 km in ca. 50 min', pre: ['A50'], hm: 'H150' },
+  k46: { label: '10 km in ca. 46–47 min oder schneller', pre: ['A46'], hm: 'H145' }
+};
+function levelFrom10k(sec){ const m = sec/60;
+  if (m > 62.5) return 'k65'; if (m > 57.5) return 'k60'; if (m > 52.5) return 'k55'; if (m > 48.5) return 'k50'; return 'k46'; }
+
+/* Trainingsformen – Glossar */
+const TYPES = {
+  'RW':   { name: 'Laufen & Gehen im Wechsel', hf: '65–75 % HFmax', desc: 'Laufintervalle mit 1 Minute Gehpause. Sehr langsam und mit kurzen Schritten laufen – zu schneller Beginn ist der häufigste Anfängerfehler.', src: 'Aderhold, 2018, S. 140 f.' },
+  'LAUF': { name: 'Dauerlauf (Minuten)', hf: '65–75 % HFmax', desc: 'Am Stück locker laufen, so dass du dich noch unterhalten kannst.', src: 'Aderhold, 2018, S. 140 f.' },
+  'RDL':  { name: 'Regenerativer Dauerlauf', hf: '65–70 % HFmax', desc: 'Sehr ruhiger Lauf zur Erholung.', src: 'Aderhold, 2018, Kap. 5.3' },
+  'R-EDL':{ name: 'Ruhiger Dauerlauf (RDL bis EDL)', hf: '65–75 % HFmax', desc: 'Langer, ruhiger Lauf zwischen regenerativem und extensivem Tempo. (Lesart der App – Abkürzung bitte im Buch prüfen.)', src: 'Aderhold, 2018, S. 468' },
+  'E-RDL':{ name: 'Ruhiger Dauerlauf (EDL bis RDL)', hf: '65–75 % HFmax', desc: 'Wie R-EDL, eher am ruhigen Ende. (Lesart der App – bitte im Buch prüfen.)', src: 'Aderhold, 2018, S. 468' },
+  'EDL':  { name: 'Extensiver Dauerlauf', hf: '70–75 % HFmax', desc: 'Lockerer Grundlagenlauf; samstags der lange Lauf.', src: 'Aderhold, 2018, Kap. 5.3' },
+  'EDL+ST':{ name: 'Extensiver Dauerlauf + Steigerungen', hf: '70–75 % HFmax', desc: 'Lockerer Dauerlauf, am Ende einige Steigerungsläufe. Bei „8/2 km“: 2 km, wenn am nächsten Tag ein Wettkampf ansteht, sonst 8 km. (Lesart der App.)', src: 'Aderhold, 2018, S. 469 ff.' },
+  'EDL/WK':{ name: 'Langer Lauf ODER 10-km-Wettkampf', hf: '70–75 % HFmax', desc: 'Entweder extensiver Dauerlauf – oder ein 10-km-Aufbauwettkampf als Leistungstest.', src: 'Aderhold, 2018, S. 469 ff.' },
+  'IDL':  { name: 'Intensiver Dauerlauf', hf: '75–80 % HFmax', desc: 'Zügiger Dauerlauf, noch gut kontrollierbar.', src: 'Aderhold, 2018, Kap. 5.3' },
+  'I-TDL':{ name: 'Zügiger Dauerlauf (IDL bis TDL)', hf: '75–90 % HFmax', desc: 'Tempo zwischen intensivem Dauerlauf und Tempodauerlauf. (Lesart der App – bitte im Buch prüfen.)', src: 'Aderhold, 2018, S. 469 ff.' },
+  'TDL':  { name: 'Tempodauerlauf', hf: '80–90 % HFmax', desc: 'Schneller Dauerlauf an der aeroben Schwelle (10-km-Tempo + ca. 15 s/km).', src: 'Aderhold, 2018, S. 89' },
+  'TDL/EDL':{ name: 'Tempodauerlauf oder extensiver Dauerlauf', hf: '70–90 % HFmax', desc: 'Je nach Tagesform TDL oder lockerer EDL.', src: 'Aderhold, 2018, S. 480 f.' },
+  'FS':   { name: 'Fahrtspiel', hf: 'wechselnd', desc: 'Lauf mit spielerischen Tempowechseln, gern im Gelände.', src: 'Aderhold, 2018, Kap. 5.5' },
+  'WHL':  { name: 'Wiederholungsläufe', hf: 'über TDL', desc: 'Schnelle Abschnitte (z. B. 4 × 1 km) mit Trabpausen; Ein- und Auslaufen dazu.', src: 'Aderhold, 2018, S. 89' },
+  'WHL/WKT':{ name: 'Wiederholungsläufe im Wettkampftempo', hf: 'HM-Tempo', desc: 'Abschnitte genau im geplanten Halbmarathon-Tempo – Gefühl fürs Renntempo.', src: 'Aderhold, 2018, S. 480 f.' },
+  'HM':   { name: 'Halbmarathon!', hf: '', desc: 'Renntag in Heidelberg – 21,1 km.', src: '' },
+  '-':    { name: 'Pause oder alternatives Training', hf: '', desc: 'Ruhetag. Crosstraining ist erlaubt – bringt dem Laufen wenig, steigert aber die Fettverbrennung. Keine wadenlastigen Geräte wie Stepper.', src: 'Aderhold, 2018, S. 468; Galloway & Galloway, 2019, S. 49' },
+  'P':    { name: 'Pause', hf: '', desc: 'Ruhe vor dem Rennen.', src: 'Aderhold, 2018, S. 480 f.' }
+};
+
+/* Literatur – APA 7 */
+const LITERATURE = [
+  { key: 'Aderhold, 2018', apa: 'Aderhold, L. (2018). <i>Laufen! Vom Einsteiger bis zum Ultraläufer</i> (2. Aufl.; mit Beiträgen von S. Weigelt). Elsevier.',
+    note: 'Trainingspläne (Einsteiger-, Fortgeschrittenen-, Aufbau- und Halbmarathonpläne), Tempoberechnung, Herzfrequenzbereiche, Trainingsausfall, Ausrüstung.' },
+  { key: 'Beck, 2024', apa: 'Beck, H. (2024). <i>Das große Buch vom Marathon: Lauftraining für Marathon, Halbmarathon und 10 km</i> (13., durchges. Aufl.). Copress.',
+    note: 'Zielzeitprognose, Tapering, Renneinteilung, Ernährung, Rekorde und Geschichte.' },
+  { key: 'Galloway & Galloway, 2019', apa: 'Galloway, J., & Galloway, B. (2019). <i>Half marathon: A complete training guide for women</i> (2nd ed.). Meyer &amp; Meyer Sport.',
+    note: 'Magic Mile, Tempoanpassung bei Wärme, Ruhetage, Crosstraining, Renneinteilung.' }
+];
+
+/* Fakten – zweisprachig. kind: fun (Fun Fact) | fact (Trainingswissen) */
+const FACTS = [
+  { k:'fun', de:'Die Halbmarathon-Weltbestzeiten laut Buch: Jacob Kiplimo lief 57:31 min (Lissabon, 2021), Letesenbet Gidey 1:02:52 h (2021).', en:'Half-marathon world bests according to the book: Jacob Kiplimo ran 57:31 (Lisbon, 2021), Letesenbet Gidey 1:02:52 (2021).', src:'Beck, 2024' },
+  { k:'fun', de:'Der Halbmarathon ist bei Olympischen Spielen und Leichtathletik-WMs keine Standarddistanz.', en:'The half marathon is not a standard distance at the Olympics or the World Athletics Championships.', src:'Beck, 2024' },
+  { k:'fun', de:'Der 10.000-m-Lauf ist seit 1912 olympisch – für Frauen allerdings erst seit 1988.', en:'The 10,000 m has been an Olympic event since 1912 – but for women only since 1988.', src:'Beck, 2024' },
+  { k:'fun', de:'Lauflegende Emil Zátopek ließ sich beim Marathon teilweise Bier statt Wasser reichen.', en:'Running legend Emil Zátopek sometimes took beer instead of water during a marathon.', src:'Beck, 2024' },
+  { k:'fun', de:'Eine Studie der TU München bestätigte: Alkoholfreies Bier eignet sich gut als Elektrolytgetränk für Ausdauersportler.', en:'A study by TU Munich confirmed that alcohol-free beer works well as an electrolyte drink for endurance athletes.', src:'Beck, 2024' },
+  { k:'fun', de:'Paula Radcliffe legte sich nach Marathons oder harten Einheiten in eine Badewanne mit eiskaltem Wasser.', en:'Paula Radcliffe used to sit in an ice-cold bath after marathons or hard sessions.', src:'Aderhold, 2018' },
+  { k:'fun', de:'Haile Gebrselassie lief 2008 in Berlin Marathon-Weltrekord (2:03:59 h). Er trainierte das Renntempo erst auf kurzen, dann auf immer längeren Strecken.', en:'Haile Gebrselassie set a marathon world record in Berlin in 2008 (2:03:59). He trained race pace first over short, then over ever longer distances.', src:'Aderhold, 2018, S. 98 f.' },
+  { k:'fun', de:'Waldemar Cierpinski gewann zweimal olympisches Marathon-Gold (1976 und 1980) – sein wichtigstes Trainingskriterium war die Zielgeschwindigkeit.', en:'Waldemar Cierpinski won Olympic marathon gold twice (1976 and 1980) – target pace was his key training criterion.', src:'Aderhold, 2018, S. 98' },
+  { k:'fun', de:'Rückenwind mit 15 km/h macht dich etwa 5 % schneller – aber der Vorteil von Rückenwind ist nur etwa halb so groß wie der Nachteil von Gegenwind.', en:'A 15 km/h tailwind makes you about 5% faster – but the tailwind bonus is only about half as big as the headwind penalty.', src:'Aderhold, 2018' },
+  { k:'fun', de:'Bergauf verlorene Zeit holst du bergab nicht wieder ganz auf – profilierte Strecken sind immer langsamer. Gut zu wissen bei rund 350 Höhenmetern in Heidelberg!', en:'Time lost uphill is never fully regained downhill – hilly courses are always slower. Good to know for Heidelberg!', src:'Aderhold, 2018' },
+  { k:'fun', de:'Kenenisa Bekele hielt laut Buch den 10.000-m-Weltrekord mit 26:17 min.', en:'According to the book, Kenenisa Bekele held the 10,000 m world record at 26:17.', src:'Beck, 2024' },
+  { k:'fun', de:'Beim Walking wirkt etwa das 1- bis 1,5-Fache deines Körpergewichts auf die Gelenke, beim Laufen das 3- bis 5-Fache.', en:'Walking puts about 1–1.5 times your body weight on your joints; running 3–5 times.', src:'Aderhold, 2018, S. 140' },
+  { k:'fun', de:'Mehr als 50 Laufkilometer pro Woche scheinen keinen zusätzlichen gesundheitlichen Effekt zu bringen.', en:'More than 50 km of running per week does not seem to add further health benefits.', src:'Aderhold, 2018, S. 141' },
+  { k:'fun', de:'Faustformel: Ein langsamer Dauerlauf verbraucht etwa 1 kcal pro Kilometer und Kilogramm Körpergewicht – 75 kg auf 10 km sind rund 750 kcal.', en:'Rule of thumb: an easy run burns about 1 kcal per km per kg of body weight – 75 kg over 10 km is roughly 750 kcal.', src:'Beck, 2024' },
+  { k:'fun', de:'Endorphine sorgen für das gute Gefühl nach dem Training.', en:'Endorphins are behind that good feeling after training.', src:'Aderhold, 2018' },
+  { k:'fact', de:'Ein 70-kg-Läufer kann maximal etwa 1.800 kcal als Glykogen speichern. Nach ca. 90–100 Minuten Dauerlauf sind die Speicher weitgehend leer – deshalb rechtzeitig Kohlenhydrate nachführen.', en:'A 70 kg runner can store at most about 1,800 kcal as glycogen. After about 90–100 minutes of running these stores are largely empty – so refuel carbs in time.', src:'Beck, 2024' },
+  { k:'fact', de:'Ein Gramm Fett liefert 9,3 kcal, ein Gramm Kohlenhydrat rund 4 kcal. Fett wird aber deutlich langsamer verbrannt.', en:'One gram of fat yields 9.3 kcal, one gram of carbohydrate about 4 kcal – but fat is burned much more slowly.', src:'Beck, 2024' },
+  { k:'fact', de:'Abgelaufene Laufschuhe verlieren Stabilität und Dämpfung – meist nach 800 bis 1.000 km. Wer oft läuft, wechselt zwischen mindestens zwei Paar.', en:'Worn-out running shoes lose stability and cushioning – usually after 800 to 1,000 km. Frequent runners should rotate at least two pairs.', src:'Aderhold, 2018, S. 104' },
+  { k:'fact', de:'Wer eine Woche mit dem Training aussetzt, braucht meist etwa zwei Wochen, um den alten Leistungsstand wieder zu erreichen.', en:'If you skip training for a week, it usually takes about two weeks to get back to your previous level.', src:'Aderhold, 2018, S. 104' },
+  { k:'fact', de:'Ausgefallenes Training nicht nachholen! Gerade nach Infekten braucht der Körper Erholung.', en:'Don\'t try to make up missed sessions! Especially after an infection your body needs to recover.', src:'Aderhold, 2018, S. 104' },
+  { k:'fact', de:'Bei Fieber ist Sport tabu – im schlimmsten Fall droht eine Herzmuskelentzündung.', en:'No sport with a fever – in the worst case it can lead to myocarditis.', src:'Aderhold, 2018' },
+  { k:'fact', de:'Bei den ersten Anzeichen einer Erkältung hilft eine ausgelassene Einheit mehr als ein Lauf („Mut zur Pause“).', en:'At the first signs of a cold, skipping a session helps more than running ("the courage to rest").', src:'Aderhold, 2018' },
+  { k:'fact', de:'Wärme bremst: Ab 14 °C pro 2 °C mehr etwa 20 s/km langsamer laufen – im Training und im Rennen.', en:'Heat slows you down: above 14 °C, run about 20 s/km slower for every extra 2 °C – in training and racing.', src:'Galloway & Galloway, 2019, S. 49' },
+  { k:'fact', de:'Galloways „Magic Mile“: Zeit für eine Meile (1,609 km) × 1,2 ergibt dein aktuell mögliches Halbmarathon-Tempo pro Meile.', en:'Galloway\'s "Magic Mile": your time for one mile × 1.2 predicts your current half-marathon pace per mile.', src:'Galloway & Galloway, 2019, S. 51' },
+  { k:'fact', de:'Halbmarathon-Zielzeit ≈ 10-km-Wettkampfzeit (zwei Wochen vorher) × 2,2234 – dann gleichmäßig laufen.', en:'Half-marathon target ≈ 10 km race time (two weeks before) × 2.2234 – then run evenly.', src:'Beck, 2024' },
+  { k:'fact', de:'51/49-Regel: Die erste Hälfte in ca. 51 % der Zeit, die zweite in 49 % – wer zu schnell startet, verliert hinten etwa doppelt so viel.', en:'51/49 rule: run the first half in about 51% of your time and the second in 49% – start too fast and you lose about twice as much later.', src:'Beck, 2024' },
+  { k:'fact', de:'Den Tag vor dem langen Lauf frei von anstrengendem Training halten.', en:'Keep the day before your long run free of strenuous training.', src:'Galloway & Galloway, 2019, S. 49' },
+  { k:'fact', de:'Steigere erst die Anzahl der Trainingseinheiten oder die Länge – und erst dann das Tempo.', en:'Increase the number or length of sessions first – and only then the pace.', src:'Aderhold, 2018, S. 162' },
+  { k:'fact', de:'Halte deine Trainingszeiten in einem Lauftagebuch fest – so werden Fortschritte und Probleme sichtbar.', en:'Keep a running log – it makes progress and problems visible.', src:'Aderhold, 2018, S. 140' },
+  { k:'fact', de:'Carbo-Loading: In den drei Tagen vor dem Wettkampf (Tag −3 bis −1) die Ernährung auf Kohlenhydrate ausrichten.', en:'Carbo-loading: focus your meals on carbohydrates in the three days before the race (day −3 to −1).', src:'Beck, 2024' },
+  { k:'fact', de:'Feste Termine mit einer Laufgruppe wirken motivierend.', en:'Fixed dates with a running group are motivating.', src:'Aderhold, 2018' }
+];
+
+/* Motivationssprüche – kurz, mit Quelle (paraphrasiert bzw. kurze Zitate) */
+const MOTIVATION = [
+  { t:'Geduld und Beharrlichkeit zahlen sich aus.', src:'Aderhold, 2018, S. 104' },
+  { t:'Werde nicht Sklave deines Trainingsplans – achte auf dein Körpergefühl.', src:'Aderhold, 2018, S. 104' },
+  { t:'Wer langsam läuft, kommt schneller ans Ziel.', src:'Beck, 2024' },
+  { t:'Setz dir ein klares Ziel und glaub an deinen persönlichen Erfolg.', src:'Aderhold, 2018' },
+  { t:'Setz dir eigene Maßstäbe und vergleich dich nicht mit anderen.', src:'Aderhold, 2018, S. 141' },
+  { t:'Der Trainingsplan ist eine wichtige Motivationshilfe, um dranzubleiben.', src:'Beck, 2024' },
+  { t:'Mut zur Pause: Erholung gehört zum Training.', src:'Aderhold, 2018, S. 104' },
+  { t:'„Abwechslung erfreut“ – Euripides, zitiert im Kapitel Laufsystem.', src:'Aderhold, 2018, S. 104' },
+  { t:'Nach einer längeren Vorbereitung ist der persönliche Erfolg umso schöner.', src:'Aderhold, 2018, S. 104' }
+];
+
+const RACE_TIPS = [
+  { t:'Tapering: Im Halbmarathon-Plan ist die letzte Woche stark reduziert – Wiederholungsläufe im Wettkampftempo, dazwischen Pausen, am Vortag Ruhe.', en:'Tapering: the last week of the half-marathon plan is strongly reduced – repeats at race pace, rest days in between, rest the day before.', src:'Aderhold, 2018, S. 480 f.' },
+  { t:'Gleichmäßig laufen: Zielzeit ermitteln und das Kilometertempo konstant halten.', en:'Run evenly: determine your target time and keep your per-km pace constant.', src:'Beck, 2024' },
+  { t:'51/49-Regel: Erste Hälfte etwas ruhiger, zweite Hälfte etwas schneller – und dann überholst du andere.', en:'51/49 rule: first half a little easier, second half a little faster – and then you overtake others.', src:'Beck, 2024' },
+  { t:'Galloway: Die ersten 9–10 Meilen (ca. 14–16 km) im geplanten Tempo laufen – schneller werden erst danach, wenn du dich gut fühlst.', en:'Galloway: run the first 9–10 miles (about 14–16 km) at your planned pace – speed up only afterwards if you feel good.', src:'Galloway & Galloway, 2019, S. 49 ff.' },
+  { t:'Wärme über 14 °C: pro 2 °C etwa 20 s/km langsamer.', en:'Heat above 14 °C: about 20 s/km slower per 2 °C.', src:'Galloway & Galloway, 2019, S. 49' },
+  { t:'Carbo-Loading in den drei Tagen vor dem Rennen.', en:'Carbo-loading in the three days before the race.', src:'Beck, 2024' }
+];
+
+/* ===================== PLAN-LOGIK ===================== */
+const DAY = 86400000;
+function parseD(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d,12); }
+function fmtD(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function addDays(s,n){ const d=parseD(s); d.setDate(d.getDate()+n); return fmtD(d); }
+function mondayOf(s){ const d=parseD(s); const wd=(d.getDay()+6)%7; d.setDate(d.getDate()-wd); return fmtD(d); }
+function daysBetween(a,b){ return Math.round((parseD(b)-parseD(a))/DAY); }
+function todayS(){ return fmtD(new Date()); }
+const WD = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+function niceD(s, opt){ return parseD(s).toLocaleDateString('de-DE', opt||{day:'2-digit',month:'2-digit',year:'numeric'}); }
+
+/* Einheit parsen: 'EDL+ST 8/2' -> {code, arg, km} */
+function parseSession(tok){
+  if (tok==='-'||tok==='P') return null;
+  if (tok==='HM') return { code:'HM', arg:'21,1 km', km:21.1 };
+  const i = tok.indexOf(' '); const code = tok.slice(0,i); const arg = tok.slice(i+1);
+  let km = null;
+  if (code==='RW' || code==='LAUF') km = null;
+  else if (arg.includes('x')) { const [a,b]=arg.split('x').map(Number); km = a*b; }
+  else km = Number(arg.split('/')[0]);
+  return { code, arg, km };
+}
+function sessionLabel(s){
+  if (s.code==='HM') return 'Halbmarathon (21,1 km)';
+  if (s.code==='RW') { const [a,b]=s.arg.split('x'); return a+' × '+b+' min laufen, je 1 min gehen'; }
+  if (s.code==='LAUF') return s.arg+' min am Stück laufen';
+  if (s.code.startsWith('WHL')) { const [a,b]=s.arg.split('x'); return a+' × '+b+' km '+s.code; }
+  if (s.code==='EDL/WK') return s.arg+' km EDL oder 10-km-Wettkampf';
+  return s.arg+' km '+s.code;
+}
+
+/* Kanonische Blockfolge für ein Niveau */
+function canonFor(level){
+  const L = LEVELS[level]; const seq=[];
+  L.pre.forEach(b => PLANS[b].weeks.forEach((w,i)=>seq.push({b, i, pre:true})));
+  PLANS[L.hm].weeks.forEach((w,i)=>seq.push({b:L.hm, i, pre:false}));
+  return seq;
+}
+
+/* Wählt n Wochen aus der Folge ab Position from, so dass der HM-Block am Ende liegt. */
+function fitWeeks(canon, from, n){
+  const notes=[];
+  const preIdx=[], hmIdx=[];
+  canon.forEach((c,k)=>{ if(k<from) return; (c.pre?preIdx:hmIdx).push(k); });
+  if (n<=0) return {list:[],notes};
+  if (hmIdx.length >= n) {
+    if (hmIdx.length > n) notes.push('Die Zeit bis zum Rennen ist kürzer als der Halbmarathon-Block. Die ersten Wochen des Blocks entfallen – lauf das Rennen lieber verhaltener an (Aderhold, 2018, S. 141).');
+    return { list: hmIdx.slice(hmIdx.length-n), notes };
+  }
+  const A = n - hmIdx.length; let pre=[];
+  if (preIdx.length <= A) {
+    pre = preIdx.slice();
+    // auffüllen: letzten Vorbereitungsblock wiederholen
+    const lastPre = canon.filter(c=>c.pre).pop();
+    if (pre.length < A) {
+      const blockStart = canon.findIndex(c=>c.b===lastPre.b);
+      const blockLen = PLANS[lastPre.b].weeks.length;
+      let k=0; const fill=[];
+      while (pre.length+fill.length < A){ fill.push(blockStart + (k%blockLen)); k++; }
+      pre = pre.concat(fill);
+      if (fill.length) notes.push('Du hast mehr Zeit als der Plan braucht: Der Aufbauplan wird wiederholt (Aderhold, 2018: Aufbaupläne decken die Grundlagenphase ab).');
+    }
+  } else {
+    // zu wenig Zeit: ersten Block möglichst behalten, Rest vom Ende nehmen
+    const firstB = canon[preIdx[0]].b; const firstPart = preIdx.filter(k=>canon[k].b===firstB);
+    const keep = firstPart.slice(0, Math.min(A, firstPart.length));
+    const rest = preIdx.filter(k=>canon[k].b!==firstB);
+    const need = A - keep.length;
+    pre = keep.concat(need>0 ? rest.slice(rest.length-need) : []);
+    notes.push('Für deinen Einstieg sieht die Literatur mehr Vorbereitungszeit vor, als bis zum Rennen bleibt. Der Plan wurde gekürzt – höre besonders auf deinen Körper. Gehpausen (Run-Walk-Run) sind auch im Rennen möglich (Galloway & Galloway, 2019).');
+  }
+  return { list: pre.concat(hmIdx), notes };
+}
+
+function makeWeek(monday, c, flag){
+  const P = PLANS[c.b]; const row = P.weeks[c.i];
+  const sessions=[];
+  row.forEach((tok,d)=>{ const s=parseSession(tok); if(s) sessions.push(Object.assign(s,{day:d, date:addDays(monday,d), done:false, skipped:false, kmDone:null})); });
+  return { monday, b:c.b, i:c.i, title:P.title, src:P.src, rest:row.map(t=>t), sessions, flag: flag||null };
+}
+
+/* kompletter Neuaufbau */
+function buildPlan(state){
+  const p=state.profile; const start=mondayOf(p.start); const raceMon=mondayOf(p.race);
+  const n = daysBetween(start, raceMon)/7 + 1;
+  state.canon = canonFor(p.level);
+  const r = fitWeeks(state.canon, 0, n);
+  state.weeks = r.list.map((k,j)=>Object.assign(makeWeek(addDays(start,7*j), state.canon[k]), {ci:k}));
+  state.notices = r.notes;
+  // HM-Tag auf echtes Renndatum legen (falls Rennen kein Sonntag)
+  const last = state.weeks[state.weeks.length-1];
+  if (last) last.sessions.forEach(s=>{ if(s.code==='HM') s.date=p.race; });
+  state.game.thresholds = computeThresholds(state);
+}
+
+function plannedKm(state){ return state.weeks.reduce((a,w)=>a+w.sessions.reduce((b,s)=>b+(s.km|| (s.code==='RW'||s.code==='LAUF'?3:0)),0),0); }
+
+/* Pause eintragen + Anpassung */
+function applyPause(state, from, to, reason){
+  const days = daysBetween(from,to)+1;
+  state.pauses.push({from,to,reason});
+  // betroffene Einheiten als ausgefallen markieren
+  state.weeks.forEach(w=>w.sessions.forEach(s=>{ if(!s.done && s.date>=from && s.date<=to) s.skipped=true; }));
+  const msgs=[];
+  if (reason==='fieber') msgs.push('Bei Fieber ist Sport tabu – erst vollständig auskurieren (Aderhold, 2018).');
+  if (reason==='erkaeltung') msgs.push('Bei Erkältungszeichen hilft eine ausgelassene Einheit mehr als ein Lauf (Aderhold, 2018).');
+  msgs.push('Verpasste Einheiten werden nicht nachgeholt (Aderhold, 2018, S. 104).');
+  if (days < 7) { msgs.push('Die Pause war kürzer als eine Woche – dein Plan läuft ganz normal weiter.'); return msgs; }
+  const pausedWeeks = Math.ceil(days/7);
+  const back = addDays(to,1); const backMon = mondayOf(back);
+  const raceMon = mondayOf(state.profile.race);
+  const remaining = daysBetween(backMon, raceMon)/7 + 1;
+  // Position im Plan beim Pausenbeginn
+  const wIdx = state.weeks.findIndex(w=>w.monday===mondayOf(from));
+  const pos = wIdx>=0 ? state.weeks[wIdx].ci : 0;
+  const resume = Math.max(0, pos - pausedWeeks);
+  const keep = state.weeks.filter(w=>w.monday < backMon);
+  // Einheiten in der Rückkehrwoche vor dem Rückkehrtag als ausgefallen markieren
+  const r = fitWeeks(state.canon, resume, remaining);
+  const re = 2*pausedWeeks;
+  const neu = r.list.map((k,j)=>Object.assign(makeWeek(addDays(backMon,7*j), state.canon[k], j<re?'reentry':null), {ci:k}));
+  neu.forEach(w=>w.sessions.forEach(s=>{ if(s.date<back) s.skipped=true; }));
+  const last = neu[neu.length-1]; if (last) last.sessions.forEach(s=>{ if(s.code==='HM') s.date=state.profile.race; });
+  state.weeks = keep.concat(neu);
+  msgs.push('Pause von '+pausedWeeks+' Woche(n): Für die Rückkehr zum alten Leistungsstand rechnet man etwa mit der doppelten Zeit (Aderhold, 2018, S. 104). Dein Plan setzt deshalb '+pausedWeeks+' Woche(n) früher wieder ein und markiert die nächsten '+re+' Wochen als Wiedereinstieg – Tempo bewusst anpassen (Aderhold, 2018, S. 90).');
+  r.notes.forEach(n=>msgs.push(n));
+  state.notices = r.notes;
+  return msgs;
+}
+
+/* Niveau/Ziel ändern ab aktueller Woche */
+function changeLevel(state, level){
+  state.profile.level = level;
+  const cur = mondayOf(todayS());
+  const keep = state.weeks.filter(w=>w.monday < cur);
+  state.canon = canonFor(level);
+  const raceMon = mondayOf(state.profile.race);
+  const n = daysBetween(cur, raceMon)/7 + 1;
+  const r = fitWeeks(state.canon, 0, n);
+  const neu = r.list.map((k,j)=>Object.assign(makeWeek(addDays(cur,7*j), state.canon[k]), {ci:k}));
+  const last = neu[neu.length-1]; if (last) last.sessions.forEach(s=>{ if(s.code==='HM') s.date=state.profile.race; });
+  state.weeks = keep.concat(neu); state.notices = r.notes;
+}
+
+/* Tempi nach Aderhold (2018, S. 89; nach Wenzel, 1991) */
+function paces(tenKsec){
+  const v10 = tenKsec/10; const TDL = v10+15;
+  return { TDL, IDL: TDL+25, EDL: TDL*1.25, RDL: TDL*1.37, WHL3: TDL*0.94, WHL2: TDL*0.91, WHL1: TDL*0.87,
+    HM: tenKsec*2.2234/21.0975, HMtime: tenKsec*2.2234 };
+}
+function fmtPace(s){ s=Math.round(s); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function fmtTime(s){ s=Math.round(s); const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60; return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0'); }
+function paceFor(code, arg, P){
+  if (!P) return '';
+  const map = { 'TDL':P.TDL,'IDL':P.IDL,'EDL':P.EDL,'EDL+ST':P.EDL,'RDL':P.RDL };
+  if (map[code]) return fmtPace(map[code])+' min/km';
+  if (code==='EDL/WK') return 'EDL '+fmtPace(P.EDL)+' min/km';
+  if (code==='R-EDL'||code==='E-RDL') return fmtPace(P.EDL)+'–'+fmtPace(P.RDL)+' min/km';
+  if (code==='I-TDL') return fmtPace(P.TDL)+'–'+fmtPace(P.IDL)+' min/km';
+  if (code==='TDL/EDL') return 'TDL '+fmtPace(P.TDL)+' / EDL '+fmtPace(P.EDL);
+  if (code==='WHL') { const d=arg.split('x')[1]; const v=d==='1'?P.WHL1:d==='2'?P.WHL2:P.WHL3; return fmtPace(v)+' min/km'; }
+  if (code==='WHL/WKT'||code==='HM') return fmtPace(P.HM)+' min/km (HM-Tempo)';
+  return '';
+}
+
+/* Level-Schwellen fürs Spiel: Anteile der geplanten Gesamtkilometer */
+function computeThresholds(state){
+  const tot = Math.max(80, plannedKm(state)); const fr=[0.03,0.11,0.2,0.31,0.43,0.56,0.7,0.84];
+  let prev=0; return fr.map(f=>{ let v=Math.max(prev+5, Math.round(tot*f/5)*5); if(v<5)v=5; prev=v; return v; });
+}
+function totalKm(state){
+  let k=0; state.weeks.forEach(w=>w.sessions.forEach(s=>{ if(s.done) k += (s.kmDone!=null? s.kmDone : (s.km||0)); }));
+  state.extra.forEach(e=>k+=e.km); return Math.round(k*10)/10;
+}
+
+/* ===================== SPIEL: Texte DE/EN ===================== */
+const GEAR = [
+  { id:'shoes', icon:'👟', de:'Laufschuhe', en:'Running shoes',
+    bossDe:'Mehr Sprungkraft gegen den Schweinehund.', bossEn:'Extra jump power against the beast.',
+    tipDe:'Als Ausrüstung brauchst du vor allem ein Paar Laufschuhe – und nach 800–1.000 km ein neues (Aderhold, 2018, S. 104, 140).', tipEn:'Above all you need a pair of running shoes – and a new pair after 800–1,000 km (Aderhold, 2018).' },
+  { id:'socks', icon:'🧦', de:'Laufsocken', en:'Running socks', bossDe:'+1 Herz', bossEn:'+1 heart',
+    tipDe:'Der häufigste Anfängerfehler ist ein zu schneller Beginn – lauf langsam und mit kurzen Schritten (Aderhold, 2018, S. 140).', tipEn:'Start slowly with short steps – the most common beginner mistake is starting too fast (Aderhold, 2018).' },
+  { id:'shirt', icon:'🎽', de:'Funktionsshirt', en:'Running shirt', bossDe:'+1 Herz', bossEn:'+1 heart',
+    tipDe:'Für schlechtes Wetter empfiehlt sich Funktionskleidung (Aderhold, 2018, S. 140).', tipEn:'For bad weather, functional sportswear is recommended (Aderhold, 2018).' },
+  { id:'watch', icon:'⌚', de:'Pulsuhr', en:'Heart-rate watch', bossDe:'Zeigt dir, wie lange der Schweinehund verwundbar ist.', bossEn:'Shows how long the beast is vulnerable.',
+    tipDe:'Ein Herzfrequenz-Messgerät hilft, im richtigen Bereich zu trainieren – z. B. extensiver Dauerlauf bei 70–75 % HFmax (Aderhold, 2018).', tipEn:'A heart-rate monitor helps you train in the right zone – e.g. easy runs at 70–75% of max HR (Aderhold, 2018).' },
+  { id:'cap', icon:'🧢', de:'Laufkappe', en:'Running cap', bossDe:'Schild: blockt einen Treffer.', bossEn:'Shield: blocks one hit.',
+    tipDe:'Wärme bremst: ab 14 °C pro 2 °C etwa 20 s/km langsamer laufen (Galloway & Galloway, 2019).', tipEn:'Heat slows you down: above 14 °C run about 20 s/km slower per 2 °C (Galloway & Galloway, 2019).' },
+  { id:'bottle', icon:'🥤', de:'Trinkflasche', en:'Water bottle', bossDe:'Einmal trinken = 1 Herz zurück.', bossEn:'Drink once = 1 heart back.',
+    tipDe:'Die Trinkmenge gleichmäßig über den Tag verteilen (Beck, 2024).', tipEn:'Spread your fluid intake evenly over the day (Beck, 2024).' },
+  { id:'gel', icon:'⚡', de:'Energie-Gel', en:'Energy gel', bossDe:'Einmal Turbo: 6 Sekunden schneller.', bossEn:'One turbo boost: 6 seconds faster.',
+    tipDe:'Nach ca. 90–100 Minuten Dauerlauf sind die Glykogenspeicher weitgehend leer – rechtzeitig Kohlenhydrate nachführen (Beck, 2024).', tipEn:'After about 90–100 minutes of running your glycogen stores are largely empty – refuel carbs in time (Beck, 2024).' },
+  { id:'bib', icon:'🏷️', de:'Startnummer', en:'Race bib', bossDe:'Eintrittskarte zum Bosskampf am Start.', bossEn:'Your ticket to the showdown at the start.',
+    tipDe:'Zielzeit realistisch einschätzen und das Rennen lieber verhaltener angehen (Aderhold, 2018, S. 141).', tipEn:'Estimate your finish time realistically and start the race conservatively (Aderhold, 2018).' }
+];
+
+const GT = {
+ de: {
+  title:'Heidelberg Run – Die Jagd nach dem Schweinehund',
+  intro:'Heidelberg, kurz vor dem ATOS Halbmarathon. Über Nacht hat der innere Schweinehund deine komplette Laufausrüstung in der ganzen Stadt versteckt. Sein Plan: Am Renntag sollst du auf dem Sofa bleiben! Doch der Brückenaffe von der Alten Brücke hat alles beobachtet. „Hol dir deine Sachen zurück“, raunt er, „Stück für Stück – und mit jedem Trainingskilometer wirst du stärker.“',
+  levels:[
+   {name:'Neckarwiese', story:'Am Neckarufer wärmst du dich auf. Zwischen Liegewiesen und Pfützen blitzt etwas – deine Laufschuhe! Aber Vorsicht: Der Schweinehund hat seine Ausreden losgeschickt.'},
+   {name:'Alte Brücke', story:'Der Brückenaffe grinst: „Deine Socken hat er über die Alte Brücke getragen.“ Auf der Brücke pfeift der Wind – Gegenwind bremst mehr, als Rückenwind hilft!'},
+   {name:'Philosophenweg', story:'Hoch über dem Neckar schlängelt sich der Philosophenweg. Bergauf verlorene Zeit holst du bergab nicht ganz auf – also gleichmäßig bleiben. Irgendwo hier hängt dein Funktionsshirt.'},
+   {name:'Hauptstraße', story:'Durch die Altstadt, vorbei an Läden und Cafés. Mitten im Trubel hat der Schweinehund deine Pulsuhr verloren.'},
+   {name:'Schlossgarten', story:'Am Schloss erzählt man sich, der Hofnarr Perkeo bewache das Große Fass. Heute bewacht er deine Laufkappe – zum Glück ist er auf deiner Seite.'},
+   {name:'Himmelsleiter', story:'Die Himmelsleiter: Stufe um Stufe hinauf Richtung Königstuhl. Oben wartet deine Trinkflasche – und eine fantastische Aussicht.'},
+   {name:'Heiligenberg', story:'Auf dem Heiligenberg, zwischen Thingstätte und alten Klostermauern, liegt dein Energie-Gel. Der Wald ist voller Ausreden …'},
+   {name:'Bismarckplatz bei Nacht', story:'Letzte Station: Nachts am Bismarckplatz. Der Schweinehund hat deine Startnummer – schnapp sie dir, dann steht dem Renntag nichts mehr im Weg!'}
+  ],
+  boss:'Bosskampf: Der innere Schweinehund', bossStory:'Renntag! Am Start in der Altstadt baut sich der innere Schweinehund vor dir auf und wirft mit Sofakissen. Spring ihm auf den Kopf, wenn er nach einem Sprung benommen ist!',
+  bossWin:'Geschafft! Der innere Schweinehund ist besiegt. Jetzt nichts wie hin zum Start – gleichmäßig loslaufen und die zweite Hälfte genießen!',
+  xmas:'Weihnachtsmarkt-Lauf', xmasStory:'Heiligabend in Heidelberg: Auf dem Weihnachtsmarkt in der Altstadt sind Geschenke verloren gegangen. Sammle sie ein und bring sie zum großen Weihnachtsbaum – aber pass auf die Ausreden mit Mütze auf!',
+  xmasWin:'Frohe Weihnachten! Alle Geschenke sind am Baum. Gönn dir die Feiertage – Erholung gehört zum Training.',
+  nye:'Silvesterlauf', nyeStory:'Silvester! Lauf am Neckar entlang zur Alten Brücke, bevor um Mitternacht das Feuerwerk startet. Sammle Wunderkerzen und weich den Funken aus – die Zeit läuft!',
+  nyeWin:'Frohes neues Jahr! 2027 wird dein Halbmarathon-Jahr.', nyeLose:'Zu spät – das Feuerwerk hat schon begonnen. Nochmal?',
+  play:'Los geht’s', again:'Nochmal', close:'Schließen', next:'Weiter', back:'Zurück',
+  locked:'Gesperrt', unlockAt:'frei ab', km:'km', youHave:'Du hast', complete:'Level geschafft!', gameOver:'Keine Herzen mehr …',
+  found:'Gefunden', missing:'Fehlt noch', needAll:'Für den Bosskampf brauchst du deine komplette Ausrüstung. Fehlende Teile findest du in diesen Leveln:',
+  bossLocked:'Der Bosskampf öffnet sich in den letzten Tagen vor dem Halbmarathon – ab', specialLocked:'Freigeschaltet ab',
+  pretzels:'Brezeln', gifts:'Geschenke', sparklers:'Wunderkerzen', time:'Zeit', funfact:'Fun Fact', drink:'Trinken', gel:'Gel',
+  excuses:['Zu kalt!','Morgen!','Keine Zeit!','Regen!','Zu müde!','Sofa!','Später!','Ach, nö!'],
+  gearTitle:'Deine Ausrüstung', story:'Geschichte', lang:'Sprache', controls:'Steuerung: ◀ ▶ laufen, ⤒ springen (Tastatur: Pfeile + Leertaste)',
+  bossGear:'So hilft dir deine Ausrüstung im Bosskampf:', start:'Start', level:'Level', hp:'Schweinehund',
+  advent:'Adventskalender', door:'Türchen', openFrom:'öffnet am', funFact:'Fun Fact', realFact:'Echter Fakt', bonus:'Bonus-Minispiel', source:'Quelle'
+ },
+ en: {
+  title:'Heidelberg Run – Chasing the Inner Couch Beast',
+  intro:'Heidelberg, just before the ATOS Half Marathon. Overnight, your inner couch beast (the "Schweinehund") has hidden all your running gear across the city. Its plan: keep you on the sofa on race day! But the Bridge Monkey from the Old Bridge saw everything. "Get your things back," he whispers, "piece by piece – every training kilometre makes you stronger."',
+  levels:[
+   {name:'Neckar Meadow', story:'You warm up on the banks of the Neckar. Between lawns and puddles something shines – your running shoes! Careful: the beast has sent out its excuses.'},
+   {name:'Old Bridge', story:'The Bridge Monkey grins: "He carried your socks across the Old Bridge." The wind is blowing on the bridge – a headwind slows you more than a tailwind helps!'},
+   {name:'Philosophers\' Walk', story:'High above the Neckar winds the Philosophers\' Walk. Time lost uphill is never fully regained downhill – so keep it steady. Your running shirt is somewhere up here.'},
+   {name:'Main Street', story:'Through the old town, past shops and cafés. In the hustle and bustle the beast dropped your heart-rate watch.'},
+   {name:'Castle Garden', story:'At the castle, people say the court jester Perkeo guards the Great Barrel. Today he guards your running cap – luckily he\'s on your side.'},
+   {name:'Heaven\'s Ladder', story:'The Himmelsleiter: step by step up towards the Königstuhl. Your water bottle waits at the top – along with a fantastic view.'},
+   {name:'Heiligenberg', story:'On the Heiligenberg, between the Thingstätte and old monastery walls, lies your energy gel. The forest is full of excuses …'},
+   {name:'Bismarckplatz by Night', story:'Final stop: Bismarckplatz at night. The beast has your race bib – grab it and nothing can stop you on race day!'}
+  ],
+  boss:'Boss fight: The Inner Couch Beast', bossStory:'Race day! At the start in the old town the inner couch beast blocks your way, throwing sofa cushions. Jump on its head while it is dazed after a leap!',
+  bossWin:'You did it! The inner couch beast is defeated. Off to the start – begin evenly and enjoy the second half!',
+  xmas:'Christmas Market Run', xmasStory:'Christmas Eve in Heidelberg: presents have gone missing at the Christmas market in the old town. Collect them and bring them to the big Christmas tree – but watch out for excuses wearing Santa hats!',
+  xmasWin:'Merry Christmas! All presents are under the tree. Enjoy the holidays – rest is part of training.',
+  nye:'New Year\'s Eve Run', nyeStory:'New Year\'s Eve! Run along the Neckar to the Old Bridge before the fireworks start at midnight. Collect sparklers and dodge the sparks – the clock is ticking!',
+  nyeWin:'Happy New Year! 2027 will be your half-marathon year.', nyeLose:'Too late – the fireworks have already started. Again?',
+  play:'Let\'s go', again:'Again', close:'Close', next:'Next', back:'Back',
+  locked:'Locked', unlockAt:'unlocks at', km:'km', youHave:'You have', complete:'Level complete!', gameOver:'Out of hearts …',
+  found:'Found', missing:'Still missing', needAll:'For the boss fight you need your complete gear. Find the missing items in these levels:',
+  bossLocked:'The boss fight opens in the last days before the half marathon – from', specialLocked:'Unlocks on',
+  pretzels:'Pretzels', gifts:'Presents', sparklers:'Sparklers', time:'Time', funfact:'Fun fact', drink:'Drink', gel:'Gel',
+  excuses:['Too cold!','Tomorrow!','No time!','Rain!','Too tired!','Couch!','Later!','Nah!'],
+  gearTitle:'Your gear', story:'Story', lang:'Language', controls:'Controls: ◀ ▶ run, ⤒ jump (keyboard: arrows + space)',
+  bossGear:'How your gear helps in the boss fight:', start:'Start', level:'Level', hp:'Couch beast',
+  advent:'Advent calendar', door:'Door', openFrom:'opens on', funFact:'Fun fact', realFact:'Real fact', bonus:'Bonus mini-game', source:'Source'
+ }
+};
+
+/* ===================== JUMP & RUN ENGINE ===================== */
+const Game = (() => {
+  const T = 20, VW = 420, VH = 240, ROWS = 12;
+  let cv, ctx, scale = 2, G = null, raf = 0, last = 0, acc = 0;
+  const keys = { left:false, right:false, jump:false, drink:false, gel:false };
+  const L = () => GT[(S.game && S.game.lang) || 'de'];
+
+  function rng(seed){ let a = seed>>>0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function hash(n){ let x = Math.sin(n*127.1)*43758.5453; return x - Math.floor(x); }
+
+  const THEMES = [
+    { sky:['#9fd3ff','#e9f6ff'], ground:'#5fae4b', dirt:'#8a6440', deco:'meadow', river:true },
+    { sky:['#ffc98f','#fff0d6'], ground:'#c2a385', dirt:'#8e6a52', deco:'bridge', river:true, wind:true },
+    { sky:['#b8dcff','#f1f9ff'], ground:'#6d9b4a', dirt:'#6b4f36', deco:'hills', hilly:true },
+    { sky:['#ffdcae','#fff7e8'], ground:'#a9a39b', dirt:'#7d756c', deco:'oldtown', cobble:true },
+    { sky:['#f6c6b3','#fff1e8'], ground:'#6aa152', dirt:'#7a5a3a', deco:'castle' },
+    { sky:['#bfe0ff','#eef8ff'], ground:'#9a948b', dirt:'#6e6a64', deco:'forest', stairs:true },
+    { sky:['#a9d3bd','#e6f4ec'], ground:'#4f8a43', dirt:'#5b4330', deco:'forest2', hilly:true },
+    { sky:['#0b1534','#283466'], ground:'#6b6f80', dirt:'#474a57', deco:'night', night:true }
+  ];
+  const SPECIAL = {
+    xmas: { sky:['#14254a','#405c86'], ground:'#f4f8ff', dirt:'#7d6a5a', deco:'xmas', snow:true, night:true },
+    nye:  { sky:['#050920','#1b2150'], ground:'#5d6275', dirt:'#3a3d4b', deco:'nye', night:true, river:true },
+    mini: { sky:['#d3e8f8','#f7fbff'], ground:'#ffffff', dirt:'#8a7a6a', deco:'hills', snow:true }
+  };
+
+  /* ---------- Levelgenerator ---------- */
+  function gen(theme, seed, diff, len, opt){
+    const r = rng(seed), tiles = new Uint8Array(len*ROWS), ents = [], wind = [];
+    let gy = 9, x = 0;
+    const col = (cx, top, kind) => { for (let y = top; y < ROWS; y++) tiles[y*len+cx] = (y===top ? (kind||1) : 2); };
+    const flat = n => { for (let i=0;i<n && x<len;i++,x++) col(x, gy); };
+    const coin = (cx, cy) => ents.push({ t:'coin', x:cx*T+4, y:cy*T+4, w:12, h:12 });
+    const enemy = cx => ents.push({ t:'enemy', x:cx*T+3, y:gy*T-15, w:15, h:15, vx:-(0.45+diff*0.07), alive:true, txt:L().excuses[Math.floor(r()*8)] });
+    flat(8); let nextCheck = 40, itemAt = opt.item!=null ? Math.floor(len*0.62) : -1;
+    while (x < len-16){
+      if (x >= nextCheck){ ents.push({ t:'check', x:x*T, y:gy*T-26, w:10, h:26, on:false }); nextCheck += 40; }
+      if (itemAt>0 && x >= itemAt){
+        flat(2); const px = x+1; flat(7);
+        for (let i=0;i<3;i++) tiles[(gy-2)*len+px+1+i] = 3;
+        ents.push({ t:'item', x:(px+2)*T+2, y:(gy-4)*T+2, w:16, h:16, gear:opt.item });
+        itemAt = -1; continue;
+      }
+      const v = r(); const w = theme.stairs ? 0.24 : 0.05;
+      if (v < 0.22){ // Lücke
+        const g = 2 + (r() < 0.25+diff*0.06 ? 1 : 0);
+        for (let i=0;i<g;i++) coin(x+i, gy-3 - (i===1?1:0));
+        x += g; flat(3+Math.floor(r()*3));
+      } else if (v < 0.22 + (theme.hilly?0.3:0.17)){ // Stufe
+        const up = r() < 0.55; const d = 1 + (r()<0.4?1:0);
+        gy = Math.max(5, Math.min(10, gy + (up?-d:d))); flat(3+Math.floor(r()*3)); coin(x-2, gy-2);
+      } else if (v < 0.56){ // Grube mit Plattform
+        const pw = 5 + (r()<0.4?1:0); const py = gy-2;
+        for (let i=1;i<pw-1;i++){ tiles[py*len+x+i] = 3; coin(x+i, py-1); }
+        x += pw; flat(3);
+      } else if (v < 0.56 + w){ // Treppe (Himmelsleiter)
+        const n = 3 + Math.floor(r()*3);
+        for (let s=0;s<n && gy>4;s++){ gy--; flat(2); }
+        coin(x-1, gy-2); flat(3);
+        const down = Math.min(n, 10-gy); gy += Math.min(2,down); flat(2); gy += Math.max(0, down-2); flat(3);
+      } else { // flach, evtl. mit Gegner
+        const n = 5 + Math.floor(r()*4); const sx = x; flat(n);
+        if (r() < 0.35 + diff*0.07) enemy(sx + Math.floor(n/2));
+        if (r() < 0.4){ tiles[(gy-2)*len+sx+1] = 3; tiles[(gy-2)*len+sx+2] = 3; coin(sx+1, gy-3); coin(sx+2, gy-3); }
+        else for (let i=1;i<n-1;i+=2) coin(sx+i, gy-1);
+      }
+      if (theme.wind && r() < 0.35) wind.push({ x0:(x-6)*T, x1:(x+6)*T, f: r()<0.65 ? -0.07 : 0.05 });
+    }
+    gy = Math.max(gy, 8); while (x < len) col(x++, gy);
+    ents.push({ t:'goal', x:(len-7)*T, y:gy*T-60, w:40, h:60 });
+    return { tiles, len, ents, wind, groundEnd: gy };
+  }
+
+  function arena(){
+    const len = 21, tiles = new Uint8Array(len*ROWS);
+    for (let x=0;x<len;x++) for (let y=10;y<ROWS;y++) tiles[y*len+x] = y===10?1:2;
+    for (let y=0;y<10;y++){ tiles[y*len] = 2; tiles[y*len+len-1] = 2; }
+    [3,4,5].forEach(x=>tiles[6*len+x]=3); [15,16,17].forEach(x=>tiles[6*len+x]=3);
+    return { tiles, len, ents:[], wind:[] };
+  }
+
+  /* ---------- Spielstart ---------- */
+  function start(mode, idx){
+    const gearN = S.game.gear;
+    let theme, lv, cfg = { mode, idx };
+    if (mode==='level'){ theme = THEMES[idx]; lv = gen(theme, 1000+idx*77, idx, 120+idx*14, { item: gearN[GEAR[idx].id] ? null : idx }); cfg.collect='🥨'; }
+    else if (mode==='xmas'){ theme = SPECIAL.xmas; lv = gen(theme, 2412, 3, 150, {}); cfg.collect='🎁'; }
+    else if (mode==='nye'){ theme = SPECIAL.nye; lv = gen(theme, 3112, 4, 150, {}); cfg.collect='🎇'; cfg.timer = 80*60; }
+    else if (mode==='mini'){ theme = SPECIAL.mini; lv = gen(theme, 1700+(idx||0), 1, 80, {}); cfg.collect='❄️'; }
+    else { theme = { sky:['#ffd29a','#fff3df'], ground:'#b8aa98', dirt:'#82705e', deco:'finish' }; lv = arena(); }
+    lv.ents.filter(e=>e.t==='coin').forEach(e=>e.icon = cfg.collect);
+    const boss = mode==='boss';
+    const maxH = boss ? 3 + (gearN.socks?1:0) + (gearN.shirt?1:0) : 3;
+    G = { cfg, theme, lv, t:0, cam:0, coins:0, totalCoins: lv.ents.filter(e=>e.t==='coin').length, hearts:maxH, maxH,
+      p:{ x:2*T, y:(boss?10:9)*T-18, w:12, h:18, vx:0, vy:0, on:false, face:1, inv:0, coy:0, buf:0, anim:0 },
+      spawn:{ x:2*T, y:7*T }, parts:[], shots:[], sparks:[], snow:[], shake:0, state:'play', gotItem:false,
+      shield: boss && gearN.cap ? 1 : 0, drink: boss && gearN.bottle ? 1 : 0, gelUse: boss && gearN.gel ? 1 : 0, turbo:0,
+      boss: boss ? { x:15*T, y:10*T-40, w:46, h:40, vx:0, vy:0, hp:6, st:'intro', tm:70, face:-1, on:true, flash:0 } : null };
+    document.getElementById('gBossBtns').style.display = boss ? 'flex' : 'none';
+    updateBossBtns();
+  }
+
+  /* ---------- Update ---------- */
+  const tileAt = (lv,tx,ty) => { if (tx<0||tx>=lv.len) return 2; if (ty<0||ty>=ROWS) return 0; return lv.tiles[ty*lv.len+tx]; };
+  const solid = (lv,tx,ty) => tileAt(lv,tx,ty)>0;
+  function moveBody(b, lv){
+    b.x += b.vx; let x0=Math.floor(b.x/T), x1=Math.floor((b.x+b.w-0.01)/T), y0=Math.floor(b.y/T), y1=Math.floor((b.y+b.h-0.01)/T);
+    outX: for (let ty=y0;ty<=y1;ty++) for (let tx=x0;tx<=x1;tx++){ const v=tileAt(lv,tx,ty); if (v>0 && v!==3){ if (b.vx>0) b.x = tx*T-b.w; else if (b.vx<0) b.x=(tx+1)*T; b.vx=0; break outX; } }
+    const oldBottom = b.y + b.h; b.y += b.vy; b.on=false; x0=Math.floor(b.x/T); x1=Math.floor((b.x+b.w-0.01)/T); y0=Math.floor(b.y/T); y1=Math.floor((b.y+b.h-0.01)/T);
+    outY: for (let ty=y0;ty<=y1;ty++) for (let tx=x0;tx<=x1;tx++){ const v=tileAt(lv,tx,ty); if (!v) continue;
+      if (v===3 && !(b.vy>0 && oldBottom <= ty*T+0.5)) continue;
+      if (b.vy>0){ b.y=ty*T-b.h; b.on=true; } else if (b.vy<0) b.y=(ty+1)*T; b.vy=0; break outY; }
+  }
+  const hit = (a,b) => a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
+  function puff(x,y,c,n){ for (let i=0;i<(n||8);i++) G.parts.push({ x,y, vx:(Math.random()-0.5)*3, vy:-Math.random()*3, life:30, c }); }
+
+  function hurt(){
+    const p = G.p; if (p.inv>0 || G.state!=='play') return;
+    if (G.shield>0){ G.shield--; p.inv=60; puff(p.x+6,p.y+9,'#7fd3ff',12); return; }
+    G.hearts--; p.inv = 90; p.vy = -4; p.vx = -p.face*2.5; G.shake = 8; puff(p.x+6,p.y+9,'#ff6b6b',10);
+    if (G.hearts<=0) endGame(false);
+  }
+  function fall(){ G.hearts--; G.shake=8; if (G.hearts<=0) return endGame(false); Object.assign(G.p,{ x:G.spawn.x, y:G.spawn.y, vx:0, vy:0, inv:60 }); }
+
+  function step(){
+    const p = G.p, lv = G.lv, boss = G.boss; G.t++;
+    if (G.state!=='play'){ G.parts.forEach(q=>{q.x+=q.vx;q.y+=q.vy;q.vy+=0.12;q.life--;}); G.parts=G.parts.filter(q=>q.life>0); if(G.state==='win') confetti(); return; }
+    const sp = G.turbo>0 ? 3.3 : 2.3; if (G.turbo>0) G.turbo--;
+    if (keys.left){ p.vx = Math.max(-sp, p.vx-0.35); p.face=-1; } else if (keys.right){ p.vx = Math.min(sp, p.vx+0.35); p.face=1; } else p.vx *= p.on ? 0.75 : 0.95;
+    G.lv.wind.forEach(w=>{ if (p.x>w.x0 && p.x<w.x1) p.vx += w.f*(keys.right||keys.left?1:0.4); });
+    p.vy = Math.min(9, p.vy + 0.45);
+    if (keys.jump && !p.held){ p.buf = 7; p.held = true; } if (!keys.jump) p.held = false;
+    if (p.buf>0) p.buf--; if (p.on) p.coy = 6; else if (p.coy>0) p.coy--;
+    const J = (boss && S.game.gear.shoes) ? 8.4 : 7.6;
+    if (p.buf>0 && p.coy>0){ p.vy = -J; p.buf=0; p.coy=0; }
+    if (!keys.jump && p.vy < -3) p.vy = -3;
+    moveBody(p, lv); p.anim += Math.abs(p.vx)*0.12; if (p.inv>0) p.inv--;
+    if (p.y > ROWS*T+30) fall();
+    if (keys.drink && G.drink>0 && G.hearts<G.maxH){ G.drink--; G.hearts++; puff(p.x+6,p.y,'#5bc0ff',14); updateBossBtns(); }
+    if (keys.gel && G.gelUse>0){ G.gelUse--; G.turbo = 360; puff(p.x+6,p.y,'#ffd23f',14); updateBossBtns(); }
+    keys.drink = keys.gel = false;
+
+    for (const e of lv.ents){
+      if (e.t==='coin' && !e.got && hit(p,e)){ e.got=true; G.coins++; puff(e.x+6,e.y+6,'#ffd23f',5); }
+      else if (e.t==='item' && !e.got && hit(p,e)){ e.got=true; G.gotItem=true; puff(e.x+8,e.y+8,'#fff',20); toast(GEAR[e.gear].icon+' '+GEAR[e.gear][S.game.lang]+'!'); }
+      else if (e.t==='check' && !e.on && p.x > e.x){ e.on=true; G.spawn={ x:e.x, y:e.y-10 }; }
+      else if (e.t==='goal' && p.x+p.w > e.x+16){ endGame(true); return; }
+      else if (e.t==='enemy' && e.alive){
+        e.x += e.vx; const fx = e.vx<0 ? e.x-1 : e.x+e.w+1, ty = Math.floor((e.y+e.h+2)/T), tx=Math.floor(fx/T);
+        if (!solid(lv,tx,ty) || solid(lv,tx,Math.floor((e.y+e.h-2)/T))) e.vx = -e.vx;
+        if (hit(p,e)){ if (p.vy>0 && p.y+p.h-e.y < 10){ e.alive=false; p.vy=-6; puff(e.x+7,e.y+7,'#b48cff',12); } else hurt(); }
+      }
+    }
+    // Silvester: Timer + Funken
+    if (G.cfg.timer!=null){ G.cfg.timer--; if (G.cfg.timer<=0) return endGame(false, 'time');
+      if (G.t % Math.max(18, 40-Math.floor(G.t/400)) === 0) G.sparks.push({ x:p.x - 40 + Math.random()*220, y:-10, vy:1.4+Math.random()*1.4, w:8, h:8 });
+      G.sparks.forEach(s=>{ s.y+=s.vy; if (hit(p,s)){ s.y=999; hurt(); } }); G.sparks = G.sparks.filter(s=>s.y<VH+20); }
+    if (G.theme.snow && G.t%3===0) G.snow.push({ x:G.cam+Math.random()*VW, y:-5, v:0.5+Math.random(), d:Math.random()*6 });
+    G.snow.forEach(s=>{ s.y+=s.v; s.x+=Math.sin((G.t+s.d*20)/30)*0.3; }); G.snow = G.snow.filter(s=>s.y<VH);
+    if (boss) bossStep();
+    G.shots.forEach(s=>{ s.x+=s.vx; s.y+=s.vy; s.vy+=0.22; if (hit(p,s)){ s.dead=true; hurt(); } if (s.y>10*T) { s.dead=true; puff(s.x,s.y,'#f3c1d9',4); } });
+    G.shots = G.shots.filter(s=>!s.dead);
+    G.parts.forEach(q=>{ q.x+=q.vx; q.y+=q.vy; q.vy+=0.12; q.life--; }); G.parts = G.parts.filter(q=>q.life>0);
+    G.cam = Math.max(0, Math.min(lv.len*T-VW, p.x - VW*0.38)); if (G.shake>0) G.shake--;
+  }
+
+  function bossStep(){
+    const b = G.boss, p = G.p; b.vy = Math.min(10, b.vy+0.42); moveBody(b, G.lv); if (b.flash>0) b.flash--;
+    const dx = (p.x+p.w/2) - (b.x+b.w/2); const ph = 6 - b.hp;
+    if (b.st==='intro'){ if (--b.tm<=0){ b.st='walk'; b.tm=110; } }
+    else if (b.st==='walk'){ b.face = Math.sign(dx)||1; b.vx = b.face*(0.8+ph*0.18); if (--b.tm<=0){ b.vx=0; if (Math.random()<0.6){ b.st='leap'; b.vy=-8.4; b.vx=Math.max(-3.2,Math.min(3.2,dx/45)); b.air=true; } else { b.st='throw'; b.tm=70; b.n=0; } } }
+    else if (b.st==='leap'){ if (b.on && b.air){ b.air=false; b.vx=0; G.shake=14; puff(b.x+b.w/2,b.y+b.h,'#c9b79c',18);
+        if (p.on && Math.abs(dx)<80) hurt(); b.st='stun'; b.tm = b.stunMax = 110 - ph*8; } }
+    else if (b.st==='stun'){ b.vx=0; if (--b.tm<=0){ b.st='walk'; b.tm=100; } }
+    else if (b.st==='throw'){ b.vx=0; b.tm--; if (b.tm%22===0 && b.n<3){ b.n++; G.shots.push({ x:b.x+b.w/2, y:b.y+6, vx:dx/55 + (Math.random()-0.5), vy:-5.2, w:12, h:9 }); } if (b.tm<=0){ b.st='walk'; b.tm=100; } }
+    else if (b.st==='hurt'){ b.vx=0; if (--b.tm<=0){ b.st='walk'; b.tm=90; } }
+    if (hit(p,b) && b.st!=='dead'){
+      const fromTop = p.vy>0 && p.y+p.h - b.y < 14;
+      if (fromTop && b.st==='stun'){ b.hp--; b.flash=30; p.vy=-7.5; puff(b.x+b.w/2,b.y,'#ffd23f',16); G.shake=8;
+        if (b.hp<=0){ b.st='dead'; endGame(true); } else { b.st='hurt'; b.tm=40; } }
+      else if (fromTop){ p.vy=-6.5; }
+      else if (b.st!=='stun' && b.st!=='hurt') hurt();
+    }
+  }
+
+  /* ---------- Zeichnen ---------- */
+  function draw(){
+    const th = G.theme, lv = G.lv;
+    ctx.save(); ctx.setTransform(scale,0,0,scale,0,0);
+    if (G.shake) ctx.translate((Math.random()-0.5)*G.shake*0.6, (Math.random()-0.5)*G.shake*0.6);
+    const g = ctx.createLinearGradient(0,0,0,VH); g.addColorStop(0,th.sky[0]); g.addColorStop(1,th.sky[1]); ctx.fillStyle=g; ctx.fillRect(-10,-10,VW+20,VH+20);
+    deco(th.deco, G.cam);
+    if (th.river){ ctx.fillStyle = th.night ? '#1d3a6b' : '#5aa9e6'; ctx.fillRect(0, ROWS*T-16, VW, 16); ctx.fillStyle='rgba(255,255,255,.35)'; for(let i=0;i<14;i++){ const xx=((i*37 - G.cam*0.9 + G.t*0.4)%VW+VW)%VW; ctx.fillRect(xx, ROWS*T-10+(i%3)*3, 10, 1.5); } }
+    ctx.translate(-Math.round(G.cam), 0);
+    const x0 = Math.floor(G.cam/T), x1 = Math.min(lv.len-1, x0+Math.ceil(VW/T)+1);
+    for (let tx=x0;tx<=x1;tx++) for (let ty=0;ty<ROWS;ty++){ const v=lv.tiles[ty*lv.len+tx]; if(!v) continue; tile(v, tx*T, ty*T, th); }
+    lv.wind.forEach(w=>{ if (w.x1<G.cam||w.x0>G.cam+VW) return; ctx.strokeStyle = w.f<0?'rgba(255,255,255,.7)':'rgba(255,240,150,.8)'; ctx.lineWidth=1.2; for(let i=0;i<6;i++){ const yy=60+((i*53)%120); const ph=(G.t*(w.f<0?-3:3)+i*40)%(w.x1-w.x0); const xx=w.x0+((ph+(w.x1-w.x0))%(w.x1-w.x0)); ctx.beginPath(); ctx.moveTo(xx,yy); ctx.lineTo(xx+(w.f<0?-14:14),yy); ctx.stroke(); } });
+    for (const e of lv.ents){
+      if (e.x < G.cam-40 || e.x > G.cam+VW+40) continue;
+      if (e.t==='coin' && !e.got) emoji(e.icon, e.x+6, e.y+7+Math.sin((G.t+e.x)/12)*1.5, 12);
+      if (e.t==='item' && !e.got){ ctx.fillStyle='rgba(255,255,200,'+(0.35+0.25*Math.sin(G.t/8))+')'; ctx.beginPath(); ctx.arc(e.x+8,e.y+8,13,0,7); ctx.fill(); emoji(GEAR[e.gear].icon, e.x+8, e.y+9+Math.sin(G.t/10)*2, 15); }
+      if (e.t==='check'){ ctx.fillStyle='#555'; ctx.fillRect(e.x, e.y, 2, 26); ctx.fillStyle = e.on ? '#3ccf6e' : '#e04848'; ctx.beginPath(); ctx.moveTo(e.x+2,e.y); ctx.lineTo(e.x+14,e.y+5); ctx.lineTo(e.x+2,e.y+10); ctx.fill(); }
+      if (e.t==='goal') goal(e);
+      if (e.t==='enemy' && e.alive) excuse(e);
+    }
+    G.sparks.forEach(s=>{ ctx.fillStyle='#ffdd55'; ctx.beginPath(); ctx.arc(s.x+4,s.y+4,3+Math.random()*1.5,0,7); ctx.fill(); ctx.fillStyle='rgba(255,120,40,.6)'; ctx.fillRect(s.x+3,s.y-8,2,8); });
+    if (G.boss) drawBoss(G.boss);
+    G.shots.forEach(s=>{ ctx.fillStyle='#f3a7c9'; rr(s.x,s.y,12,9,3); ctx.fill(); ctx.fillStyle='#fff'; ctx.fillRect(s.x+5,s.y+1,2,7); });
+    drawPlayer(G.p);
+    G.parts.forEach(q=>{ ctx.globalAlpha=q.life/30; ctx.fillStyle=q.c; ctx.fillRect(q.x,q.y,3,3); }); ctx.globalAlpha=1;
+    ctx.translate(Math.round(G.cam),0);
+    if (G.theme.snow){ ctx.fillStyle='#fff'; G.snow.forEach(s=>{ ctx.fillRect(s.x-G.cam, s.y, 2, 2); }); }
+    if (G.theme.night && G.cfg.mode!=='nye' && G.cfg.mode!=='xmas'){ ctx.fillStyle='rgba(5,10,30,.18)'; ctx.fillRect(0,0,VW,VH); }
+    hud(); ctx.restore();
+  }
+  function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+  function emoji(c,x,y,s){ ctx.font = s+'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(c,x,y); }
+  function tile(v,x,y,th){
+    if (v===3){ ctx.fillStyle = th.night?'#8b7a66':'#b07a4a'; ctx.fillRect(x,y,T,8); ctx.fillStyle='rgba(0,0,0,.18)'; ctx.fillRect(x,y+6,T,2); ctx.fillStyle='rgba(255,255,255,.25)'; ctx.fillRect(x,y,T,2); return; }
+    ctx.fillStyle = th.dirt; ctx.fillRect(x,y,T,T);
+    ctx.fillStyle='rgba(0,0,0,.08)'; ctx.fillRect(x+((x*7)%13), y+((x*3+y)%11)+4, 4, 3);
+    if (th.cobble){ ctx.strokeStyle='rgba(0,0,0,.15)'; ctx.strokeRect(x+0.5,y+0.5,9,9); ctx.strokeRect(x+10.5,y+10.5,9,9); }
+    if (v===1){ ctx.fillStyle = th.ground; ctx.fillRect(x,y,T,6); ctx.fillStyle='rgba(255,255,255,.22)'; ctx.fillRect(x,y,T,2); }
+  }
+  function goal(e){
+    const m = G.cfg.mode;
+    if (m==='xmas'){ ctx.fillStyle='#2e7d4f'; for(let i=0;i<4;i++){ ctx.beginPath(); ctx.moveTo(e.x+20,e.y-6+i*14); ctx.lineTo(e.x-2-i*3,e.y+20+i*14); ctx.lineTo(e.x+42+i*3,e.y+20+i*14); ctx.fill(); }
+      ctx.fillStyle='#6b4a2b'; ctx.fillRect(e.x+16,e.y+60-6,8,8); emoji('⭐',e.x+20,e.y-8,14);
+      for(let i=0;i<8;i++){ ctx.fillStyle=['#ff5252','#ffd23f','#5bc0ff'][i%3]; ctx.beginPath(); ctx.arc(e.x+8+(i*7)%26, e.y+14+(i*11)%40, 2,0,7); ctx.fill(); } return; }
+    const label = m==='nye' ? '2027' : (S.game.lang==='en'?'FINISH':'ZIEL');
+    ctx.fillStyle='#e8e2d6'; ctx.fillRect(e.x, e.y, 6, 60); ctx.fillRect(e.x+40, e.y, 6, 60);
+    ctx.fillStyle = m==='nye'?'#7a3cff':'#d64545'; ctx.fillRect(e.x-2, e.y, 50, 14);
+    ctx.fillStyle='#fff'; ctx.font='bold 10px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(label, e.x+23, e.y+7);
+  }
+  function excuse(e){
+    const bob = Math.sin((G.t+e.x)/6)*1;
+    ctx.fillStyle = '#8f6cd8'; ctx.beginPath(); ctx.ellipse(e.x+7.5, e.y+9+bob, 8, 7, 0, 0, 7); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(e.x+4.5+(e.vx<0?-1:1),e.y+7+bob,2.2,0,7); ctx.arc(e.x+10.5+(e.vx<0?-1:1),e.y+7+bob,2.2,0,7); ctx.fill();
+    ctx.fillStyle='#222'; ctx.fillRect(e.x+4+(e.vx<0?-1:1),e.y+7+bob,1.5,1.5); ctx.fillRect(e.x+10+(e.vx<0?-1:1),e.y+7+bob,1.5,1.5);
+    ctx.fillStyle='#4b2e8a'; ctx.fillRect(e.x+5,e.y+12+bob,5,1.2);
+    if (G.cfg.mode==='xmas'){ ctx.fillStyle='#e53935'; ctx.beginPath(); ctx.moveTo(e.x+1,e.y+3+bob); ctx.lineTo(e.x+14,e.y+3+bob); ctx.lineTo(e.x+12,e.y-6+bob); ctx.fill(); ctx.fillStyle='#fff'; ctx.fillRect(e.x+1,e.y+2+bob,13,2); ctx.beginPath(); ctx.arc(e.x+12,e.y-6+bob,1.8,0,7); ctx.fill(); }
+    if (Math.abs(e.x - G.p.x) < 110){ ctx.font='bold 7px system-ui'; const w = ctx.measureText(e.txt).width+6; ctx.fillStyle='rgba(255,255,255,.92)'; rr(e.x+7-w/2, e.y-14+bob, w, 10, 3); ctx.fill(); ctx.fillStyle='#4b2e8a'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(e.txt, e.x+7, e.y-9+bob); }
+  }
+  function drawPlayer(p){
+    if (p.inv>0 && Math.floor(p.inv/4)%2) return;
+    const gear = S.game.gear, x=p.x, y=p.y, f=p.face, a=p.on?Math.sin(p.anim)*4:2;
+    ctx.save(); ctx.translate(x+6, y); ctx.scale(f,1);
+    if (G.shield>0){ ctx.strokeStyle='rgba(120,210,255,.8)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(0,9,13,0,7); ctx.stroke(); }
+    if (G.turbo>0){ ctx.fillStyle='rgba(255,210,63,.5)'; ctx.fillRect(-14,6,6,1.5); ctx.fillRect(-16,10,8,1.5); }
+    // Beine
+    ctx.strokeStyle='#2d3a5c'; ctx.lineWidth=3; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(0,12); ctx.lineTo(a*0.8, 17); ctx.moveTo(0,12); ctx.lineTo(-a*0.8,17); ctx.stroke();
+    ctx.fillStyle = gear.shoes ? '#ff5a3c' : '#6b5d52'; ctx.fillRect(a*0.8-2,16.5,5,2.5); ctx.fillRect(-a*0.8-2,16.5,5,2.5);
+    // Körper
+    ctx.fillStyle = gear.shirt ? '#19b6a3' : '#9aa3ad'; rr(-4,5,8,8,2); ctx.fill();
+    if (gear.bib && G.cfg.mode==='boss'){ ctx.fillStyle='#fff'; ctx.fillRect(-2.5,7,5,4); }
+    ctx.strokeStyle='#f1c9a5'; ctx.lineWidth=2.2; ctx.beginPath(); ctx.moveTo(1,7); ctx.lineTo(-a*0.6+2,11); ctx.stroke();
+    if (gear.watch){ ctx.fillStyle='#222'; ctx.fillRect(-a*0.6+1,10,2,2); }
+    // Kopf
+    ctx.fillStyle='#f1c9a5'; ctx.beginPath(); ctx.arc(0,2,3.6,0,7); ctx.fill();
+    ctx.fillStyle='#5a3825'; ctx.beginPath(); ctx.arc(-0.6,0.8,3.8,Math.PI,0); ctx.fill(); ctx.fillRect(-5.5,0,2.5,5+Math.sin(p.anim)*1);
+    if (gear.cap){ ctx.fillStyle='#ffcc00'; ctx.fillRect(-4,-2.2,8,2.4); ctx.fillRect(2,-0.6,4,1.4); }
+    ctx.fillStyle='#222'; ctx.fillRect(1.6,1.4,1,1);
+    ctx.restore();
+  }
+  function drawBoss(b){
+    if (b.st==='dead') return;
+    const x=b.x, y=b.y, f=b.face; ctx.save(); ctx.translate(x+b.w/2,y); ctx.scale(f,1);
+    if (b.flash && Math.floor(b.flash/3)%2) ctx.globalAlpha=0.5;
+    ctx.fillStyle='#d9a08b'; rr(-23,8,46,30,12); ctx.fill();                       // Körper
+    ctx.fillStyle='#c48672'; ctx.beginPath(); ctx.ellipse(-14,38,5,3,0,0,7); ctx.ellipse(12,38,5,3,0,0,7); ctx.fill();
+    ctx.fillStyle='#e8b3a0'; ctx.beginPath(); ctx.arc(14,10,13,0,7); ctx.fill();    // Kopf
+    ctx.fillStyle='#c48672'; ctx.beginPath(); ctx.moveTo(6,0); ctx.lineTo(9,-9); ctx.lineTo(14,-1); ctx.fill(); ctx.beginPath(); ctx.moveTo(16,-1); ctx.lineTo(22,-8); ctx.lineTo(24,3); ctx.fill();
+    ctx.fillStyle='#f4c6b6'; ctx.beginPath(); ctx.ellipse(24,13,6,5,0,0,7); ctx.fill(); ctx.fillStyle='#8a4e3e'; ctx.fillRect(22,12,1.5,2.5); ctx.fillRect(25.5,12,1.5,2.5);
+    const st = b.st==='stun';
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(11,6,3.3,0,7); ctx.arc(19,5,3,0,7); ctx.fill();
+    ctx.fillStyle='#222'; if (st){ ctx.font='bold 6px system-ui'; ctx.textAlign='center'; ctx.fillText('x',11,8); ctx.fillText('x',19,7); } else { ctx.fillRect(12,5,2,2); ctx.fillRect(20,4,2,2); }
+    ctx.fillStyle='#5b3a8c'; ctx.fillRect(-20,14,16,5);
+    ctx.restore(); ctx.globalAlpha=1; ctx.fillStyle='#fff'; ctx.font='bold 4.5px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('SOFA', x+b.w/2 - f*12, y+16.6);
+    if (st){ for(let i=0;i<3;i++){ const an=G.t/10+i*2.1; emoji('⭐', x+b.w/2+Math.cos(an)*16, y-6+Math.sin(an)*4, 8); }
+      if (S.game.gear.watch){ ctx.fillStyle='rgba(0,0,0,.3)'; ctx.fillRect(x, y-16, b.w, 4); ctx.fillStyle='#3ccf6e'; ctx.fillRect(x, y-16, b.w*(b.tm/b.stunMax), 4); } }
+  }
+  function hud(){
+    const l = L(); ctx.font='12px system-ui'; ctx.textBaseline='middle'; ctx.textAlign='left';
+    let hx=8; for (let i=0;i<G.maxH;i++){ emoji(i<G.hearts?'❤️':'🤍', hx+6, 12, 11); hx+=15; }
+    if (G.shield) emoji('🛡️', hx+6, 12, 11);
+    ctx.fillStyle = G.theme.night?'#fff':'#233'; ctx.font='bold 11px system-ui'; ctx.textAlign='left';
+    if (G.cfg.mode!=='boss'){ emoji(G.cfg.collect, VW-70, 12, 12); ctx.fillStyle=G.theme.night?'#fff':'#233'; ctx.textAlign='left'; ctx.fillText(G.coins+'/'+G.totalCoins, VW-60, 12); }
+    if (G.cfg.timer!=null){ const s=Math.ceil(G.cfg.timer/60); ctx.textAlign='center'; ctx.fillStyle = s<=10?'#ff5a5a':'#fff'; ctx.font='bold 14px system-ui'; ctx.fillText('⏱ '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0'), VW/2, 13); }
+    if (G.boss){ const b=G.boss; ctx.textAlign='center'; ctx.font='bold 9px system-ui'; ctx.fillStyle='#5b3a8c'; ctx.fillText(l.hp, VW/2, 10);
+      ctx.fillStyle='rgba(0,0,0,.2)'; ctx.fillRect(VW/2-50,16,100,6); ctx.fillStyle='#d9534f'; ctx.fillRect(VW/2-50,16,100*Math.max(0,b.hp)/6,6); }
+    if (G.cfg.mode==='level' && G.lv.ents.some(e=>e.t==='item')){ const it=G.lv.ents.find(e=>e.t==='item'); ctx.globalAlpha = it.got?1:0.35; emoji(GEAR[it.gear].icon, VW-90, 12, 12); ctx.globalAlpha=1; }
+  }
+
+  /* Hintergründe */
+  function deco(kind, cam){
+    const night = G.theme.night;
+    if (night){ for (let i=0;i<40;i++){ ctx.fillStyle='rgba(255,255,255,'+(0.4+hash(i)*0.6)+')'; ctx.fillRect((hash(i+3)*VW*2 - cam*0.05)%VW, hash(i+9)*110, 1.4, 1.4); }
+      ctx.fillStyle='#fdf6c8'; ctx.beginPath(); ctx.arc(340,40,14,0,7); ctx.fill(); }
+    hills(cam*0.15, night?'#1f2c55':'#9ec3a6', 120, 30, 1); hills(cam*0.3, night?'#18234a':'#7fae86', 145, 26, 2);
+    const layer = (f, sp, fn) => { const off = cam*f; const i0 = Math.floor(off/sp)-1; for (let i=i0;i<i0+Math.ceil(VW/sp)+3;i++) fn(i*sp - off, i); };
+    if (kind==='meadow') layer(0.55, 70, (x,i)=>{ if(hash(i)<0.6) tree(x, 175, 0.8+hash(i+1)*0.5, '#3f8a3a'); });
+    if (kind==='bridge'){ layer(0.4, 420, (x)=>bridge(x+40, 150)); }
+    if (kind==='hills') layer(0.5, 46, (x,i)=>{ ctx.strokeStyle='rgba(60,110,50,.35)'; ctx.beginPath(); ctx.moveTo(x,180); ctx.lineTo(x+30,140); ctx.stroke(); if(hash(i)<0.4) tree(x,170,0.8,'#4d8a45'); });
+    if (kind==='oldtown' || kind==='xmas') layer(0.5, 52, (x,i)=>house(x, 190, i));
+    if (kind==='xmas') layer(0.7, 120, (x,i)=>stall(x, 196, i));
+    if (kind==='castle'){ layer(0.25, 520, (x)=>castle(x+200, 112)); layer(0.55, 80, (x,i)=>{ if(hash(i)<0.5) tree(x,180,1,'#3e7f3a'); }); }
+    if (kind==='forest' || kind==='forest2') layer(0.55, 34, (x,i)=>tree(x, 185, 0.9+hash(i)*0.6, i%2?'#2f6b34':'#3d7f3f'));
+    if (kind==='forest2') layer(0.35, 600, (x)=>{ ctx.strokeStyle='rgba(120,100,80,.6)'; ctx.lineWidth=2; for(let k=0;k<5;k++){ ctx.beginPath(); ctx.ellipse(x+120,150,60-k*9,16-k*2.5,0,Math.PI,0); ctx.stroke(); } ctx.lineWidth=1; });
+    if (kind==='night'){ layer(0.5, 48, (x,i)=>house(x, 200, i, true)); layer(0.8, 90, (x)=>{ ctx.fillStyle='#333'; ctx.fillRect(x,150,2,60); ctx.fillStyle='rgba(255,230,140,.9)'; ctx.beginPath(); ctx.arc(x+1,150,4,0,7); ctx.fill(); }); }
+    if (kind==='nye'){ layer(0.3, 500, (x)=>bridge(x+60, 160, true)); fireworks(); }
+    if (kind==='finish'){ layer(0.0, 60, (x,i)=>house(x, 200, i)); ctx.fillStyle='rgba(0,0,0,.25)'; for(let i=0;i<40;i++){ const hx=i*11; ctx.beginPath(); ctx.arc(hx, 192+Math.sin(G.t/8+i)*2, 5,0,7); ctx.fill(); }
+      ctx.fillStyle='#d64545'; ctx.fillRect(110,40,200,18); ctx.fillStyle='#fff'; ctx.font='bold 11px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('ATOS HALBMARATHON 2027',210,49); }
+  }
+  function hills(off, c, base, amp, k){ ctx.fillStyle=c; ctx.beginPath(); ctx.moveTo(0,VH); for (let x=0;x<=VW;x+=10){ const w=(x+off)/90; ctx.lineTo(x, base - amp*(0.5+0.5*Math.sin(w*k*0.7)+0.3*Math.sin(w*2.3))); } ctx.lineTo(VW,VH); ctx.fill(); }
+  function tree(x,y,s,c){ ctx.fillStyle='#6b4a2b'; ctx.fillRect(x-1.5*s,y-6*s,3*s,10*s); ctx.fillStyle=G.theme.night?'#1c3324':c; ctx.beginPath(); ctx.arc(x,y-12*s,9*s,0,7); ctx.fill(); }
+  function house(x,y,i,night){ const h=40+hash(i)*30, w=40; const cols=['#e9c8a0','#d9a089','#f1e0c0','#c9b08f','#e6b9a6']; ctx.fillStyle = G.theme.night ? '#2b2f45' : cols[i%5]; ctx.fillRect(x,y-h,w,h); ctx.fillStyle = G.theme.night?'#3a2a36':'#a3473a'; ctx.beginPath(); ctx.moveTo(x-3,y-h); ctx.lineTo(x+w/2,y-h-16); ctx.lineTo(x+w+3,y-h); ctx.fill();
+    for (let r=0;r<Math.floor(h/16);r++) for (let c=0;c<3;c++){ ctx.fillStyle = G.theme.night ? (hash(i*9+r*3+c)<0.6?'#ffd77a':'#22263a') : '#5d7a99'; ctx.fillRect(x+5+c*12, y-h+6+r*16, 6, 8); }
+    if (G.cfg.mode==='xmas'){ for(let k=0;k<6;k++){ ctx.fillStyle=['#ff5252','#ffd23f','#7cff8a'][(k+Math.floor(G.t/20))%3]; ctx.beginPath(); ctx.arc(x+2+k*7, y-h+1, 1.5,0,7); ctx.fill(); } } }
+  function stall(x,y,i){ ctx.fillStyle='#7a4a2a'; ctx.fillRect(x,y-22,44,22); ctx.fillStyle = i%2?'#c62828':'#2e7d32'; ctx.beginPath(); ctx.moveTo(x-4,y-22); ctx.lineTo(x+22,y-34); ctx.lineTo(x+48,y-22); ctx.fill(); ctx.fillStyle='#ffd77a'; ctx.fillRect(x+4,y-18,36,6); }
+  function bridge(x,y,night){ ctx.fillStyle = night?'#2a2f4a':'#b98c6e'; ctx.fillRect(x, y-8, 300, 10); for (let k=0;k<6;k++){ ctx.beginPath(); ctx.arc(x+25+k*50, y+30, 22, Math.PI, 0); ctx.lineTo(x+47+k*50,y+2); ctx.lineTo(x+3+k*50,y+2); ctx.fill(); }
+    ctx.fillStyle = night?'#323856':'#c9a283'; ctx.fillRect(x-30, y-46, 14, 48); ctx.fillRect(x-12, y-46, 14, 48); ctx.fillStyle=night?'#262a40':'#7c5a48'; ctx.beginPath(); ctx.moveTo(x-32,y-46); ctx.lineTo(x-23,y-60); ctx.lineTo(x-14,y-46); ctx.moveTo(x-14,y-46); ctx.lineTo(x-5,y-60); ctx.lineTo(x+4,y-46); ctx.fill(); }
+  function castle(x,y){ ctx.fillStyle='#b5574b'; ctx.fillRect(x,y,120,46); ctx.fillRect(x-14,y-20,26,66); ctx.fillRect(x+100,y-10,30,56); for(let k=0;k<6;k++) ctx.fillRect(x+6+k*20,y-6,10,8); ctx.fillStyle='#7e3a32'; for(let k=0;k<5;k++) ctx.fillRect(x+12+k*22,y+12,7,12); ctx.fillStyle='rgba(255,255,255,.2)'; ctx.fillRect(x-14,y-20,26,3); }
+  function fireworks(){ for (let k=0;k<3;k++){ const ph=(G.t+k*53)%160; if (ph>80) continue; const cx=80+((k*137+Math.floor((G.t+k*53)/160)*91)%260), cy=40+k*18; const col=['#ff5a8a','#ffd23f','#7cd6ff'][k];
+      for (let i=0;i<14;i++){ const an=i/14*6.283; ctx.fillStyle=col; ctx.globalAlpha=1-ph/80; ctx.fillRect(cx+Math.cos(an)*ph*0.5, cy+Math.sin(an)*ph*0.5+ph*0.08, 2, 2); } ctx.globalAlpha=1; } }
+  function confetti(){ if (G.t%2) return; for (let i=0;i<3;i++) G.parts.push({ x:G.cam+Math.random()*VW, y:-4, vx:(Math.random()-0.5), vy:1+Math.random(), life:120, c:['#ff5a8a','#ffd23f','#7cd6ff','#3ccf6e'][i%4] }); }
+
+  /* ---------- Ende ---------- */
+  function endGame(win, why){
+    if (G.state!=='play') return; G.state = win ? 'win' : 'lose';
+    setTimeout(()=>Game.onEnd && Game.onEnd(G.cfg.mode, G.cfg.idx, { win, why, coins:G.coins, total:G.totalCoins, item:G.gotItem }), win?900:500);
+  }
+
+  /* ---------- Loop, Größe, Eingaben ---------- */
+  function loop(ts){ raf = requestAnimationFrame(loop); if (!G) return; const dt = Math.min(100, ts-(last||ts)); last = ts; acc += dt;
+    while (acc >= 1000/60){ step(); acc -= 1000/60; } draw(); }
+  function resize(){ if (!cv) return; const box = cv.closest('.gwrap').getBoundingClientRect(); const w = Math.min(box.width, (window.innerHeight-150)*VW/VH);
+    cv.style.width = w+'px'; cv.style.height = (w*VH/VW)+'px'; const dpr = window.devicePixelRatio||1; scale = w/VW*dpr; cv.width = Math.round(VW*scale); cv.height = Math.round(VH*scale); }
+  function bindTouch(id, k){ const el=document.getElementById(id); const on=e=>{ e.preventDefault(); keys[k]=true; el.classList.add('on'); }; const off=e=>{ e.preventDefault(); if(k!=='drink'&&k!=='gel') keys[k]=false; el.classList.remove('on'); };
+    el.addEventListener('pointerdown',on); ['pointerup','pointerleave','pointercancel'].forEach(t=>el.addEventListener(t,off)); }
+  function updateBossBtns(){ if(!G) return; const d=document.getElementById('gDrink'), g=document.getElementById('gGel'); d.textContent='🥤 '+L().drink+' ('+G.drink+')'; g.textContent='⚡ '+L().gel+' ('+G.gelUse+')'; d.disabled=!G.drink; g.disabled=!G.gelUse; }
+  let toastT=0; function toast(t){ const el=document.getElementById('gToast'); el.textContent=t; el.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),1800); }
+
+  function init(){
+    cv = document.getElementById('gc'); ctx = cv.getContext('2d');
+    bindTouch('gL','left'); bindTouch('gR','right'); bindTouch('gJ','jump'); bindTouch('gDrink','drink'); bindTouch('gGel','gel');
+    const km = { ArrowLeft:'left', ArrowRight:'right', ArrowUp:'jump', ' ':'jump', a:'left', d:'right', w:'jump' };
+    addEventListener('keydown', e=>{ if (!G) return; if (km[e.key]){ keys[km[e.key]]=true; e.preventDefault(); } if (e.key==='1') keys.drink=true; if (e.key==='2') keys.gel=true; });
+    addEventListener('keyup', e=>{ if (km[e.key]) keys[km[e.key]]=false; });
+    addEventListener('resize', resize);
+  }
+  return {
+    init, resize,
+    run(mode, idx){ start(mode, idx); resize(); last=0; acc=0; if (!raf) raf = requestAnimationFrame(loop); },
+    stop(){ cancelAnimationFrame(raf); raf=0; G=null; Object.keys(keys).forEach(k=>keys[k]=false); },
+    pause(){ if (G) G.state = G.state==='play' ? 'paused' : G.state; },
+    resume(){ if (G && G.state==='paused') G.state='play'; },
+    get state(){ return G; }, onEnd:null
+  };
+})();
+
+/* ===================== ADVENTSKALENDER + MINISPIELE ===================== */
+const ADVENT_YEAR = 2026;
+const ADVENT = [null,
+  {t:'fun',f:3},{t:'game',g:'reaction'},{t:'fact',f:17},{t:'fun',f:8},{t:'game',g:'catch'},{t:'fact',f:15},
+  {t:'fun',f:0},{t:'game',g:'memory'},{t:'fact',f:22},{t:'fun',f:6},{t:'game',g:'pace'},{t:'fact',f:18},
+  {t:'fun',f:5},{t:'game',g:'quiz'},{t:'fact',f:25},{t:'fun',f:2},{t:'game',g:'jump'},{t:'fact',f:23},
+  {t:'fun',f:11},{t:'game',g:'reaction'},{t:'fact',f:21},{t:'fun',f:13},{t:'game',g:'catch',v:'xmas'},{t:'xmas'}];
+const DOOR_ORDER = [7,15,2,22,11,4,19,9,24,13,1,17,6,21,10,3,23,14,8,18,5,12,20,16];
+
+const MG = {
+ de:{ reaction:'Startschuss-Reaktion', reactionHelp:'Tippe so schnell wie möglich, sobald „LOS!“ erscheint – aber kein Fehlstart!', ready:'Auf die Plätze …', set:'Fertig …', go:'LOS!', early:'Fehlstart! 😅', ms:'ms', best:'Beste Zeit', round:'Runde',
+      catch:'Verpflegungsstation', catchHelp:'Fang Wasser, Brezeln und Gels – weich den Ausreden aus! Steuern: ziehen oder ◀ ▶.', points:'Punkte',
+      memory:'Ausrüstungs-Memory', memoryHelp:'Finde alle Paare deiner Laufausrüstung.', moves:'Züge',
+      pace:'Tempo-Gefühl (51/49)', paceHelp:'Halte den Knopf gedrückt, um schneller zu werden, lass los, um langsamer zu werden. Bleib im grünen Bereich – in der zweiten Hälfte wird er etwas schneller!', hold:'Gas geben', inZone:'im Zielbereich',
+      quiz:'Lauf-Quiz', jump:'Schnee-Lauf', done:'Fertig!', startBtn:'Start', result:'Ergebnis', tap:'Tippen!' },
+ en:{ reaction:'Starting-gun reaction', reactionHelp:'Tap as fast as you can when "GO!" appears – but no false start!', ready:'On your marks …', set:'Set …', go:'GO!', early:'False start! 😅', ms:'ms', best:'Best time', round:'Round',
+      catch:'Aid station', catchHelp:'Catch water, pretzels and gels – avoid the excuses! Drag or use ◀ ▶.', points:'Points',
+      memory:'Gear memory', memoryHelp:'Find all pairs of your running gear.', moves:'Moves',
+      pace:'Pace feeling (51/49)', paceHelp:'Hold the button to speed up, release to slow down. Stay in the green zone – it gets a little faster in the second half!', hold:'Speed up', inZone:'in the target zone',
+      quiz:'Running quiz', jump:'Snow run', done:'Done!', startBtn:'Start', result:'Result', tap:'Tap!' }
+};
+const QUIZ = [
+ { de:'Nach wie vielen Kilometern sind Laufschuhe meist abgelaufen?', en:'After how many kilometres are running shoes usually worn out?', o:[['200–300 km','200–300 km'],['800–1.000 km','800–1,000 km'],['3.000–4.000 km','3,000–4,000 km']], a:1, src:'Aderhold, 2018, S. 104' },
+ { de:'Du setzt eine Woche aus. Wie lange brauchst du meist, um wieder auf deinem alten Stand zu sein?', en:'You miss a week of training. How long does it usually take to get back to your old level?', o:[['1–2 Tage','1–2 days'],['ca. 2 Wochen','about 2 weeks'],['ca. 2 Monate','about 2 months']], a:1, src:'Aderhold, 2018, S. 104' },
+ { de:'Ab welcher Temperatur empfiehlt Galloway, das Tempo zu drosseln?', en:'Above which temperature does Galloway recommend slowing down?', o:[['ab 5 °C','above 5 °C'],['ab 14 °C','above 14 °C'],['ab 25 °C','above 25 °C']], a:1, src:'Galloway & Galloway, 2019, S. 49' },
+ { de:'Was gilt bei Fieber?', en:'What applies when you have a fever?', o:[['Locker laufen geht','Easy running is fine'],['Kein Sport','No sport at all'],['Nur Intervalle','Intervals only']], a:1, src:'Aderhold, 2018' },
+ { de:'51/49-Regel: Welche Rennhälfte läufst du etwas schneller?', en:'51/49 rule: which half of the race do you run slightly faster?', o:[['Die erste','The first'],['Die zweite','The second'],['Beide gleich','Both equal']], a:1, src:'Beck, 2024' },
+ { de:'Nach wie viel Dauerlauf sind die Glykogenspeicher weitgehend leer?', en:'After how much running are your glycogen stores largely empty?', o:[['20–30 Minuten','20–30 minutes'],['90–100 Minuten','90–100 minutes'],['5 Stunden','5 hours']], a:1, src:'Beck, 2024' }
+];
+
+const Advent = (() => {
+  const lang = () => (S.game.lang||'de'); const m = () => MG[lang()]; const g = () => GT[lang()];
+  const openDate = d => ADVENT_YEAR+'-12-'+String(d).padStart(2,'0');
+  const isOpen = d => S.game.preview || todayS() >= openDate(d);
+  let timers = [], rafId = 0;
+  function clear(){ timers.forEach(clearTimeout); timers=[]; cancelAnimationFrame(rafId); }
+  function modal(html){ const el=document.getElementById('mg'); el.querySelector('.mgbody').innerHTML = html; el.classList.remove('hidden'); }
+  function close(){ clear(); document.getElementById('mg').classList.add('hidden'); renderGame(); }
+
+  function grid(){
+    return '<div class="advent">'+DOOR_ORDER.map(d=>{ const o=isOpen(d), seen=S.game.advent[d]; const a=ADVENT[d];
+      const ic = !o ? '🔒' : seen ? (a.t==='game'?'🎮':a.t==='xmas'?'🎄':a.t==='fun'?'😄':'💡') : '';
+      return `<button class="door ${o?'open':''} ${seen?'seen':''} ${d===24?'big':''}" data-door="${d}"><span class="dn">${d}</span><span class="di">${ic}</span></button>`; }).join('')+'</div>';
+  }
+  function openDoor(d){
+    if (!isOpen(d)){ modal(`<h3>${g().door} ${d}</h3><p>${g().openFrom} ${niceD(openDate(d))} 🔒</p><button class="btn" onclick="Advent.close()">${g().close}</button>`); return; }
+    S.game.advent[d]=true; save(); const a=ADVENT[d];
+    if (a.t==='fun' || a.t==='fact'){ const f=FACTS[a.f];
+      modal(`<div class="doorhead">${g().door} ${d}</div><h3>${a.t==='fun'?'😄 '+g().funFact:'💡 '+g().realFact}</h3><p class="big">${f[lang()]}</p><p class="src">${g().source}: ${f.src}</p><button class="btn" onclick="Advent.close()">${g().close}</button>`); return; }
+    if (a.t==='xmas'){ close(); openSpecial('xmas'); return; }
+    if (a.g==='jump'){ close(); openGame('mini', d); return; }
+    ({reaction, catch:catchGame, memory, pace, quiz})[a.g](d, a.v);
+  }
+
+  /* --- Reaktion --- */
+  function reaction(d){
+    let round=0, best=null, state='idle', t0=0;
+    modal(`<div class="doorhead">${g().door} ${d} · ${g().bonus}</div><h3>🏁 ${m().reaction}</h3><p>${m().reactionHelp}</p>
+      <div id="rx" class="rx">${m().startBtn}</div><p id="rxi" class="muted"></p><button class="btn ghost" onclick="Advent.close()">${g().close}</button>`);
+    const box=document.getElementById('rx'), info=document.getElementById('rxi');
+    const go = () => { state='ready'; box.className='rx wait'; box.textContent=m().ready;
+      timers.push(setTimeout(()=>{ if(state!=='ready')return; box.textContent=m().set; }, 700));
+      timers.push(setTimeout(()=>{ if(state!=='ready')return; state='go'; t0=performance.now(); box.className='rx go'; box.textContent=m().go; }, 1400+Math.random()*2600)); };
+    box.onpointerdown = () => {
+      if (state==='idle' || state==='res'){ if (round>=3) return; go(); return; }
+      if (state==='ready'){ clear(); state='res'; box.className='rx bad'; box.textContent=m().early; info.textContent=m().round+' '+(round+1)+' – '+m().tap; return; }
+      if (state==='go'){ const ms=Math.round(performance.now()-t0); round++; best = best==null?ms:Math.min(best,ms); state='res'; box.className='rx';
+        box.textContent = ms+' '+m().ms + (round<3?' – '+m().tap:''); info.textContent = m().best+': '+best+' '+m().ms+' · '+m().round+' '+round+'/3'; }
+    };
+  }
+
+  /* --- Fangen --- */
+  function catchGame(d, v){
+    modal(`<div class="doorhead">${g().door} ${d} · ${g().bonus}</div><h3>🥤 ${m().catch}</h3><p>${m().catchHelp}</p>
+      <canvas id="cg" width="300" height="300" class="mgcv"></canvas><div class="row"><button class="btn sm" id="cgl">◀</button><b id="cgs">0</b><button class="btn sm" id="cgr">▶</button></div><button class="btn ghost" onclick="Advent.close()">${g().close}</button>`);
+    const c=document.getElementById('cg'), x=c.getContext('2d'); let px=150, score=0, t=0, items=[], dir=0, over=false;
+    const good = v==='xmas' ? ['🍪','🎁','🥤'] : ['🥤','🥨','⚡'];
+    const move = e => { const r=c.getBoundingClientRect(); px = (e.clientX-r.left)/r.width*300; };
+    c.onpointermove = e => { if (e.buttons||e.pointerType==='touch') move(e); }; c.onpointerdown = move;
+    const hold=(id,v2)=>{ const b=document.getElementById(id); b.onpointerdown=()=>dir=v2; b.onpointerup=b.onpointerleave=()=>dir=0; }; hold('cgl',-1); hold('cgr',1);
+    function frame(){ if (over) return; rafId=requestAnimationFrame(frame); t++; px=Math.max(15,Math.min(285,px+dir*4));
+      if (t%28===0) items.push({ x:15+Math.random()*270, y:-10, v:1.6+t/900, bad: Math.random()<0.28, e: good[Math.floor(Math.random()*3)] });
+      x.fillStyle='#eaf4ff'; x.fillRect(0,0,300,300); x.fillStyle='#cfe3c9'; x.fillRect(0,270,300,30);
+      items.forEach(i=>{ i.y+=i.v; if (i.bad){ x.fillStyle='#8f6cd8'; x.beginPath(); x.arc(i.x,i.y,10,0,7); x.fill(); x.fillStyle='#fff'; x.fillRect(i.x-5,i.y-3,3,3); x.fillRect(i.x+2,i.y-3,3,3); }
+        else { x.font='20px sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(i.e,i.x,i.y); }
+        if (i.y>250 && i.y<275 && Math.abs(i.x-px)<24){ i.hit=true; score += i.bad?-3:1; } });
+      items = items.filter(i=>!i.hit && i.y<310);
+      x.fillStyle='#b5574b'; x.fillRect(px-22,262,44,10); x.font='22px sans-serif'; x.textAlign='center'; x.fillText('🏃',px,250);
+      x.fillStyle='#233'; x.font='bold 13px system-ui'; x.textAlign='left'; x.fillText('⏱ '+Math.max(0,30-Math.floor(t/60))+' s',8,16);
+      document.getElementById('cgs').textContent = m().points+': '+score;
+      if (t>=30*60){ over=true; x.fillStyle='rgba(255,255,255,.85)'; x.fillRect(0,110,300,70); x.fillStyle='#233'; x.font='bold 18px system-ui'; x.textAlign='center'; x.fillText(m().done+' '+score+' '+m().points,150,145); } }
+    frame();
+  }
+
+  /* --- Memory --- */
+  function memory(d){
+    const icons=['👟','🧦','🎽','⌚','🧢','🥤']; const cards = icons.concat(icons).map(i=>({i})).sort(()=>Math.random()-0.5);
+    modal(`<div class="doorhead">${g().door} ${d} · ${g().bonus}</div><h3>🧠 ${m().memory}</h3><p>${m().memoryHelp}</p><div class="mem">${cards.map((c,k)=>`<button class="card" data-k="${k}"><span>${c.i}</span></button>`).join('')}</div><p id="mm" class="muted">${m().moves}: 0</p><button class="btn ghost" onclick="Advent.close()">${g().close}</button>`);
+    let open=[], moves=0, found=0, lock=false;
+    document.querySelectorAll('.mem .card').forEach(b=>b.onclick=()=>{ const k=+b.dataset.k; if(lock||b.classList.contains('up')) return; b.classList.add('up'); open.push(b);
+      if (open.length===2){ moves++; document.getElementById('mm').textContent=m().moves+': '+moves; const [a1,a2]=open;
+        if (cards[a1.dataset.k].i===cards[a2.dataset.k].i){ a1.classList.add('ok'); a2.classList.add('ok'); open=[]; found++; if(found===6) document.getElementById('mm').textContent='🎉 '+m().done+' '+moves+' '+m().moves; }
+        else { lock=true; timers.push(setTimeout(()=>{ a1.classList.remove('up'); a2.classList.remove('up'); open=[]; lock=false; },800)); } } });
+  }
+
+  /* --- Tempo 51/49 --- */
+  function pace(d){
+    modal(`<div class="doorhead">${g().door} ${d} · ${g().bonus}</div><h3>⏱️ ${m().pace}</h3><p>${m().paceHelp}</p>
+      <canvas id="pc" width="300" height="120" class="mgcv"></canvas><button class="btn" id="pb">${m().hold}</button><p id="pr" class="muted"></p><p class="src">${g().source}: Beck, 2024</p><button class="btn ghost" onclick="Advent.close()">${g().close}</button>`);
+    const c=document.getElementById('pc'), x=c.getContext('2d'); let v=0.2, held=false, t=0, inz=0, run=true;
+    const b=document.getElementById('pb'); b.onpointerdown=e=>{e.preventDefault(); held=true;}; ['pointerup','pointerleave','pointercancel'].forEach(k=>b.addEventListener(k,()=>held=false));
+    const DUR=24*60;
+    function frame(){ if(!run) return; rafId=requestAnimationFrame(frame); t++; v += held ? 0.006 : -0.005; v=Math.max(0,Math.min(1,v));
+      const half = t < DUR/2; const zc = (half?0.47:0.55) + Math.sin(t/90)*0.04, zw=0.14; if (Math.abs(v-zc)<zw/2) inz++;
+      x.clearRect(0,0,300,120); x.fillStyle='#e9eef3'; x.fillRect(10,40,280,26); x.fillStyle='#3ccf6e'; x.fillRect(10+(zc-zw/2)*280,40,zw*280,26);
+      x.fillStyle='#b5574b'; x.fillRect(10+v*280-2,32,4,42);
+      x.fillStyle='#233'; x.font='bold 12px system-ui'; x.textAlign='left'; x.fillText((half?'1.':'2.')+' '+(lang()==='de'?'Hälfte':'half'),10,22);
+      x.textAlign='right'; x.fillText('⏱ '+Math.max(0,Math.ceil((DUR-t)/60))+' s',290,22);
+      x.fillStyle='#667'; x.font='11px system-ui'; x.textAlign='left'; x.fillText(lang()==='de'?'langsam':'slow',10,90); x.textAlign='right'; x.fillText(lang()==='de'?'schnell':'fast',290,90);
+      if (t>=DUR){ run=false; document.getElementById('pr').textContent = m().result+': '+Math.round(inz/DUR*100)+' % '+m().inZone; } }
+    frame();
+  }
+
+  /* --- Quiz --- */
+  function quiz(d){
+    const qs = QUIZ.slice().sort(()=>Math.random()-0.5); let i=0, right=0;
+    const show = () => { if (i>=qs.length){ modal(`<div class="doorhead">${g().door} ${d} · ${g().bonus}</div><h3>🎉 ${right}/${qs.length}</h3><button class="btn" onclick="Advent.close()">${g().close}</button>`); return; }
+      const q=qs[i], L=lang()==='de'?0:1;
+      modal(`<div class="doorhead">${g().door} ${d} · ${m().quiz} ${i+1}/${qs.length}</div><h3>${q[lang()]}</h3><div class="qo">${q.o.map((o,k)=>`<button class="btn ghost q" data-k="${k}">${o[L]}</button>`).join('')}</div><p id="qf"></p><button class="btn ghost" onclick="Advent.close()">${g().close}</button>`);
+      document.querySelectorAll('.q').forEach(b=>b.onclick=()=>{ const ok=+b.dataset.k===q.a; if(ok) right++; document.querySelectorAll('.q').forEach(x=>{x.disabled=true; if(+x.dataset.k===q.a) x.classList.add('right');}); if(!ok) b.classList.add('wrong');
+        document.getElementById('qf').innerHTML = `<span class="src">${g().source}: ${q.src}</span><br><button class="btn" id="qn">${g().next}</button>`; document.getElementById('qn').onclick=()=>{ i++; show(); }; }); };
+    show();
+  }
+  return { grid, openDoor, close, isOpen, openDate };
+})();
+
+/* ===================== APP / UI ===================== */
+const KEY = 'laufapp-heidelberg-2027';
+let S = null;
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function blank(){ return { v:1, profile:null, weeks:[], canon:[], notices:[], pauses:[], extra:[],
+  game:{ lang:'de', gear:{}, done:{}, best:{}, thresholds:[], preview:false, bossWon:false, xmasWon:false, nyeWon:false, advent:{}, seenIntro:false } }; }
+function load(){ try { const raw = localStorage.getItem(KEY); if (raw){ const s = JSON.parse(raw); s.game = Object.assign(blank().game, s.game||{}); return s; } } catch(e){} return blank(); }
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+
+/* ---------- Hilfen ---------- */
+function curWeekIdx(){ const m = mondayOf(todayS()); let i = S.weeks.findIndex(w=>w.monday===m); if (i<0) i = todayS() < S.weeks[0].monday ? 0 : S.weeks.length-1; return i; }
+function daysToRace(){ return daysBetween(todayS(), S.profile.race); }
+function myPaces(){ return S.profile.tenK ? paces(S.profile.tenK) : null; }
+function dayIndex(){ return Math.floor(parseD(todayS())/DAY); }
+function hfText(code){ const t=TYPES[code]; if(!t||!t.hf) return ''; const hf=S.profile.hfmax; const m=t.hf.match(/(\d+)–(\d+) %/);
+  if (hf && m) return t.hf+' ≈ '+Math.round(hf*m[1]/100)+'–'+Math.round(hf*m[2]/100)+' S/min'; return t.hf; }
+function streak(){ let s=0; const cur=curWeekIdx(); for (let i=cur;i>=0;i--){ const w=S.weeks[i]; const any=w.sessions.some(x=>x.done); if (any) s++; else if (i===cur) continue; else break; } return s; }
+function kmToNext(){ const k=totalKm(S); const th=S.game.thresholds; const i=th.findIndex(t=>k<t); return i<0?null:{ lvl:i+1, need: Math.round((th[i]-k)*10)/10 }; }
+function bossOpenDate(){ return addDays(S.profile.race, -3); }
+
+/* ---------- Setup ---------- */
+function renderSetup(){
+  const p = S.profile || { name:'', start: todayS(), race: RACE_DEFAULT, level:'fg', tenK:null, hfmax:null };
+  $('#app').innerHTML = `<div class="setup">
+    <div class="hero"><div class="kicker">${RACE_NAME}</div><h1>Dein Weg zum<br>Halbmarathon</h1><p>Ein individueller Trainingsplan auf Basis der hochgeladenen Fachliteratur – mit Anpassung bei Pausen und einem Jump-'n'-Run durch Heidelberg.</p></div>
+    <form id="setupForm" class="card">
+      <label>Dein Name<input name="name" value="${esc(p.name)}" placeholder="z. B. Laura" required></label>
+      <label>Trainingsstart<input type="date" name="start" value="${p.start}" required></label>
+      <label>Renntag<input type="date" name="race" value="${p.race}" required><small>Laut Veranstalterangaben 25.04.2027 – bitte auf der offiziellen Seite prüfen.</small></label>
+      <fieldset><legend>Wo stehst du gerade?</legend>
+        ${['ein','fg'].map(k=>`<label class="radio"><input type="radio" name="lv" value="${k}" ${p.level===k?'checked':''}> ${LEVELS[k].label}</label>`).join('')}
+        <label class="radio"><input type="radio" name="lv" value="10k" ${p.level&&p.level.startsWith('k')?'checked':''}> Ich kenne meine 10-km-Zeit</label>
+        <div class="tenk"><input name="tenk" placeholder="mm:ss, z. B. 58:30" value="${p.tenK?fmtTime(p.tenK):''}" inputmode="numeric"></div>
+      </fieldset>
+      <label>Maximale Herzfrequenz (optional)<input name="hf" type="number" min="120" max="230" value="${p.hfmax||''}" placeholder="z. B. 190"><small>Damit zeigt die App deine Pulsbereiche in Schlägen pro Minute.</small></label>
+      <button class="btn big">Plan erstellen</button>
+    </form></div>`;
+  $('#setupForm').onsubmit = e => { e.preventDefault(); const f = new FormData(e.target);
+    let level = f.get('lv'), tenK = null;
+    if (level==='10k'){ tenK = parseTime(f.get('tenk')); if (!tenK){ alertBox('Bitte gib deine 10-km-Zeit als mm:ss ein (z. B. 58:30).'); return; } level = levelFrom10k(tenK); }
+    if (f.get('race') <= f.get('start')){ alertBox('Der Renntag muss nach dem Trainingsstart liegen.'); return; }
+    S = Object.assign(blank(), { game: S.game });
+    S.profile = { name: f.get('name').trim(), start: f.get('start'), race: f.get('race'), level, tenK, hfmax: +f.get('hf')||null };
+    buildPlan(S); save(); renderApp('today');
+  };
+}
+function parseTime(s){ if (!s) return null; const p = String(s).trim().split(':').map(Number); if (p.some(isNaN)) return null;
+  if (p.length===2) return p[0]*60+p[1]; if (p.length===3) return p[0]*3600+p[1]*60+p[2]; if (p.length===1 && p[0]>0) return p[0]*60; return null; }
+
+/* ---------- Gerüst ---------- */
+let TAB = 'today';
+function renderApp(tab){
+  TAB = tab || TAB;
+  $('#app').innerHTML = `<header class="top"><div><div class="kicker">${RACE_NAME}</div><div class="hello">Hallo ${esc(S.profile.name)}!</div></div><button class="icon" onclick="openSettings()" aria-label="Einstellungen">⚙️</button></header>
+    <main id="view"></main>
+    <nav class="tabs">${[['today','🏠','Heute'],['plan','📅','Plan'],['game','🎮','Spiel'],['know','📚','Wissen'],['lit','📖','Literatur']].map(t=>`<button class="${TAB===t[0]?'on':''}" onclick="renderApp('${t[0]}')"><span>${t[1]}</span>${t[2]}</button>`).join('')}</nav>`;
+  ({today:renderToday, plan:renderPlan, game:renderGame, know:renderKnow, lit:renderLit})[TAB]();
+  window.scrollTo(0,0);
+}
+
+/* ---------- Heute ---------- */
+function renderToday(){
+  const wi = curWeekIdx(), w = S.weeks[wi], d = daysToRace(), k = totalKm(S), plan = plannedKm(S);
+  const mot = MOTIVATION[dayIndex()%MOTIVATION.length], fact = FACTS[(dayIndex()*7)%FACTS.length];
+  const nx = kmToNext(); const dec = todayS() >= ADVENT_YEAR+'-12-01' && todayS() <= ADVENT_YEAR+'-12-24';
+  const bossOpen = todayS() >= bossOpenDate();
+  const pct = Math.min(100, Math.round(k/plan*100));
+  $('#view').innerHTML = `
+    <section class="countdown card dark">
+      <div class="ring" style="--p:${Math.max(0,Math.min(100,Math.round((wi+1)/S.weeks.length*100)))}"><div><b>${d>0?d:d===0?'🏁':'✓'}</b><span>${d>0?'Tage':d===0?'Heute!':'vorbei'}</span></div></div>
+      <div class="cd-txt"><div class="kicker light">Renntag ${niceD(S.profile.race,{weekday:'short',day:'numeric',month:'long',year:'numeric'})}</div>
+        <h2>Woche ${wi+1} von ${S.weeks.length}</h2><p>${esc(w.title)}${w.flag==='reentry'?' · <b>Wiedereinstieg</b>':''}</p>
+        <div class="stats"><div><b>${k}</b><span>km gelaufen</span></div><div><b>${streak()}</b><span>Wochen in Folge</span></div><div><b>${pct}%</b><span>vom Plan</span></div></div></div>
+    </section>
+    ${bossOpen && d>=0 ? `<section class="card boss-banner" onclick="renderApp('game')"><b>🐷 Der Bosskampf ist freigeschaltet!</b><p>Stell dich dem inneren Schweinehund – und dann ab an den Start.</p></section>`:''}
+    ${dec ? `<section class="card advent-teaser" onclick="renderApp('game'); setTimeout(()=>document.getElementById('adventSec').scrollIntoView({behavior:'smooth'}),50)"><b>🎄 Adventskalender</b><p>Heute wartet Türchen ${parseD(todayS()).getDate()} auf dich.</p></section>`:''}
+    ${S.notices.length ? `<section class="card note">${S.notices.map(n=>`<p>ℹ️ ${esc(n)}</p>`).join('')}</section>`:''}
+    <section><div class="sec-h"><h3>Diese Woche</h3><span class="muted">${niceD(w.monday,{day:'2-digit',month:'2-digit'})} – ${niceD(addDays(w.monday,6),{day:'2-digit',month:'2-digit'})}</span></div>
+      <p class="src">${esc(w.src)}</p>${weekSessions(wi)}
+      <div class="row wrap"><button class="btn ghost" onclick="openPause()">🤒 Pause / Krankheit eintragen</button><button class="btn ghost" onclick="openExtra()">➕ Zusätzlicher Lauf</button></div></section>
+    ${nx ? `<section class="card game-teaser" onclick="renderApp('game')"><div class="gt-ic">🎮</div><div><b>Noch ${nx.need} km bis Level ${nx.lvl}</b><p>${esc(GT[S.game.lang].levels[nx.lvl-1].name)} – jeder Trainingskilometer zählt.</p><div class="bar"><i style="width:${Math.min(100,(k/S.game.thresholds[nx.lvl-1])*100)}%"></i></div></div></section>`:''}
+    <section class="card quote"><p>„${esc(mot.t)}“</p><span class="src">${esc(mot.src)}</span></section>
+    <section class="card fact"><div class="kicker">${fact.k==='fun'?'Fun Fact':'Wusstest du?'} des Tages</div><p>${esc(fact.de)}</p><span class="src">${esc(fact.src)}</span></section>
+    ${d<=10 && d>=0 ? `<section class="card"><h3>🏁 Tipps für den Renntag</h3>${RACE_TIPS.map(t=>`<p>• ${esc(t.t)} <span class="src">(${esc(t.src)})</span></p>`).join('')}</section>`:''}`;
+  bindSessions();
+}
+
+function sessionHTML(wi, si){
+  const s = S.weeks[wi].sessions[si], T0 = TYPES[s.code]||{}, P = myPaces(); const pace = paceFor(s.code, s.arg, P);
+  const isToday = s.date===todayS();
+  const cls = s.done?'done':s.skipped?'skipped':(s.date<todayS()?'past':'');
+  const timeBased = s.km==null;
+  return `<div class="sess ${cls} ${isToday?'today':''} ${s.code==='HM'?'race':''}" data-w="${wi}" data-s="${si}">
+    <button class="chk" data-act="done" aria-label="erledigt">${s.done?'✓':''}</button>
+    <div class="sx"><div class="sd">${WD[(parseD(s.date).getDay()+6)%7]} ${niceD(s.date,{day:'2-digit',month:'2-digit'})}${isToday?' · <b>heute</b>':''}</div>
+      <div class="sl">${esc(sessionLabel(s))}</div>
+      <div class="sm">${esc(T0.name||'')}${pace?' · '+esc(pace):''}${hfText(s.code)?' · '+esc(hfText(s.code)):''}</div>
+      ${S.weeks[wi].flag==='reentry'?'<div class="sm warn">Wiedereinstieg: Tempo bewusst ruhiger, auf dein Körpergefühl achten.</div>':''}
+      ${s.done ? `<div class="kmrow">gelaufen: <input type="number" step="0.1" min="0" data-act="km" value="${s.kmDone!=null?s.kmDone:(s.km||'')}" placeholder="${timeBased?'km eintragen':''}"> km</div>`:''}
+    </div>
+    <button class="skip" data-act="skip" title="ausgefallen">${s.skipped?'↺':'✕'}</button></div>`;
+}
+function weekSessions(wi){ const w=S.weeks[wi]; const rest = w.rest.map((t,d)=>t==='-'||t==='P'?WD[d]:null).filter(Boolean);
+  return `<div class="sessions">${w.sessions.map((s,si)=>sessionHTML(wi,si)).join('')}</div>${rest.length?`<p class="muted small">Ruhetage (${rest.join(', ')}): Pause oder alternatives Training.</p>`:''}`; }
+function bindSessions(){
+  document.querySelectorAll('.sess').forEach(el=>{
+    const s = S.weeks[+el.dataset.w].sessions[+el.dataset.s];
+    el.querySelector('[data-act=done]').onclick = () => { const before = totalKm(S); s.done=!s.done; if (s.done){ s.skipped=false; if (s.km==null && s.kmDone==null) s.kmDone=null; } save(); afterKm(before); };
+    el.querySelector('[data-act=skip]').onclick = () => { s.skipped=!s.skipped; if (s.skipped) s.done=false; save(); renderApp(); };
+    const km = el.querySelector('[data-act=km]'); if (km) km.onchange = () => { const before=totalKm(S); s.kmDone = km.value===''?null:Math.max(0,+km.value); save(); afterKm(before); };
+  });
+}
+function afterKm(before){
+  const after = totalKm(S); const th=S.game.thresholds; const newly = th.map((t,i)=>before<t && after>=t ? i : -1).filter(i=>i>=0);
+  renderApp();
+  if (newly.length){ const i=newly[newly.length-1]; toastMsg('🎉 Level '+(i+1)+' „'+GT[S.game.lang].levels[i].name+'“ freigeschaltet!'); }
+  else if (after>before) toastMsg(MOTIVATION[(dayIndex()+Math.floor(after))%MOTIVATION.length].t);
+}
+
+/* ---------- Plan ---------- */
+function renderPlan(){
+  const cur = curWeekIdx(); let lastB = null;
+  const html = S.weeks.map((w,wi)=>{
+    const head = w.b!==lastB ? `<div class="block-h"><h3>${esc(w.title)}</h3><span class="src">${esc(w.src)}</span></div>` : ''; lastB = w.b;
+    const done = w.sessions.filter(s=>s.done).length, km = w.sessions.reduce((a,s)=>a+(s.km||0),0);
+    return head + `<details class="week ${wi===cur?'cur':''} ${w.flag||''}" ${wi===cur?'open':''}><summary><span class="wn">W${wi+1}</span><span class="wd">${niceD(w.monday,{day:'2-digit',month:'2-digit'})}</span><span class="wt">${PLANS[w.b].weeks.length>1?'Woche '+(w.i+1):''}${w.flag==='reentry'?' · Wiedereinstieg':''}</span><span class="wk">${km?Math.round(km)+' km':''}</span><span class="wdn">${done}/${w.sessions.length}</span></summary>${weekSessions(wi)}</details>`;
+  }).join('');
+  $('#view').innerHTML = `<div class="sec-h"><h2>Dein Plan</h2><button class="btn sm ghost" onclick="openLevel()">Ziel ändern</button></div>
+    <p class="muted">Ab ${niceD(S.weeks[0].monday)} bis zum Renntag ${niceD(S.profile.race)} · geplant ca. ${Math.round(plannedKm(S))} km. Wochentage sind Vorschläge – verschiebe Einheiten, wie es in deinen Alltag passt, und halte zwischen harten Einheiten Ruhetage ein.</p>
+    ${S.notices.length?`<div class="card note">${S.notices.map(n=>`<p>ℹ️ ${esc(n)}</p>`).join('')}</div>`:''}
+    ${S.pauses.length?`<div class="card"><b>Eingetragene Pausen</b>${S.pauses.map(p=>`<p class="small">${niceD(p.from)} – ${niceD(p.to)} (${({fieber:'Krankheit mit Fieber',erkaeltung:'Erkältung',verletzung:'Verletzung',sonst:'Sonstiges'})[p.reason]})</p>`).join('')}</div>`:''}
+    ${html}`;
+  bindSessions();
+  const c = document.querySelector('.week.cur'); if (c) setTimeout(()=>c.scrollIntoView({block:'center'}),30);
+}
+
+/* ---------- Dialoge ---------- */
+function sheet(html){ const el=$('#sheet'); el.querySelector('.sbody').innerHTML = html; el.classList.remove('hidden'); }
+function closeSheet(){ $('#sheet').classList.add('hidden'); }
+function alertBox(t){ sheet(`<p>${esc(t)}</p><button class="btn" onclick="closeSheet()">OK</button>`); }
+let toastTimer=0; function toastMsg(t){ const el=$('#toast'); el.textContent=t; el.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),3200); }
+
+function openPause(){
+  sheet(`<h3>Pause eintragen</h3><p class="muted">Krank, verletzt oder einfach keine Zeit? Trag den Zeitraum ein – die App passt deinen Plan an.</p>
+    <form id="pf"><label>Von<input type="date" name="from" value="${todayS()}" required></label><label>Bis (letzter Pausentag)<input type="date" name="to" value="${todayS()}" required></label>
+    <label>Grund<select name="r"><option value="erkaeltung">Erkältung</option><option value="fieber">Krankheit mit Fieber</option><option value="verletzung">Verletzung</option><option value="sonst">Sonstiges (Urlaub, Termine …)</option></select></label>
+    <p class="small muted">Regeln aus der Literatur: Verpasstes nicht nachholen; nach einer Woche Pause braucht man etwa zwei Wochen zurück zum alten Stand; bei Fieber kein Sport (Aderhold, 2018, S. 104). Bei Verletzungen ärztlich abklären lassen.</p>
+    <div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn">Plan anpassen</button></div></form>`);
+  $('#pf').onsubmit = e => { e.preventDefault(); const f=new FormData(e.target); const from=f.get('from'), to=f.get('to');
+    if (to<from) return alertBox('„Bis“ muss nach „Von“ liegen.');
+    const msgs = applyPause(S, from, to, f.get('r')); save(); renderApp();
+    sheet(`<h3>Plan angepasst 💪</h3>${msgs.map(m=>`<p>• ${esc(m)}</p>`).join('')}<p class="quote-inline">„${esc(MOTIVATION[0].t)}“ <span class="src">(${MOTIVATION[0].src})</span></p><button class="btn" onclick="closeSheet()">Weiter geht's</button>`); };
+}
+function openExtra(){
+  sheet(`<h3>Zusätzlicher Lauf</h3><form id="xf"><label>Datum<input type="date" name="d" value="${todayS()}"></label><label>Kilometer<input type="number" step="0.1" min="0.1" name="km" required></label><div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn">Speichern</button></div></form>`);
+  $('#xf').onsubmit = e => { e.preventDefault(); const f=new FormData(e.target); const before=totalKm(S); S.extra.push({ date:f.get('d'), km:+f.get('km') }); save(); closeSheet(); afterKm(before); };
+}
+function openLevel(){
+  sheet(`<h3>Niveau / Ziel ändern</h3><p class="muted small">Ab dieser Woche wird der Plan neu berechnet; Vergangenes bleibt erhalten.</p>
+    ${Object.entries(LEVELS).map(([k,v])=>`<label class="radio"><input type="radio" name="nl" value="${k}" ${S.profile.level===k?'checked':''}> ${esc(v.label)} <span class="muted small">→ ${esc(PLANS[v.hm].target)}</span></label>`).join('')}
+    <div class="row"><button class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn" id="nlb">Übernehmen</button></div>`);
+  $('#nlb').onclick = () => { const v = document.querySelector('input[name=nl]:checked').value; changeLevel(S, v); save(); closeSheet(); renderApp('plan'); };
+}
+function openSettings(){
+  const p=S.profile;
+  sheet(`<h3>Einstellungen</h3><form id="sf">
+    <label>Name<input name="name" value="${esc(p.name)}"></label>
+    <label>10-km-Zeit (mm:ss) – für Tempoangaben<input name="tenk" value="${p.tenK?fmtTime(p.tenK):''}" placeholder="z. B. 58:30"></label>
+    <label>Maximale Herzfrequenz<input name="hf" type="number" value="${p.hfmax||''}"></label>
+    <label class="radio"><input type="checkbox" name="prev" ${S.game.preview?'checked':''}> Vorschau-Modus: alle Spiel-Level, Specials und Türchen zum Testen freischalten</label>
+    <div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">Schließen</button><button class="btn">Speichern</button></div></form>
+    <hr><h4>Daten sichern</h4><p class="small muted">Deine Daten liegen nur in diesem Browser. Kopiere die Sicherung, um sie auf ein anderes Gerät zu übertragen.</p>
+    <div class="row wrap"><button class="btn sm ghost" onclick="exportData()">Sicherung kopieren</button><button class="btn sm ghost" onclick="importData()">Sicherung einfügen</button></div>
+    <hr><button class="btn sm danger" onclick="resetAll()">Neuen Plan erstellen (alles zurücksetzen)</button>`);
+  $('#sf').onsubmit = e => { e.preventDefault(); const f=new FormData(e.target); p.name=f.get('name').trim()||p.name;
+    const t=parseTime(f.get('tenk')); p.tenK = t||null; p.hfmax = +f.get('hf')||null; S.game.preview = !!f.get('prev'); save(); closeSheet(); renderApp(); };
+}
+function exportData(){ const txt = JSON.stringify(S); const done = () => toastMsg('Sicherung in die Zwischenablage kopiert.');
+  try { navigator.clipboard.writeText(txt).then(done, ()=>showExport(txt)); } catch(e){ showExport(txt); } }
+function showExport(txt){ sheet(`<h3>Sicherung</h3><p class="small">Text markieren und kopieren:</p><textarea rows="8" readonly>${esc(txt)}</textarea><button class="btn" onclick="closeSheet()">Fertig</button>`); }
+function importData(){ sheet(`<h3>Sicherung einfügen</h3><textarea id="imp" rows="8" placeholder="Sicherung hier einfügen"></textarea><div class="row"><button class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn" id="impb">Laden</button></div>`);
+  $('#impb').onclick = () => { try { const s=JSON.parse($('#imp').value); if(!s.profile||!s.weeks) throw 0; s.game=Object.assign(blank().game,s.game||{}); S=s; save(); closeSheet(); renderApp('today'); toastMsg('Sicherung geladen.'); } catch(e){ toastMsg('Das sieht nicht nach einer gültigen Sicherung aus.'); } }; }
+function resetAll(){ sheet(`<h3>Wirklich zurücksetzen?</h3><p>Plan, Kilometer und Spielstand werden gelöscht.</p><div class="row"><button class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn danger" onclick="S=blank(); save(); closeSheet(); renderSetup();">Zurücksetzen</button></div>`); }
+
+/* ---------- Spiel-Tab ---------- */
+function renderGame(){
+  if (TAB!=='game' || !$('#view')) return;
+  const L = GT[S.game.lang], gs=S.game, k = totalKm(S), th = gs.thresholds;
+  const unlocked = i => gs.preview || k >= th[i];
+  const allGear = GEAR.every(g=>gs.gear[g.id]);
+  const bossDate = bossOpenDate(); const bossTime = gs.preview || todayS() >= bossDate;
+  const xmasOpen = gs.preview || todayS() >= ADVENT_YEAR+'-12-24', nyeOpen = gs.preview || todayS() >= ADVENT_YEAR+'-12-31';
+  $('#view').innerHTML = `
+    <div class="sec-h"><h2>${esc(L.title)}</h2><div class="lang"><button class="${gs.lang==='de'?'on':''}" onclick="setLang('de')">DE</button><button class="${gs.lang==='en'?'on':''}" onclick="setLang('en')">EN</button></div></div>
+    <p class="muted small">${S.game.lang==='de'?'Freiwillig: Mit jedem gelaufenen Kilometer schaltest du neue Level frei.':'Optional: every kilometre you run unlocks new levels.'} ${k} km.</p>
+    <section class="card story"><div class="kicker">${esc(L.story)}</div><p>${esc(L.intro)}</p></section>
+    <section class="card"><h3>${esc(L.gearTitle)}</h3><div class="gear">${GEAR.map(g=>`<div class="gi ${gs.gear[g.id]?'got':''}"><span>${g.icon}</span><small>${esc(g[gs.lang])}</small></div>`).join('')}</div></section>
+    <div class="levels">${L.levels.map((lv,i)=>{ const u=unlocked(i), d=gs.done[i];
+      return `<button class="lvl ${u?'':'locked'} ${d?'done':''}" ${u?`onclick="openGame('level',${i})"`:''}><span class="ln">${i+1}</span><span class="lt"><b>${esc(lv.name)}</b><small>${u ? (d?'✓ '+(gs.best[i]||0)+' '+esc(L.pretzels):esc(L.play)) : '🔒 '+esc(L.unlockAt)+' '+th[i]+' km'}</small></span><span class="lg">${gs.gear[GEAR[i].id]?GEAR[i].icon:'❔'}</span></button>`; }).join('')}
+      <button class="lvl boss ${bossTime?'':'locked'} ${gs.bossWon?'done':''}" onclick="openBoss()"><span class="ln">🐷</span><span class="lt"><b>${esc(L.boss)}</b><small>${bossTime ? (allGear? (gs.bossWon?'✓':esc(L.play)) : esc(L.missing)+': '+GEAR.filter(g=>!gs.gear[g.id]).map(g=>g.icon).join(' ')) : '🔒 '+esc(L.bossLocked)+' '+niceD(bossDate)}</small></span></button>
+    </div>
+    <h3 class="mt">Specials</h3><div class="levels">
+      <button class="lvl xmas ${xmasOpen?'':'locked'} ${gs.xmasWon?'done':''}" onclick="openSpecial('xmas')"><span class="ln">🎄</span><span class="lt"><b>${esc(L.xmas)}</b><small>${xmasOpen?(gs.xmasWon?'✓':esc(L.play)):'🔒 '+esc(L.specialLocked)+' 24.12.'+ADVENT_YEAR}</small></span></button>
+      <button class="lvl nye ${nyeOpen?'':'locked'} ${gs.nyeWon?'done':''}" onclick="openSpecial('nye')"><span class="ln">🎆</span><span class="lt"><b>${esc(L.nye)}</b><small>${nyeOpen?(gs.nyeWon?'✓':esc(L.play)):'🔒 '+esc(L.specialLocked)+' 31.12.'+ADVENT_YEAR}</small></span></button>
+    </div>
+    <section id="adventSec" class="card"><h3>🎄 ${esc(L.advent)} ${ADVENT_YEAR}</h3><p class="muted small">${gs.lang==='de'?'Vom 1. bis 24. Dezember öffnet sich jeden Tag ein Türchen: Fun Fact, echter Fakt oder Bonus-Minispiel.':'From 1 to 24 December a new door opens every day: fun fact, real fact or bonus mini-game.'}</p>${Advent.grid()}</section>
+    <p class="muted small">${esc(L.controls)}</p>`;
+  document.querySelectorAll('.door').forEach(b=>b.onclick=()=>Advent.openDoor(+b.dataset.door));
+}
+function setLang(l){ S.game.lang=l; save(); renderGame(); }
+
+/* Spiel-Overlay */
+function gPanel(html){ const p=$('#gpanel'); p.innerHTML = html; p.classList.remove('hidden'); }
+function gHide(){ $('#gpanel').classList.add('hidden'); }
+function showOverlay(){ $('#gov').classList.remove('hidden'); document.body.classList.add('noscroll'); }
+function closeGame(){ Game.stop(); $('#gov').classList.add('hidden'); document.body.classList.remove('noscroll'); renderGame(); if (TAB==='today') renderApp('today'); }
+function openGame(mode, idx){
+  const L = GT[S.game.lang]; showOverlay(); Game.run(mode, idx); Game.pause();
+  let title, story;
+  if (mode==='level'){ title = L.level+' '+(idx+1)+': '+L.levels[idx].name; story = L.levels[idx].story; if (!S.game.seenIntro){ story = L.intro+'<br><br>'+story; S.game.seenIntro=true; save(); } }
+  else if (mode==='mini'){ title = '❄️ '+MG[S.game.lang].jump; story = S.game.lang==='de'?'Ein kurzer Winterlauf durch verschneite Weinberge – sammle die Schneeflocken!':'A short winter run through snowy vineyards – collect the snowflakes!'; }
+  gPanel(`<div class="kicker">${esc(L.story)}</div><h3>${esc(title)}</h3><p>${story}</p><p class="small muted">${esc(L.controls)}</p><button class="btn" onclick="gHide(); Game.resume()">${esc(L.play)}</button>`);
+}
+function openSpecial(kind){
+  const L = GT[S.game.lang]; const open = S.game.preview || todayS() >= ADVENT_YEAR+(kind==='xmas'?'-12-24':'-12-31');
+  if (!open) return toastMsg('🔒 '+L.specialLocked+' '+(kind==='xmas'?'24.12.':'31.12.')+ADVENT_YEAR);
+  showOverlay(); Game.run(kind); Game.pause();
+  gPanel(`<div class="kicker">${kind==='xmas'?'🎄':'🎆'} Special</div><h3>${esc(kind==='xmas'?L.xmas:L.nye)}</h3><p>${esc(kind==='xmas'?L.xmasStory:L.nyeStory)}</p><button class="btn" onclick="gHide(); Game.resume()">${esc(L.play)}</button>`);
+}
+function openBoss(){
+  const L = GT[S.game.lang], gs=S.game; const bossTime = gs.preview || todayS() >= bossOpenDate();
+  if (!bossTime) return toastMsg('🔒 '+L.bossLocked+' '+niceD(bossOpenDate()));
+  const missing = GEAR.map((g,i)=>({g,i})).filter(x=>!gs.gear[x.g.id]);
+  if (missing.length){ sheet(`<h3>🐷 ${esc(L.boss)}</h3><p>${esc(L.needAll)}</p>${missing.map(x=>`<p>${x.g.icon} ${esc(x.g[gs.lang])} → ${esc(L.level)} ${x.i+1}: ${esc(L.levels[x.i].name)}</p>`).join('')}<button class="btn" onclick="closeSheet()">${esc(L.close)}</button>`); return; }
+  showOverlay(); Game.run('boss'); Game.pause();
+  gPanel(`<div class="kicker">${esc(L.boss)}</div><h3>🐷 ${esc(L.boss)}</h3><p>${esc(L.bossStory)}</p><p><b>${esc(L.bossGear)}</b></p><ul class="gearlist">${GEAR.map(g=>`<li>${g.icon} <b>${esc(g[gs.lang])}:</b> ${esc(gs.lang==='de'?g.bossDe:g.bossEn)}</li>`).join('')}</ul><button class="btn" onclick="gHide(); Game.resume()">${esc(L.play)}</button>`);
+}
+Game.onEnd = (mode, idx, r) => {
+  const L = GT[S.game.lang], gs = S.game, lang = gs.lang; let html='';
+  const fact = FACTS[((idx||0)*5 + (mode==='boss'?3:mode==='xmas'?7:mode==='nye'?11:0)) % 15];
+  const factBox = `<div class="ffbox"><div class="kicker">${esc(L.funfact)}</div><p>${esc(fact[lang])}</p><span class="src">${esc(fact.src)}</span></div>`;
+  const again = `<button class="btn ghost" onclick="${mode==='level'?`openGame('level',${idx})`:mode==='boss'?'openBoss()':mode==='mini'?`openGame('mini',${idx})`:`openSpecial('${mode}')`}">${esc(L.again)}</button>`;
+  if (!r.win){ html = `<h3>${r.why==='time'?'🎆 '+esc(L.nyeLose):'💔 '+esc(L.gameOver)}</h3>${factBox}<div class="row">${again}<button class="btn" onclick="closeGame()">${esc(L.close)}</button></div>`; }
+  else if (mode==='level'){
+    gs.done[idx]=true; gs.best[idx]=Math.max(gs.best[idx]||0, r.coins); let itemTxt='';
+    const g = GEAR[idx];
+    if (r.item){ gs.gear[g.id]=true; itemTxt = `<div class="itembox"><span>${g.icon}</span><div><b>${esc(L.found)}: ${esc(g[lang])}</b><p class="small">${esc(lang==='de'?g.tipDe:g.tipEn)}</p></div></div>`; }
+    else if (!gs.gear[g.id]) itemTxt = `<p>❔ ${esc(L.missing)}: ${g.icon} ${esc(g[lang])}</p>`;
+    save();
+    html = `<h3>🏁 ${esc(L.complete)}</h3><p>${r.coins}/${r.total} ${esc(L.pretzels)}</p>${itemTxt}${factBox}<div class="row">${again}<button class="btn" onclick="closeGame()">${esc(L.close)}</button></div>`;
+  } else if (mode==='boss'){ gs.bossWon=true; save(); html = `<h3>🏆 ${esc(L.bossWin)}</h3><div class="ffbox">${RACE_TIPS.slice(1,5).map(t=>`<p class="small">• ${esc(lang==='en'&&t.en?t.en:t.t)} <span class="src">(${esc(t.src)})</span></p>`).join('')}</div><div class="row">${again}<button class="btn" onclick="closeGame()">${esc(L.close)}</button></div>`; }
+  else if (mode==='xmas'){ gs.xmasWon=true; save(); html = `<h3>🎄 ${esc(L.xmasWin)}</h3><p>${r.coins}/${r.total} ${esc(L.gifts)}</p>${factBox}<div class="row">${again}<button class="btn" onclick="closeGame()">${esc(L.close)}</button></div>`; }
+  else if (mode==='nye'){ gs.nyeWon=true; save(); html = `<h3>🎆 ${esc(L.nyeWin)}</h3><p>${r.coins}/${r.total} ${esc(L.sparklers)}</p>${factBox}<div class="row">${again}<button class="btn" onclick="closeGame()">${esc(L.close)}</button></div>`; }
+  else { html = `<h3>❄️ ${esc(MG[lang].done)}</h3><p>${r.coins}/${r.total} ❄️</p>${factBox}<div class="row">${again}<button class="btn" onclick="closeGame()">${esc(L.close)}</button></div>`; }
+  gPanel(html);
+};
+
+/* ---------- Wissen ---------- */
+function renderKnow(){
+  const P = myPaces();
+  $('#view').innerHTML = `<h2>Wissen & Rechner</h2>
+    <section class="card"><h3>⏱️ Tempo-Rechner</h3><p class="small muted">Trainingstempi aus deiner 10-km-Zeit nach Aderhold (2018, S. 89; nach Wenzel, 1991) und Halbmarathon-Prognose nach Beck (2024).</p>
+      <label>10-km-Zeit (mm:ss)<input id="tk" value="${S.profile.tenK?fmtTime(S.profile.tenK):''}" placeholder="z. B. 58:30"></label><div id="tkr"></div></section>
+    <section class="card"><h3>✨ Magic Mile</h3><p class="small muted">Galloway & Galloway (2019, S. 49 ff.): Meile (1,609 km) zügig laufen, Zeit × 1,2 = aktuell mögliches HM-Tempo pro Meile; + 3 min = Tempo für lange Läufe.</p>
+      <label>Zeit für 1 Meile (mm:ss)<input id="mm" placeholder="z. B. 9:30"></label><div id="mmr"></div></section>
+    <section class="card"><h3>🌡️ Wärme-Anpassung</h3><p class="small muted">Ab 14 °C pro 2 °C etwa 20 s/km langsamer (Galloway & Galloway, 2019, S. 49).</p>
+      <label>Temperatur (°C)<input id="tc" type="number" placeholder="z. B. 20"></label><div id="tcr"></div></section>
+    <section class="card"><h3>📖 Trainingsformen</h3>${Object.entries(TYPES).filter(([k])=>!['HM','P'].includes(k)).map(([k,t])=>`<details class="gl"><summary><b>${esc(k==='-'?'P/AT':k)}</b> ${esc(t.name)}</summary><p>${esc(t.desc)}${t.hf?' <b>'+esc(t.hf)+'</b>':''}</p><span class="src">${esc(t.src)}</span></details>`).join('')}</section>
+    <section class="card"><h3>🏁 Renntag & Tapering</h3>${RACE_TIPS.map(t=>`<p>• ${esc(t.t)} <span class="src">(${esc(t.src)})</span></p>`).join('')}</section>
+    <section class="card"><h3>🤒 Pausen & Krankheit</h3>${[19,18,20,21].map(i=>`<p>• ${esc(FACTS[i].de)} <span class="src">(${esc(FACTS[i].src)})</span></p>`).join('')}</section>
+    <section class="card"><h3>😄 Alle Fakten</h3>${FACTS.map(f=>`<p>• ${esc(f.de)} <span class="src">(${esc(f.src)})</span></p>`).join('')}</section>`;
+  const calc = () => { const t = parseTime($('#tk').value); if (!t){ $('#tkr').innerHTML=''; return; } const p=paces(t);
+    $('#tkr').innerHTML = `<table class="tbl">${[['Tempodauerlauf (TDL)',p.TDL],['Intensiver DL (IDL)',p.IDL],['Extensiver DL (EDL)',p.EDL],['Regenerativer DL (RDL)',p.RDL],['WHL 1.000 m',p.WHL1],['WHL 2.000 m',p.WHL2],['WHL 3.000 m',p.WHL3]].map(r=>`<tr><td>${r[0]}</td><td><b>${fmtPace(r[1])}</b> min/km</td></tr>`).join('')}
+      <tr class="hl"><td>Halbmarathon-Prognose (× 2,2234)</td><td><b>${fmtTime(p.HMtime)}</b> h · ${fmtPace(p.HM)} min/km</td></tr></table>
+      <button class="btn sm ghost" id="tks">Als meine 10-km-Zeit speichern</button>`;
+    $('#tks').onclick = () => { S.profile.tenK=t; save(); toastMsg('Gespeichert – der Plan zeigt jetzt deine Tempi.'); }; };
+  $('#tk').oninput = calc; calc();
+  $('#mm').oninput = () => { const t=parseTime($('#mm').value); if(!t){ $('#mmr').innerHTML=''; return; } const hm=t*1.2, lr=hm+180;
+    $('#mmr').innerHTML = `<table class="tbl"><tr><td>HM-Tempo (aktuell)</td><td><b>${fmtPace(hm)}</b> /Meile · ${fmtPace(hm/1.609)} min/km</td></tr><tr><td>≈ HM-Zeit</td><td><b>${fmtTime(hm*13.109)}</b></td></tr><tr><td>Lange Läufe</td><td><b>${fmtPace(lr)}</b> /Meile · ${fmtPace(lr/1.609)} min/km</td></tr></table>`; };
+  $('#tc').oninput = () => { const c=+$('#tc').value; if($('#tc').value===''){ $('#tcr').innerHTML=''; return; } const add = c>14 ? Math.ceil((c-14)/2)*20 : 0;
+    $('#tcr').innerHTML = `<p>${add?`Etwa <b>${add} s/km</b> langsamer laufen.`:'Keine Anpassung nötig.'}${add && P?` Dein HM-Tempo: ${fmtPace(P.HM)} → <b>${fmtPace(P.HM+add)}</b> min/km.`:''}</p>`; };
+}
+
+/* ---------- Literatur ---------- */
+function renderLit(){
+  $('#view').innerHTML = `<h2>Verwendete Literatur</h2><p class="muted">Alle Trainingsinhalte, Tipps und Fakten dieser App stammen ausschließlich aus diesen Werken. Zitierweise: APA, 7. Auflage.</p>
+    <section class="card lit">${LITERATURE.map(l=>`<p class="apa">${l.apa}</p><p class="small muted">Verwendet für: ${esc(l.note)}</p>`).join('<hr>')}</section>
+    <section class="card note"><p>⚠️ <b>Bitte prüfen:</b> Die Inhalte wurden aus Scans der Bücher übernommen. Autor:innen, Erscheinungsjahre, Auflagen und Seitenzahlen bitte vor der Verwendung mit den Originalquellen abgleichen. Abkürzungen wie R-EDL, E-RDL, I-TDL und „8/2 km“ werden in der App gedeutet – die Deutung ist jeweils gekennzeichnet.</p></section>
+    <section class="card"><h3>Weitere Hinweise</h3><p class="small">Renntermin (25.04.2027) nach Veranstalterangaben, keine Literaturquelle – bitte auf der offiziellen Seite des ATOS Halbmarathons der TSG 78 Heidelberg prüfen.</p>
+      <p class="small">Die Einsteiger-Progression zitiert Aderhold (2018) als „modifiziert nach Steffny (2017)“; die Tempoformeln führt Aderhold auf Wenzel (1991) zurück. Diese Sekundärverweise sind nicht im Literaturverzeichnis, da nur die vorliegenden Bücher genutzt wurden.</p>
+      <p class="small">Die App ersetzt keine ärztliche Beratung. Aderhold (2018) empfiehlt eine jährliche sportärztliche Vorsorgeuntersuchung.</p></section>`;
+}
+
+/* ---------- Start ---------- */
+document.addEventListener('DOMContentLoaded', () => {
+  S = load(); Game.init();
+  $('#gclose').onclick = closeGame;
+  $('#sheet').addEventListener('click', e => { if (e.target.id==='sheet') closeSheet(); });
+  if (S.profile && S.weeks.length) renderApp('today'); else renderSetup();
+});
+</script>
+</body>
+</html>
