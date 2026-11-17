@@ -761,25 +761,27 @@ const nameKey = n => normName(n).toLowerCase();
 const isCreatorName = n => nameKey(n) === nameKey(CREATOR_NAME);
 
 const Store = (() => {
-  let sb = null, user = null, saveTimer = 0;
+  let online = false, user = null, saveTimer = 0;
   const cloud = () => !!(CLOUD.url && CLOUD.key) && !/claude/i.test(location.hostname) && location.protocol.startsWith('http');
   const LS = { get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch(e){ return null; } }, set(k,v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }, del(k){ try { localStorage.removeItem(k); } catch(e){} } };
-  const email = n => 'u' + Array.from(new TextEncoder().encode(nameKey(n))).map(b=>b.toString(16).padStart(2,'0')).join('') + '@mein-weg-atos.app';
+  async function rpc(fn, args){
+    const r = await fetch(CLOUD.url.replace(/\/+$/,'') + '/rest/v1/rpc/' + fn, { method:'POST', headers:{ apikey:CLOUD.key, 'Content-Type':'application/json' }, body: JSON.stringify(args||{}) });
+    const txt = await r.text(); let j = null; try { j = txt ? JSON.parse(txt) : null; } catch(e){}
+    if (!r.ok){ const m = (j && (j.message||j.hint)) || ('HTTP '+r.status); const e = new Error(m); e.server = true; throw e; }
+    return j;
+  }
+  const MSG = { name_taken:'Dieser Name ist schon vergeben.', login_failed:'Name oder Passwort stimmt nicht.', pw_short:'Das Passwort braucht mindestens 6 Zeichen.', name_invalid:'Der Name muss 2–30 Zeichen lang sein.' };
+  const errText = e => MSG[e.message] || (e.server ? 'Fehler vom Server: '+e.message : 'Keine Verbindung zum Server. Bitte später nochmal versuchen.');
 
   async function init(){
     if (cloud()){
-      try {
-        await new Promise((ok,err)=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'; s.onload=ok; s.onerror=err; document.head.appendChild(s); });
-        sb = window.supabase.createClient(CLOUD.url, CLOUD.key);
-        const ping = await sb.from('scores').select('name').limit(1); if (ping.error && /fetch|network|load/i.test(ping.error.message||'')) throw new Error(ping.error.message);
-        const { data } = await sb.auth.getSession();
-        if (data && data.session){ const { data:p } = await sb.from('profiles').select('name').eq('id', data.session.user.id).maybeSingle();
-          if (p) user = { id:data.session.user.id, name:p.name, creator:isCreatorName(p.name) }; }
-      } catch(e){ console.warn('Server nicht erreichbar', e); sb = null; }
-    } else {
-      const sess = LS.get('mwah-session'); const users = LS.get('mwah-users')||{};
-      if (sess && users[sess]) user = { id:sess, name:users[sess].name, creator:isCreatorName(users[sess].name) };
+      try { await rpc('app_scores'); online = true; } catch(e){ online = !!e.server; console.warn('Server:', e.message); }
+      if (online){ const sess = LS.get('mwah-cloud');
+        if (sess && sess.token){ try { const r = await rpc('app_load', { p_token: sess.token }); user = { id:sess.token, name:r.name, creator:isCreatorName(r.name), remote:r.data }; }
+          catch(e){ if (e.server) LS.del('mwah-cloud'); else user = { id:sess.token, name:sess.name, creator:isCreatorName(sess.name) }; } } }
     }
+    if (!online){ const sess = LS.get('mwah-session'); const users = LS.get('mwah-users')||{};
+      if (sess && users[sess]) user = { id:sess, name:users[sess].name, creator:isCreatorName(users[sess].name) }; }
     return user;
   }
   function check(name, pw){
@@ -791,15 +793,8 @@ const Store = (() => {
   }
   async function register(name, pw){
     const err = check(name, pw); if (err) return { err }; name = normName(name);
-    if (sb){
-      const { data, error } = await sb.auth.signUp({ email: email(name), password: pw });
-      if (error) return { err: /registered|exists/i.test(error.message) ? 'Dieser Name ist schon vergeben.' : 'Registrierung fehlgeschlagen: '+error.message };
-      if (!data.session) return { err: 'Der Server verlangt eine E-Mail-Bestätigung. Bitte in Supabase „Confirm email“ ausschalten.' };
-      const id = data.user.id; const ins = await sb.from('profiles').insert({ id, name });
-      if (ins.error){ await sb.auth.signOut(); return { err: /duplicate|unique/i.test(ins.error.message) ? 'Dieser Name ist schon vergeben.' : 'Fehler: '+ins.error.message }; }
-      await sb.from('scores').upsert({ id, name, km:0, items:0, coins:0 });
-      user = { id, name, creator:isCreatorName(name) }; return { user };
-    }
+    if (online){ try { const r = await rpc('app_register', { p_name:name, p_pw:pw }); LS.set('mwah-cloud', { token:r.token, name:r.name });
+        user = { id:r.token, name:r.name, creator:isCreatorName(r.name), remote:null }; return { user }; } catch(e){ return { err: errText(e) }; } }
     const users = LS.get('mwah-users')||{}; const key = nameKey(name);
     if (users[key]) return { err:'Dieser Name ist auf diesem Gerät schon vergeben.' };
     const salt = Math.random().toString(36).slice(2,12);
@@ -808,37 +803,32 @@ const Store = (() => {
   }
   async function login(name, pw){
     name = normName(name); if (!name || !pw) return { err:'Bitte Name und Passwort eingeben.' };
-    if (sb){
-      const { data, error } = await sb.auth.signInWithPassword({ email: email(name), password: pw });
-      if (error) return { err:'Name oder Passwort stimmt nicht.' };
-      const { data:p } = await sb.from('profiles').select('name').eq('id', data.user.id).maybeSingle();
-      user = { id:data.user.id, name:(p&&p.name)||name, creator:isCreatorName((p&&p.name)||name) }; return { user };
-    }
+    if (online){ try { const r = await rpc('app_login', { p_name:name, p_pw:pw }); LS.set('mwah-cloud', { token:r.token, name:r.name });
+        const d = await rpc('app_load', { p_token:r.token }); user = { id:r.token, name:r.name, creator:isCreatorName(r.name), remote:d.data }; return { user }; } catch(e){ return { err: errText(e) }; } }
     const users = LS.get('mwah-users')||{}; const u = users[nameKey(name)];
     if (!u || u.hash !== sha256(u.salt+pw)) return { err:'Name oder Passwort stimmt nicht.' };
     LS.set('mwah-session', nameKey(name)); user = { id:nameKey(name), name:u.name, creator:isCreatorName(u.name) }; return { user };
   }
-  async function logout(){ if (sb) await sb.auth.signOut(); LS.del('mwah-session'); user = null; }
+  async function logout(){ LS.del('mwah-cloud'); LS.del('mwah-session'); user = null; }
   async function loadData(){
-    if (!user) return null;
-    const cached = LS.get('mwah-data-'+user.id);
-    if (sb){ try { const { data } = await sb.from('profiles').select('data').eq('id', user.id).maybeSingle(); if (data && data.data) { LS.set('mwah-data-'+user.id, data.data); return data.data; } } catch(e){} }
-    return cached;
+    if (!user) return null; const key = 'mwah-data-'+(online ? 'c-'+nameKey(user.name) : user.id);
+    if (online && user.remote){ LS.set(key, user.remote); return user.remote; }
+    return LS.get(key);
   }
   function score(S){ const items = GEAR.filter(g=>S.game.gear[g.id]).length; const coins = Object.values(S.game.best||{}).reduce((a,b)=>a+b,0);
     return { km: totalKm(S), items, coins }; }
   function saveData(S){
-    if (!user) return; LS.set('mwah-data-'+user.id, S);
-    const sc = score(S); const all = LS.get('mwah-scores')||{}; all[user.id] = Object.assign({ name:user.name, creator:user.creator }, sc); LS.set('mwah-scores', all);
-    if (sb){ clearTimeout(saveTimer); saveTimer = setTimeout(async ()=>{
-      try { await sb.from('profiles').update({ data:S, updated_at:new Date().toISOString() }).eq('id', user.id);
-            await sb.from('scores').upsert({ id:user.id, name:user.name, km:sc.km, items:sc.items, coins:sc.coins, updated_at:new Date().toISOString() }); } catch(e){ console.warn(e); } }, 1200); }
+    if (!user) return; const sc = score(S);
+    if (online){ LS.set('mwah-data-c-'+nameKey(user.name), S); clearTimeout(saveTimer);
+      saveTimer = setTimeout(()=>{ rpc('app_save', { p_token:user.id, p_data:S, p_km:sc.km, p_items:sc.items, p_coins:sc.coins }).catch(e=>console.warn('Speichern:', e.message)); }, 1000); return; }
+    LS.set('mwah-data-'+user.id, S);
+    const all = LS.get('mwah-scores')||{}; all[user.id] = Object.assign({ name:user.name, creator:user.creator }, sc); LS.set('mwah-scores', all);
   }
   async function scores(){
-    if (sb){ const { data, error } = await sb.from('scores').select('name,km,items,coins'); if (!error && data) return data.filter(r=>!isCreatorName(r.name)); }
+    if (online){ try { const d = await rpc('app_scores'); return (d||[]).filter(r=>!isCreatorName(r.name)); } catch(e){ return []; } }
     const all = LS.get('mwah-scores')||{}; return Object.values(all).filter(r=>!r.creator);
   }
-  return { init, register, login, logout, loadData, saveData, scores, get user(){ return user; }, get mode(){ return sb ? 'cloud' : 'local'; } };
+  return { init, register, login, logout, loadData, saveData, scores, get user(){ return user; }, get mode(){ return online ? 'cloud' : 'local'; } };
 })();
 
 /* ===================== SPIEL: Texte DE/EN ===================== */
