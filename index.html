@@ -175,6 +175,26 @@ details.factcat summary span:last-child{ display:flex; flex-direction:column; } 
 body::before{ content:''; position:fixed; left:0; right:0; bottom:0; height:200px; background:var(--skyline) repeat-x left bottom / 640px 200px; opacity:.09; pointer-events:none; z-index:0; }
 #app{ position:relative; z-index:1; }
 .warnbox{ background:#fff3dc; border:1px solid #f0d9a8; border-radius:10px; padding:8px 10px; font-size:.86rem; }
+.days .dnrow{ gap:18px; justify-content:flex-start; margin:4px 0 6px; } .days .dnrow .radio{ margin:0; }
+.days label small{ font-weight:400; color:var(--muted); }
+.days .dwarn p{ margin:6px 0 0; }
+.sec-h .row{ gap:6px; }
+/* Rubrik Krafttraining */
+.chips{ display:flex; gap:6px; overflow-x:auto; padding:2px 0 10px; margin:0 -2px; scrollbar-width:none; } .chips::-webkit-scrollbar{ display:none; }
+.chips button{ flex:none; border:1.5px solid var(--line); background:var(--card); color:var(--wine); font:600 .82rem var(--font); padding:7px 11px; border-radius:999px; cursor:pointer; }
+[id^=k-]{ scroll-margin-top:12px; }
+.kbasics{ display:grid; gap:8px; } .kbasics p{ margin:2px 0 0; }
+.kgrid{ display:grid; gap:8px; margin-top:8px; }
+.kex{ display:grid; grid-template-columns:auto 96px 1fr; gap:10px; align-items:center; background:#fff9f0; border:1.5px solid var(--line); border-radius:14px; padding:8px 10px; cursor:pointer; font-weight:400; margin:0; }
+.kex p{ margin:2px 0 0; } .kex input{ width:20px; height:20px; margin:0; accent-color:var(--wine); }
+.kex:has(input:checked){ background:#eef6ea; border-color:#a9cf9a; }
+.kfw{ position:relative; } .kn{ position:absolute; left:-4px; top:-4px; background:var(--wine); color:#fff; font:700 .7rem var(--font); width:18px; height:18px; border-radius:50%; display:grid; place-items:center; }
+.kfig{ width:96px; height:58px; display:block; stroke:#5a3423; stroke-width:3.2; stroke-linecap:round; fill:none; background:#fdf3e4; border-radius:10px; }
+.kfig .kh{ fill:#5a3423; stroke:none; } .kfig .kg{ stroke:#d8c3a5; stroke-width:1.5; } .kfig .ks{ fill:#d8c3a5; stroke:none; } .kfig .ka{ stroke:#c8735a; stroke-width:1.8; }
+.kabc{ display:grid; gap:6px; margin-top:8px; }
+.kabci{ display:flex; gap:10px; align-items:flex-start; justify-content:space-between; border-bottom:1px dashed var(--line); padding:6px 0; } .kabci p{ margin:2px 0 0; }
+.kdose{ flex:none; background:#efe2cf; color:var(--wine); font:700 .78rem var(--font); padding:4px 8px; border-radius:8px; white-space:nowrap; }
+button.lnk{ border:none; background:none; color:var(--wine); font:700 .85rem var(--font); padding:0; cursor:pointer; text-decoration:underline; }
 </style>
 </head>
 <body>
@@ -352,21 +372,21 @@ const TYPES = {
   'RDL':  { name:'Regenerativer Dauerlauf', hf:'60–69 % HFmax',
     what:'Ein sehr ruhiger Lauf, der vor allem der Erholung dient. Er hält die Beine in Bewegung, ohne neue Ermüdung zu erzeugen.',
     why:'Fördert die Regeneration zwischen fordernden Einheiten.',
-    feel:'Langsamer Dauerlauf: Du kannst während des Laufens noch gut sprechen.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 110, 162' },
+    feel:'Gemütlich: Du kannst während des Laufens noch gut sprechen.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 110, 162' },
   'R-EDL':{ name:'Ruhiger langer Lauf', hf:'60–70 % HFmax',
     what:'Langer, ruhiger Lauf im Bereich zwischen regenerativem und extensivem Dauerlauf. Hier zählt die Dauer, nicht das Tempo.',
     why:'Baut Grundlagenausdauer auf und gewöhnt Sehnen, Bänder und Muskeln an längere Belastung.',
-    feel:'Langsamer Dauerlauf: Du kannst während des Laufens noch gut sprechen.', src:'Aderhold, 2018, S. 468; Beck, 2024, S. 110, 162',
+    feel:'Gemütlich: Du kannst während des Laufens noch gut sprechen.', src:'Aderhold, 2018, S. 468; Beck, 2024, S. 110, 162',
     dev:'Lesart der App für „R-EDL“ – Abkürzung im Buch nicht erklärt.' },
   'E-RDL':{ name:'Ruhiger langer Lauf (eher regenerativ)', hf:'60–70 % HFmax',
     what:'Wie der ruhige lange Lauf, aber eher am ruhigen Ende – zum Abschluss eines Trainingszyklus.',
     why:'Grundlagenausdauer mit Fokus auf Erholung.',
-    feel:'Langsamer Dauerlauf: Du kannst während des Laufens noch gut sprechen.', src:'Aderhold, 2018, S. 468; Beck, 2024, S. 110, 162',
+    feel:'Gemütlich: Du kannst während des Laufens noch gut sprechen.', src:'Aderhold, 2018, S. 468; Beck, 2024, S. 110, 162',
     dev:'Lesart der App für „E-RDL“ – Abkürzung im Buch nicht erklärt.' },
   'EDL':  { name:'Extensiver Dauerlauf', hf:'ca. 70 % HFmax',
-    what:'Der klassische lockere Grundlagenlauf. Samstags ist er der lange Lauf der Woche, der dich Schritt für Schritt an die 21,1 km heranführt.',
+    what:'Der klassische lockere Grundlagenlauf. Als langer Lauf der Woche ist er es, der dich Schritt für Schritt an die 21,1 km heranführt.',
     why:'Verbessert die aerobe Ausdauer – die Basis für den Halbmarathon.',
-    feel:'Langsamer Dauerlauf: Du kannst während des Laufens noch gut sprechen.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 110, 162' },
+    feel:'Gemütlich: Du kannst während des Laufens noch gut sprechen.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 110, 162' },
   'EDL+ST':{ name:'Lockerer Lauf mit Steigerungen', hf:'ca. 70 % HFmax (Steigerungen schneller)',
     what:'Ein extensiver Dauerlauf, an dessen Ende einige Steigerungsläufe stehen: etwa 100 m, langsam beginnend und immer schneller werdend; bei ca. 80 m ist die höchste Geschwindigkeit erreicht und wird kurz gehalten – mit langen, kraftvollen Schritten.',
     why:'Hält dich „spritzig“ und schult einen kraftvollen Laufstil, ohne zu ermüden.',
@@ -379,28 +399,28 @@ const TYPES = {
   'IDL':  { name:'Intensiver Dauerlauf', hf:'75–80 % HFmax',
     what:'Ein zügiger Dauerlauf, schneller als der lockere Lauf, aber noch gut kontrollierbar (Tempo: Tempodauerlauf + 25 s/km).',
     why:'Verbessert die Ausdauer bei höherem Tempo.',
-    feel:'Lockerer Dauerlauf: Du kannst beim Laufen gerade noch sprechen.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 110, 162' },
+    feel:'Zügig: Du kannst beim Laufen gerade noch sprechen.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 110, 162' },
   'I-TDL':{ name:'Zügiger bis schneller Dauerlauf', hf:'75–89 % HFmax',
     what:'Ein Dauerlauf im Bereich zwischen intensivem Dauerlauf und Tempodauerlauf – die Brücke zum schnelleren Training.',
     why:'Bereitet auf Tempodauerläufe und das Renntempo vor.',
-    feel:'Vom lockeren Dauerlauf (gerade noch sprechen) bis zum schnellen Dauerlauf (maximale, aber konstante Geschwindigkeit).', src:'Aderhold, 2018, S. 469 ff.; Beck, 2024, S. 110, 162',
+    feel:'Von zügig (gerade noch sprechen) bis schnell (maximale, aber konstante Geschwindigkeit).', src:'Aderhold, 2018, S. 469 ff.; Beck, 2024, S. 110, 162',
     dev:'Lesart der App für „I-TDL“ – Abkürzung im Buch nicht erklärt.' },
   'TDL':  { name:'Tempodauerlauf', hf:'83–89 % HFmax',
     what:'Ein schneller Dauerlauf an der aeroben Schwelle. Das Tempo liegt etwa 15 s/km langsamer als dein 10-km-Wettkampftempo.',
     why:'Hebt deine Schwelle an – du kannst ein höheres Tempo länger halten.',
-    feel:'Schneller Dauerlauf: so, dass du die ganze Einheit mit maximaler, aber konstanter Geschwindigkeit laufen kannst.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 110, 162' },
+    feel:'Schnell: so, dass du die ganze Einheit mit maximaler, aber konstanter Geschwindigkeit laufen kannst.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 110, 162' },
   'TDL/EDL':{ name:'Tempodauerlauf oder lockerer Dauerlauf', hf:'ca. 70 % bzw. 83–89 % HFmax',
     what:'Je nach Tagesform läufst du einen Tempodauerlauf oder einen extensiven Dauerlauf.',
     why:'Gibt dir Spielraum, auf dein Körpergefühl zu hören.',
-    feel:'Gut erholt: schneller Dauerlauf (maximal, aber konstant). Müde: langsamer Dauerlauf (noch gut sprechen).', src:'Aderhold, 2018, S. 480 f.; Beck, 2024, S. 162' },
+    feel:'Gut erholt: schneller Dauerlauf (maximal, aber konstant). Müde: gemütlich (noch gut sprechen).', src:'Aderhold, 2018, S. 480 f.; Beck, 2024, S. 162' },
   'FS':   { name:'Fahrtspiel', hf:'wechselnd, ca. 70 % bis 83–89 % HFmax',
-    what:'Ein Lauf mit Tempowechseln. Ein Beispiel: 1 km, 2 km, 3 km, 2 km, 1 km im schnellen Dauerlauf, dazwischen jeweils 3 Minuten langsamer Dauerlauf.',
+    what:'Ein Lauf mit Tempowechseln. Ein Beispiel: 1 km, 2 km, 3 km, 2 km, 1 km im schnellen Dauerlauf, dazwischen jeweils 3 Minuten gemütlich.',
     why:'Bringt Abwechslung und trainiert verschiedene Tempobereiche in einer Einheit.',
-    feel:'Abwechselnd schneller Dauerlauf und langsamer Dauerlauf (noch gut sprechen).', src:'Aderhold, 2018, S. 469 ff.; Beck, 2024, S. 162' },
+    feel:'Abwechselnd schnell und gemütlich (noch gut sprechen).', src:'Aderhold, 2018, S. 469 ff.; Beck, 2024, S. 162' },
   'WHL':  { name:'Wiederholungsläufe', hf:'83–89 % HFmax (Schwellenzone)',
-    what:'Schnelle Abschnitte über 1.000 bis 3.000 m, dazwischen Trabpausen im langsamen Dauerlauf. Davor und danach je etwa 10 Minuten ein- und auslaufen.',
+    what:'Schnelle Abschnitte über 1.000 bis 3.000 m, dazwischen gemütliche Trabpausen. Davor und danach je etwa 10 Minuten ein- und auslaufen.',
     why:'Steigern Tempohärte und Kraftausdauer.',
-    feel:'Schnelle Abschnitte, dazwischen langsamer Dauerlauf zur Erholung.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 110, 162' },
+    feel:'Schnelle Abschnitte, dazwischen gemütlich zur Erholung.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 110, 162' },
   'WHL/WKT':{ name:'Wiederholungsläufe im Renntempo', hf:'85–88 % HFmax',
     what:'Abschnitte genau in deinem geplanten Halbmarathon-Tempo, mit Trabpausen dazwischen.',
     why:'Du bekommst ein sicheres Gefühl für dein Renntempo.',
@@ -414,17 +434,82 @@ const TYPES = {
   'P':    { name:'Pause', hf:'', what:'Ruhe vor dem Rennen.', why:'Frisch an den Start.', feel:'', src:'Aderhold, 2018, S. 480 f.' },
   'KT':   { name:'Krafttraining', hf:'',
     what:'Etwa 30–45 Minuten Kräftigung – dafür brauchst du kein Fitnessstudio, Übungen mit dem eigenen Körpergewicht reichen.',
-    list:['Rumpf: Unterarmstütz, Füße abwechselnd um eine Schuhlänge anheben','Bauch: Crunches aus der Rückenlage, Arme vor der Brust gekreuzt, Knie angewinkelt','Rücken: aus dem Kniestand den Rumpf mit gestrecktem Rücken aufrichten','Seitlicher Rumpf: Seitstütz auf dem Ellbogen, Becken anheben, bis der Rumpf gestreckt ist','Äußere Hüfte: in Seitlage das gestreckte obere Bein abspreizen','Hintere Oberschenkel und Hüfte: Rückenlage, ein Bein aufgestellt, das andere gestreckt nach oben – Becken hochdrücken','Arme, Brust, Schultern: Liegestütz aus dem Vierfüßlerstand (schwerer: klassischer Liegestütz)','Innere Hüfte: im Sitz die Knie gegen den Unterarm als „Klemme“ zusammendrücken'],
-    why:'Laufen trainiert vor allem den Unterkörper und tut wenig für den Oberkörper. Regelmäßige Kräftigung stärkt auch die Muskeln, die beim Laufen wenig beansprucht werden, und stabilisiert den Rumpf. Am besten an Pausentagen oder vor leichtem Training – nicht vor oder nach harten Einheiten (Tempodauerlauf, Wiederholungsläufe) und nicht vor einem Wettkampf. Deshalb steht es freitags, vor dem lockeren langen Lauf.',
-    feel:'', src:'Aderhold, 2018, S. 154 f.; Beck, 2024, S. 162' }
+    list:['Rumpf: Unterarmstütz, Füße abwechselnd um eine Schuhlänge anheben','Bauch: Crunches aus der Rückenlage, Arme vor der Brust gekreuzt, Knie angewinkelt','Rücken: aus dem Kniestand den Rumpf mit gestrecktem Rücken aufrichten','Seitlicher Rumpf: Seitstütz auf dem Ellbogen, Becken anheben, bis der Rumpf gestreckt ist','Äußere Hüfte: in Seitlage das gestreckte obere Bein abspreizen','Hintere Oberschenkel und Hüfte: Rückenlage, ein Bein aufgestellt, das andere gestreckt – Becken hochdrücken','Arme, Brust, Schultern: Liegestütz aus dem Vierfüßlerstand (schwerer: klassischer Liegestütz)','Innere Hüfte: im Sitz die Knie gegen den Unterarm als „Klemme“ drücken','Vorderer Oberschenkel: im Einbeinstand das Knie bis ca. 60° beugen','Waden: auf einer Stufe auf die Ballen hochdrücken und die Ferse langsam wieder senken'],
+    why:'Laufen trainiert vor allem den Unterkörper und tut wenig für den Oberkörper. Regelmäßige Kräftigung stärkt auch die Muskeln, die beim Laufen wenig beansprucht werden, und stabilisiert den Rumpf. Am besten an Pausentagen oder vor leichtem Training – nicht vor oder nach harten Einheiten (schneller Dauerlauf im Tempo „schnell“, Intervalle mit festen Abschnitten) und nicht vor einem Wettkampf. Lege es deshalb auf einen Tag ohne harte Laufeinheit. Ausführliche Übungsvorschläge findest du unter „Wissen“ → „Krafttraining“.',
+    feel:'', src:'Aderhold, 2018, S. 154–157; Beck, 2024, S. 162' }
+};
+
+/* Vereinfachte Laufkategorien (Wunsch der Kursleitung). Zuordnung zur Literatur:
+   Beck (2024, S. 110) unterscheidet sehr langsamen (60–70 %), langsamen (70–75 %), ruhigen bis lockeren (75–80 %) und schnellen Dauerlauf (85–89 % HFmax) sowie Intervallläufe;
+   Aderhold (2018, S. 89) unterscheidet RDL, EDL, IDL, TDL, Fahrtspiel und Wiederholungsläufe. */
+const CATS = {
+  G: { name:'Gemütlicher Dauerlauf', short:'gemütlich', icon:'🟢', hf:'ca. 60–75 % HFmax',
+    what:'Ruhig und entspannt laufen – so, dass du dich dabei noch gut unterhalten kannst. Dazu gehört auch der lange Lauf der Woche: Hier zählt die Dauer, nicht das Tempo.',
+    why:'Baut die Grundlagenausdauer auf, gewöhnt Muskeln, Sehnen und Bänder an längere Belastung und hilft bei der Erholung. Das ist die Basis für den Halbmarathon.',
+    feel:'Du kannst während des Laufens noch gut sprechen.',
+    book:'Aderhold: regenerativer Dauerlauf (RDL), extensiver Dauerlauf (EDL), ruhiger langer Lauf (R-EDL, E-RDL), EDL mit Steigerungen (EDL+ST). Beck: „sehr langsamer“ und „langsamer Dauerlauf“.',
+    src:'Aderhold, 2018, S. 89, 138 f.; Beck, 2024, S. 110, 162' },
+  S: { name:'Schneller Dauerlauf', short:'schnell', icon:'🟠', hf:'ca. 75–89 % HFmax (je nach Einheit)',
+    what:'Ein Dauerlauf am Stück in einem zügigen bis schnellen Tempo. Wie schnell genau, steht bei jeder Einheit: mal zügig (du kannst gerade noch sprechen), mal schnell (maximales, aber gleichmäßiges Tempo über die ganze Strecke).',
+    why:'Du lernst, ein höheres Tempo länger zu halten – das brauchst du für deine Halbmarathon-Zielzeit.',
+    feel:'Zügig: gerade noch sprechen. Schnell: so, dass du die ganze Strecke mit maximaler, aber konstanter Geschwindigkeit schaffst.',
+    book:'Aderhold: intensiver Dauerlauf (IDL, 75–80 %), Tempodauerlauf (TDL, 83–89 %) und Mischformen (I-TDL, TDL/EDL). Beck: „ruhiger bis lockerer“ und „schneller Dauerlauf“.',
+    src:'Aderhold, 2018, S. 89; Beck, 2024, S. 110, 162' },
+  I: { name:'Intervalllauf', short:'Intervalle', icon:'🔴', hf:'schnelle Abschnitte ca. 83–89 % HFmax, dazwischen locker',
+    what:'Schnelle Abschnitte wechseln sich mit lockeren Trabpausen ab. Entweder fest vorgegeben (z. B. 2 × 3 km schnell) oder spielerisch als Fahrtspiel, bei dem du das Tempo nach Lust und Gelände wechselst. Davor und danach je etwa 10 Minuten locker ein- und auslaufen.',
+    why:'Macht dich schneller und tempohärter; die Abschnitte im Renntempo geben dir ein sicheres Gefühl für den Renntag.',
+    feel:'Schnelle Abschnitte: schneller Dauerlauf oder Renntempo. Pausen: so locker, dass du wieder gut sprechen kannst.',
+    book:'Aderhold: Wiederholungsläufe (WHL), Wiederholungsläufe im Wettkampftempo (WHL/WKT) und Fahrtspiel (FS). Beck: Intervallläufe bzw. Intervalltraining.',
+    src:'Aderhold, 2018, S. 89, 469 ff.; Beck, 2024, S. 110, 162' }
+};
+const CAT_OF = { 'RDL':'G','R-EDL':'G','E-RDL':'G','EDL':'G','EDL+ST':'G','EDL/WK':'G', 'IDL':'S','I-TDL':'S','TDL':'S','TDL/EDL':'S', 'FS':'I','WHL':'I','WHL/WKT':'I' };
+
+/* Rubrik Krafttraining – Übungsvorschläge (Aderhold, 2018, S. 153–157; Beck, 2024, S. 88–91) */
+const STRENGTH = {
+  basics: [
+    { t:'Wofür?', d:'Laufen trainiert vor allem die Beine, für den Oberkörper tut es wenig. Kräftigungsübungen stabilisieren den Rumpf, gleichen Ungleichgewichte zwischen Muskelgruppen aus und beugen so Verletzungen vor. Ein stabiler Rumpf verbessert außerdem den Laufstil.', src:'Aderhold, 2018, S. 153 f.' },
+    { t:'Wie oft und wie lange?', d:'In der Wettkampfsaison ein- bis zweimal pro Woche etwa 30–45 Minuten. Pro Übung 2–3 Serien mit je 10 Wiederholungen, langsam und kontrolliert ausgeführt.', src:'Aderhold, 2018, S. 154' },
+    { t:'Wann?', d:'An Pausentagen, vor leichtem Training (gemütlicher Dauerlauf, zügiger Dauerlauf oder Fahrtspiel) oder nach Lauf-ABC. Nicht vor oder nach harten Einheiten (schneller Dauerlauf im Tempo „schnell“, Intervalle mit festen Abschnitten), nicht vor einem Wettkampf und nicht im verletzten Bereich.', src:'Aderhold, 2018, S. 154' },
+    { t:'Was brauche ich?', d:'Kein Fitnessstudio: Übungen mit dem eigenen Körpergewicht reichen, wer mag, nimmt ein Gymnastikband dazu.', src:'Aderhold, 2018, S. 154' }
+  ],
+  program: [
+    { n:1, title:'Rumpf', icon:'plank', how:'Unterarmstütz: Unterarme parallel aufstellen, Rumpf und Beine gestreckt. Die Füße abwechselnd etwa eine Schuhlänge anheben.' },
+    { n:2, title:'Bauch', icon:'crunch', how:'Rückenlage, Knie angewinkelt, Fersen am Boden, Arme vor der Brust gekreuzt. Den Oberkörper abheben (Crunches).' },
+    { n:3, title:'Rücken', icon:'kneel', how:'Kniestand, Arme vor der Brust gekreuzt. Den Rumpf mit gestrecktem Rücken aufrichten.' },
+    { n:4, title:'Seitliche Rumpfmuskeln', icon:'side', how:'Seitlage, auf den Ellbogen gestützt, Füße parallel. Das Becken seitlich anheben, bis der Rumpf gestreckt ist.' },
+    { n:5, title:'Äußere Hüfte', icon:'abduct', how:'Seitlage, das untere Bein angewinkelt. Das obere, gestreckte Bein abspreizen.' },
+    { n:6, title:'Hintere Oberschenkel & Hüfte', icon:'bridge', how:'Rückenlage, ein Fuß aufgestellt, das andere Bein gestreckt. Das Becken nach oben drücken, bis der Rumpf ganz gestreckt ist.' },
+    { n:7, title:'Arme, Brust & Schultern', icon:'push', how:'Liegestütz aus dem Vierfüßlerstand, Hände parallel: die Ellbogen beugen. Schwerer: klassischer Liegestütz mit gestreckten Beinen.' },
+    { n:8, title:'Innere Hüfte', icon:'adduct', how:'Im Sitzen die Beine grätschen und einen Unterarm als „Klemme“ zwischen die Knie legen. Die Knie so fest wie möglich gegen den Arm drücken und halten.' },
+    { n:9, title:'Vorderer Oberschenkel', icon:'squat', how:'Auf einem Bein stehen, das andere leicht anheben, mit einer Hand abstützen. Das Standbein bis etwa 60° beugen.' },
+    { n:10, title:'Waden', icon:'calf', how:'Mit dem Fußballen auf eine Stufe stellen, das andere Bein leicht anheben, mit einer Hand abstützen. Die Ferse bis in den Zehenstand heben und langsam wieder senken.' }
+  ],
+  programSrc:'Aderhold, 2018, S. 155–157 (Abb. 5.11, nach Spring et al., 1990, und Boeckh-Behrens, 2008)',
+  abcIntro:'Die Übungen des Lauf-ABC schulen die Koordination und kräftigen gleichzeitig die Muskeln, die du beim Laufen brauchst. Am besten nach kurzem Einlaufen vor dem eigentlichen Training, nicht danach, weil die Muskeln dann zu müde sind. Etwa zweimal pro Woche an leichteren Tagen; es muss nicht immer das ganze Programm sein.',
+  abcIntroSrc:'Beck, 2024, S. 88; Aderhold, 2018, S. 157',
+  abc: [
+    { title:'Einbeinige Hocke', how:'Aus der Hocke abwechselnd ein Bein strecken und etwa 5 Sekunden halten.', dose:'5 × pro Bein' },
+    { title:'Schwingendes Bein', how:'Auf einem Bein stehen, das andere im Halbkreis vor und zurück schwingen.', dose:'5 × pro Bein' },
+    { title:'Zehen/Fersen belasten', how:'Im Stand das Gewicht abwechselnd auf Fersen und Zehen verlagern.', dose:'10 ×' },
+    { title:'Hopserlauf', how:'Aus dem langsamen Lauf abwechselnd mit einem Bein abspringen, dabei einen Arm ganz nach oben strecken.', dose:'2 × 20 m' },
+    { title:'Seitwärtslauf', how:'Seitwärts laufen und die Beine nach außen spreizen; die Ferse führt die Bewegung.', dose:'20 m' },
+    { title:'Kniehebelauf (Skipping)', how:'Aus dem Lauf die Knie in schneller Folge bis zur Waagerechten heben, das Standbein durchstrecken, die Arme helfen mit.', dose:'2 × 20 m' },
+    { title:'Anfersen', how:'Aus dem lockeren Lauf die Fersen abwechselnd zum Gesäß führen.', dose:'20 m' },
+    { title:'Rückwärtslauf', how:'Locker und gleichmäßig rückwärts laufen.', dose:'20 m' },
+    { title:'Strecksprung', how:'Aus dem lockeren Lauf mit kräftigem Abdruck weit nach vorne springen, Körper gestreckt, Arme schwingen mit.', dose:'5 × pro Seite' },
+    { title:'Hochsprung', how:'Aus dem Lauf kräftig abspringen und so hoch wie möglich springen, die Arme unterstützen.', dose:'5 × pro Bein' },
+    { title:'Überkreuzschritt', how:'Im Seitwärtslauf das Knie auf 90° anwinkeln und im Halbkreis nach vorne führen, das andere Bein bleibt gestreckt.', dose:'20 m pro Seite' },
+    { title:'Überkreuzlauf', how:'Im Seitwärtslauf die Füße abwechselnd vor- und hintereinander überkreuzen; Oberkörper und Becken kontrollieren die Bewegung.', dose:'20 m pro Seite' }
+  ],
+  abcSrc:'Beck, 2024, S. 88–91'
 };
 
 /* Literatur – APA 7 */
 const LITERATURE = [
   { key: 'Aderhold, 2018', apa: 'Aderhold, L. (2018). <i>Laufen! Vom Einsteiger bis zum Ultraläufer</i> (2. Aufl.; mit Beiträgen von S. Weigelt). Elsevier.',
-    note: 'Trainingspläne, Tempoberechnung, Herzfrequenzbereiche, Trainingsausfall, Ausrüstung.' },
+    note: 'Trainingspläne, Tempoberechnung, Herzfrequenzbereiche, Trainingsausfall, Ausrüstung, Kräftigungsprogramm.' },
   { key: 'Beck, 2024', apa: 'Beck, H. (2024). <i>Das große Buch vom Marathon: Lauftraining für Marathon, Halbmarathon und 10 km</i> (13., durchges. Aufl.). Copress.',
-    note: 'Trainingsformen und Belastungsgefühl, Zielzeitprognose, Tapering, Renneinteilung, Ernährung, Rekorde.' },
+    note: 'Trainingsformen und Belastungsgefühl, Zielzeitprognose, Tapering, Renneinteilung, Ernährung, Rekorde, Lauf-ABC.' },
   { key: 'Galloway & Galloway, 2019', apa: 'Galloway, J., & Galloway, B. (2019). <i>Half marathon: A complete training guide for women</i> (2nd ed.). Meyer &amp; Meyer Sport.',
     note: 'Magic Mile, Tempoanpassung bei Wärme, Ruhetage, Crosstraining, Renneinteilung.' }
 ];
@@ -453,7 +538,7 @@ const FACTS = [
     de:'Lauflegende Emil Zátopek ließ sich beim Marathon teilweise Bier statt Wasser reichen. Ganz abwegig ist das nicht: Eine Studie der TU München bestätigte, dass alkoholfreies Bier als Elektrolytgetränk für Ausdauersportler gut geeignet ist.',
     en:'Running legend Emil Zátopek sometimes took beer instead of water during a marathon.', src:'Beck, 2024' },
   { id:'gebre', cat:'rekorde', fun:true, title:'Gebrselassies Trick',
-    de:'Haile Gebrselassie lief 2008 in Berlin Marathon-Weltrekord (2:03:59 h). Sein Prinzip: das Renntempo gezielt trainieren – erst auf kurzen, dann auf immer längeren Strecken. Genau das machen auch die Wiederholungsläufe im Renntempo in deinem Plan.',
+    de:'Haile Gebrselassie lief 2008 in Berlin Marathon-Weltrekord (2:03:59 h). Sein Prinzip: das Renntempo gezielt trainieren – erst auf kurzen, dann auf immer längeren Strecken. Genau das machen auch die Intervalle im Renntempo in deinem Plan.',
     en:'Haile Gebrselassie set a marathon world record in Berlin in 2008 (2:03:59) by training race pace over ever longer distances.', src:'Aderhold, 2018, S. 98 f.' },
   { id:'cierp', cat:'rekorde', fun:true, title:'Zweimal Olympiagold',
     de:'Waldemar Cierpinski gewann 1976 und 1980 olympisches Gold im Marathon. Sein wichtigstes Trainingskriterium war die Zielgeschwindigkeit: Die Dauerläufe näherten sich im Lauf der Vorbereitung immer mehr dem geplanten Renntempo an.',
@@ -559,7 +644,7 @@ const MOTIVATION = [
 ];
 
 const RACE_TIPS = [
-  { t:'Tapering: Im Halbmarathon-Plan ist die letzte Woche stark reduziert – Wiederholungsläufe im Wettkampftempo, dazwischen Pausen, am Vortag Ruhe.', en:'Tapering: the last week of the half-marathon plan is strongly reduced – repeats at race pace, rest days in between, rest the day before.', src:'Aderhold, 2018, S. 480 f.' },
+  { t:'Tapering: Im Halbmarathon-Plan ist die letzte Woche stark reduziert – Intervalle im Renntempo, dazwischen Pausen, am Vortag Ruhe.', en:'Tapering: the last week of the half-marathon plan is strongly reduced – repeats at race pace, rest days in between, rest the day before.', src:'Aderhold, 2018, S. 480 f.' },
   { t:'Gleichmäßig laufen: Zielzeit ermitteln und das Kilometertempo konstant halten.', en:'Run evenly: determine your target time and keep your per-km pace constant.', src:'Beck, 2024' },
   { t:'51/49-Regel: Erste Hälfte etwas ruhiger, zweite Hälfte etwas schneller – und dann überholst du andere.', en:'51/49 rule: first half a little easier, second half a little faster – and then you overtake others.', src:'Beck, 2024' },
   { t:'Galloway: Die ersten 9–10 Meilen (ca. 14–16 km) im geplanten Tempo laufen – schneller werden erst danach, wenn du dich gut fühlst.', en:'Galloway: run the first 9–10 miles (about 14–16 km) at your planned pace – speed up only afterwards if you feel good.', src:'Galloway & Galloway, 2019, S. 49 ff.' },
@@ -591,13 +676,20 @@ function parseSession(tok){
   return { code, arg, km };
 }
 function sessionLabel(s){
+  const km = s.km!=null ? String(s.km).replace('.',',') : '';
   if (s.code==='HM') return 'Halbmarathon (21,1 km)';
   if (s.code==='KT') return 'Krafttraining (ca. 30–45 Min.)';
   if (s.code==='RW') { const [a,b]=s.arg.split('x'); return a+' × '+b+' min laufen, je 1 min gehen'; }
   if (s.code==='LAUF') return s.arg+' min am Stück laufen';
-  if (s.code.startsWith('WHL')) { const [a,b]=s.arg.split('x'); return a+' × '+b+' km '+s.code; }
-  if (s.code==='EDL/WK') return s.arg+' km EDL oder 10-km-Wettkampf';
-  return s.arg+' km '+s.code;
+  if (s.code==='WHL' || s.code==='WHL/WKT') { const [a,b]=s.arg.split('x'); return 'Intervalllauf: '+a+' × '+b+' km '+(s.code==='WHL'?'schnell':'im Renntempo'); }
+  if (s.code==='FS') return km+' km Intervalllauf (Fahrtspiel)';
+  if (s.code==='EDL/WK') return km+' km gemütlicher Dauerlauf oder 10-km-Wettkampf';
+  if (s.code==='EDL+ST') return km+' km gemütlicher Dauerlauf + Steigerungen';
+  if (s.code==='TDL/EDL') return km+' km schneller Dauerlauf (bei Müdigkeit gemütlich)';
+  const c = CATS[CAT_OF[s.code]];
+  if (c && CAT_OF[s.code]==='G' && s.role==='L') return km+' km langer Lauf (gemütlich)';
+  const sub = { 'IDL':' (zügig)', 'TDL':' (schnell)', 'I-TDL':' (zügig bis schnell)' }[s.code] || '';
+  return c ? km+' km '+c.name.replace('Gemütlicher','gemütlicher').replace('Schneller','schneller')+sub : s.arg+' km '+s.code;
 }
 
 /* Kanonische Blockfolge für ein Niveau + längsten Lauf */
@@ -650,31 +742,76 @@ function fitWeeks(canon, from, n){
   return { list: pre.concat(hmIdx), notes };
 }
 
-/* Vorgabe der Kursleitung: höchstens 3 Läufe pro Woche, in der Regel max. 25 km, in den Wochen mit dem längsten Lauf max. 30 km.
-   Es bleiben die zentralen Einheiten Tempo-/Dauerlauf (Mo), Wiederholungsläufe/Fahrtspiel (Mi) und langer Lauf (Sa) –
-   dieser Rahmen muss laut Aderhold (2018, S. 138 f.) erhalten bleiben. Gekürzt wird zuerst der Montagslauf, dann das Fahrtspiel, zuletzt der lange Lauf.
-   Dazu einmal pro Woche Krafttraining am Freitag (Pausentag vor lockerem Training; Aderhold, 2018, S. 154 f.). */
-const RUN_DAYS = [0,2,5,6], WEEK_KM = 25, PEAK_KM = 30, MIN_RUN = 5;
-function makeWeek(monday, c, flag){
-  const P = PLANS[c.b]; const row = P.weeks[c.i];
+/* Trainingstage & Umfang
+   – Vorgabe der Kursleitung: höchstens 3 Läufe pro Woche (wählbar: 2 oder 3), Ziel in der Regel max. 25 km, in den Wochen mit dem längsten Lauf max. 30 km.
+   – Bausteine aus Aderholds Plänen: Tempo-/Dauerlauf (Buch: Mo), Wiederholungsläufe/Fahrtspiel (Buch: Mi), langer Lauf (Buch: Sa);
+     diese zentralen Einheiten müssen erhalten bleiben (Aderhold, 2018, S. 138 f.). Bei 2 Lauftagen wechseln sich die beiden ersten Bausteine ab (ANNAHME DER APP).
+   – Langsam aufbauen, den Kilometerumfang bedächtig steigern, lange Läufe kontinuierlich verlängern (Aderhold, 2018, S. 102);
+     Entlastungswochen im Rhythmus 3:1, in denen der Umfang sinkt (Aderhold, 2018, S. 101).
+     Die Umsetzung (Start beim aktuellen Wochenumfang, gleichmäßige Steigerung bis zum Halbmarathon-Block, Entlastungswoche ca. 20 % weniger) ist eine ANNAHME DER APP.
+   – Krafttraining einmal pro Woche am gewählten Tag (Aderhold, 2018, S. 154 f.). */
+const WEEK_KM = 25, PEAK_KM = 30, MIN_RUN = 5, START_MAX = 20;
+const DEFAULT_DAYS = { n:3, A:0, B:2, L:5, K:4 };
+function daysOf(p){ return Object.assign({}, DEFAULT_DAYS, (p&&p.days)||{}); }
+function runDays(d){ return (d.n===2 ? [d.A, d.L] : [d.A, d.B, d.L]).slice().sort((x,y)=>x-y); }
+/* Prüft die Wochentage; Fehler blockieren, Hinweise nur anzeigen. */
+function checkDays(d){
+  const run = d.n===2 ? [d.A, d.L] : [d.A, d.B, d.L];
+  if (new Set(run).size !== run.length) return { err:'Bitte wähle für jeden Lauf einen anderen Tag.' };
+  if (d.K!=null && run.includes(d.K)) return { err:'Lege das Krafttraining auf einen Tag ohne Lauf.' };
+  const adj = (x,y) => Math.abs(x-y)===1 || Math.abs(x-y)===6, warn=[];
+  if (d.n===3 && adj(d.A,d.B)) warn.push('Schneller Dauerlauf und Intervalllauf liegen direkt hintereinander. Nach einer intensiven Einheit sollte eine gemütliche Einheit oder ein Ruhetag folgen (Aderhold, 2018, S. 105).');
+  if (d.K!=null && (adj(d.K,d.A) || (d.n===3 && adj(d.K,d.B)))) warn.push('Das Krafttraining liegt direkt neben einer fordernden Laufeinheit. Besser an einem Pausentag vor einem lockeren Lauf (Aderhold, 2018, S. 154 f.).');
+  return { warn };
+}
+function longMin(p){ return Math.max(6, Math.round((p.longest||8)*0.7)); } // ANNAHME DER APP: langer Lauf anfangs nicht unter ca. 70 % deines bisher längsten Laufs
+function runFloor(p, firstLong){ const d=daysOf(p); return (d.n===2?MIN_RUN:2*MIN_RUN) + Math.min(firstLong||10, longMin(p)); }
+/* Wochenumfang-Grenze für Woche rw (0 = erste Trainingswoche) */
+function weekCap(p, rw, recovery){
+  const R = Math.max(4, p.rampR||16);
+  const s0 = p.startKm || 15;
+  if (rw >= R) return recovery ? Math.round(WEEK_KM*0.8) : WEEK_KM;
+  let cap = s0 + (WEEK_KM - s0) * (recovery ? Math.max(0,rw-1) : rw) / R;
+  if (recovery) cap *= 0.8;
+  return Math.round(cap*2)/2;
+}
+function makeWeek(monday, c, flag, p, rw){
+  const P = PLANS[c.b]; const row = P.weeks[c.i]; const d = daysOf(p); rw = rw||0;
+  const mk = (tok, day, role) => { const s=parseSession(tok); return s ? Object.assign(s,{day, role, date:addDays(monday,day), done:false, skipped:false, kmDone:null}) : null; };
   let sessions=[];
-  row.forEach((tok,d)=>{ const s=parseSession(tok); if(s && RUN_DAYS.includes(d)) sessions.push(Object.assign(s,{day:d, date:addDays(monday,d), done:false, skipped:false, kmDone:null})); });
-  const race = sessions.some(s=>s.code==='HM');
-  if (!race){
+  const race = row[6]==='HM';
+  if (race){
+    const need = d.n===2 ? 1 : 2; const days = runDays(d).filter(x=>x<=3);
+    [0,2,1,3].forEach(x=>{ if (days.length<need && !days.includes(x)) days.push(x); }); days.sort((x,y)=>x-y);
+    [row[0], row[2]].slice(0,need).forEach((tok,k)=>{ const s=mk(tok, days[k], k?'B':'A'); if(s) sessions.push(s); });
+    sessions.push(mk('HM', 6, 'R'));
+  } else {
+    const L = mk(row[5], d.L, 'L');
+    if (d.n===3){ sessions.push(mk(row[0], d.A, 'A'), mk(row[2], d.B, 'B'), L); }
+    else { const useB = c.i%2===0; sessions.push(mk(useB?row[2]:row[0], d.A, useB?'B':'A'), L); }
+    sessions = sessions.filter(Boolean);
     const longs = P.weeks.map(r=>{ const x=parseSession(r[5]); return x&&x.km ? x.km : 0; });
-    const peak = !c.pre && longs[c.i] > 0 && longs[c.i] === Math.max(...longs);
-    const limit = peak ? PEAK_KM : WEEK_KM;
+    const recovery = c.i%4===3;
+    const peak = !c.pre && longs[c.i] > 0 && longs[c.i] === Math.max(...longs) && rw >= Math.max(4, p.rampR||16);
+    const limit = peak ? PEAK_KM : weekCap(p, rw, recovery);
     const tot = () => sessions.reduce((a,x)=>a+(x.km||0),0);
-    const cut = (x, min) => { if (!x || !x.km || tot()<=limit) return; const r = Math.min(x.km-min, tot()-limit); if (r<=0) return; x.orig = x.orig||x.km; x.km -= r; x.arg = String(x.km); };
-    cut(sessions.find(x=>x.day===0 && !x.code.startsWith('WHL')), MIN_RUN);
-    cut(sessions.find(x=>x.day===2 && x.code==='FS'), MIN_RUN);
-    cut(sessions.find(x=>x.day===5), 8);
-    sessions.push({ code:'KT', arg:'', km:null, day:4, date:addDays(monday,4), done:false, skipped:false, kmDone:null, wk: (row[5]||'').startsWith('EDL/WK') });
+    const cut = (x, min) => { if (!x || !x.km || tot()<=limit) return; const r = Math.min(x.km-min, tot()-limit); if (r<=0) return; x.orig = x.orig||x.km; x.km = Math.round((x.km-r)*2)/2; const sfx = x.arg.includes('/') ? x.arg.slice(x.arg.indexOf('/')) : ''; x.arg = String(x.km).replace('.',',')+sfx; };
+    cut(sessions.find(x=>x.role==='A' && !x.code.startsWith('WHL')), MIN_RUN);
+    cut(sessions.find(x=>x.role==='B' && !x.code.startsWith('WHL')), MIN_RUN);
+    { const Ls = sessions.find(x=>x.role==='L'); cut(Ls, Ls && Ls.code==='EDL/WK' ? Math.min(Ls.km,10) : longMin(p)); }
+    if (d.K!=null) sessions.push({ code:'KT', arg:'', km:null, role:'K', day:d.K, date:addDays(monday,d.K), done:false, skipped:false, kmDone:null, wk: (row[5]||'').startsWith('EDL/WK') && (d.K+1)%7===d.L });
     sessions.sort((a,b)=>a.day-b.day);
   }
-  const rest = [0,1,2,3,4,5,6].map(d=> sessions.some(x=>x.day===d) ? 'x' : '-');
-  return { monday, b:c.b, i:c.i, title:P.title, src:P.src+' · angepasst: max. 3 Läufe pro Woche', rest, sessions, flag: flag||null };
+  const rest = [0,1,2,3,4,5,6].map(x=> sessions.some(s=>s.day===x) ? 'x' : '-');
+  return { monday, b:c.b, i:c.i, rw, title:P.title, src:P.src+' · angepasst an deine Trainingstage und deinen Wochenumfang', rest, sessions, flag: flag||null };
 }
+/* Startumfang und Steigerungsdauer festlegen (bei Planerstellung) */
+function setupRamp(p, weeksTotal, firstLong){
+  const est = p.weekKm || Math.round((p.longest||8)*1.5);
+  p.startKm = Math.min(Math.max(est, runFloor(p, firstLong)), Math.max(START_MAX, runFloor(p, firstLong)), WEEK_KM);
+  p.rampR = Math.max(4, weeksTotal - 8);
+}
+function rwSince(p, monday){ return Math.max(0, daysBetween(mondayOf(p.start), monday)/7); }
 
 /* kompletter Neuaufbau */
 function buildPlan(state){
@@ -682,7 +819,9 @@ function buildPlan(state){
   const n = daysBetween(start, raceMon)/7 + 1;
   state.canon = canonFor(p);
   const r = fitWeeks(state.canon, 0, n);
-  state.weeks = r.list.map((k,j)=>Object.assign(makeWeek(addDays(start,7*j), state.canon[k]), {ci:k}));
+  const fl = r.list.length ? parseSession(PLANS[state.canon[r.list[0]].b].weeks[state.canon[r.list[0]].i][5]) : null;
+  setupRamp(p, n, fl && fl.km);
+  state.weeks = r.list.map((k,j)=>Object.assign(makeWeek(addDays(start,7*j), state.canon[k], null, p, j), {ci:k}));
   state.notices = r.notes;
   // HM-Tag auf echtes Renndatum legen (falls Rennen kein Sonntag)
   const last = state.weeks[state.weeks.length-1];
@@ -715,7 +854,9 @@ function applyPause(state, from, to, reason){
   // Einheiten in der Rückkehrwoche vor dem Rückkehrtag als ausgefallen markieren
   const r = fitWeeks(state.canon, resume, remaining);
   const re = 2*pausedWeeks;
-  const neu = r.list.map((k,j)=>Object.assign(makeWeek(addDays(backMon,7*j), state.canon[k], j<re?'reentry':null), {ci:k}));
+  const baseRw = wIdx>=0 && state.weeks[wIdx].rw!=null ? state.weeks[wIdx].rw : rwSince(state.profile, mondayOf(from));
+  const rw0 = Math.max(0, baseRw - pausedWeeks);
+  const neu = r.list.map((k,j)=>Object.assign(makeWeek(addDays(backMon,7*j), state.canon[k], j<re?'reentry':null, state.profile, rw0+j), {ci:k}));
   neu.forEach(w=>w.sessions.forEach(s=>{ if(s.date<back) s.skipped=true; }));
   const last = neu[neu.length-1]; if (last) last.sessions.forEach(s=>{ if(s.code==='HM') s.date=state.profile.race; });
   state.weeks = keep.concat(neu); state.game.thresholds = computeThresholds(state);
@@ -733,14 +874,17 @@ function replanFromNow(state){
   const raceMon = mondayOf(state.profile.race);
   const n = daysBetween(cur, raceMon)/7 + 1;
   const r = fitWeeks(state.canon, 0, n);
-  const neu = r.list.map((k,j)=>Object.assign(makeWeek(addDays(cur,7*j), state.canon[k]), {ci:k}));
+  const p = state.profile, old = state.weeks.find(w=>w.monday===cur);
+  if (!p.startKm || !p.rampR){ const fl = r.list.length ? parseSession(PLANS[state.canon[r.list[0]].b].weeks[state.canon[r.list[0]].i][5]) : null; setupRamp(p, daysBetween(mondayOf(p.start), raceMon)/7 + 1, fl && fl.km); }
+  const rw0 = old && old.rw!=null ? old.rw : rwSince(p, cur);
+  const neu = r.list.map((k,j)=>Object.assign(makeWeek(addDays(cur,7*j), state.canon[k], null, p, rw0+j), {ci:k}));
   // bereits erledigte Einheiten der laufenden Woche übernehmen
-  const old = state.weeks.find(w=>w.monday===cur);
   if (old && neu[0]) old.sessions.forEach(o=>{ if (o.done){ const t = neu[0].sessions.find(x=>x.date===o.date); if (t) Object.assign(t,{done:true,kmDone:o.kmDone,time:o.time,hr:o.hr,hm:o.hm,km:o.kmDone!=null?t.km:o.km}); else state.extra.push({date:o.date, km:o.kmDone!=null?o.kmDone:(o.km||0), time:o.time, hr:o.hr, hm:o.hm}); } });
   const last = neu[neu.length-1]; if (last) last.sessions.forEach(s=>{ if(s.code==='HM') s.date=state.profile.race; });
   state.weeks = keep.concat(neu); state.notices = r.notes; state.game.thresholds = computeThresholds(state);
 }
 function changeGoal(state, goal){ state.profile.goal = goal || null; replanFromNow(state); }
+function changeDays(state, days){ state.profile.days = days; replanFromNow(state); }
 
 /* Tempi nach Aderhold (2018, S. 89; nach Wenzel, 1991) */
 function paces(tenKsec){
@@ -1211,7 +1355,7 @@ const Game = (() => {
 
     for (const e of lv.ents){
       if (e.t==='coin' && !e.got && hit(p,e)){ e.got=true; G.coins++; if (G.cfg.mode==='level' || G.cfg.collect==='🥨') G.ammo++; Music.sfx('coin'); puff(e.x+6,e.y+6,'#ffd23f',5); }
-      else if (e.t==='item' && !e.got && hit(p,e)){ e.got=true; G.gotItem=true; Music.sfx('item'); puff(e.x+8,e.y+8,'#fff',20); toast(GEAR[e.gear].icon+' '+GEAR[e.gear][S.game.lang]+'!'); }
+      else if (e.t==='item' && !e.got && hit(p,e)){ e.got=true; G.gotItem=true; G.worn=Object.assign({},G.worn||{},{[GEAR[e.gear].id]:true}); Music.sfx('item'); puff(e.x+8,e.y+8,'#fff',20); toast(GEAR[e.gear].icon+' '+GEAR[e.gear][S.game.lang]+'!'); }
       else if (e.t==='check' && !e.on && p.x > e.x){ e.on=true; G.spawn={ x:e.x, y:e.y-10 }; }
       else if (e.t==='goal' && p.x+p.w > e.x+16){ endGame(true); return; }
       else if (e.t==='enemy' && e.alive){
@@ -1324,33 +1468,47 @@ const Game = (() => {
   }
   function koPig(e){ ctx.save(); ctx.translate(e.x+7.5, e.y+7); ctx.rotate(e.spin); ctx.translate(-(e.x+7.5), -(e.y+7)); const al=e.alive; excuse(Object.assign({}, e, { txt:'', vx:-1 })); ctx.restore();
     if (e.ko>30){ ctx.fillStyle='#fff'; ctx.strokeStyle='#7b3f8c'; ctx.lineWidth=2.5; ctx.font='bold 10px system-ui'; ctx.textAlign='center'; ctx.strokeText('K.O.!', e.x+8, e.y-12); ctx.fillText('K.O.!', e.x+8, e.y-12); } }
-  function drawPlayer(p){
+  function drawPlayer(p){ // Outfit wächst mit der gesammelten Ausrüstung: anfangs Tunika + Sandalen, am Ende komplette Läuferausrüstung
     if (p.inv>0 && Math.floor(p.inv/4)%2) return;
-    const gear = S.game.gear, x=p.x, y=p.y, f=p.face, a=p.on?Math.sin(p.anim)*4:2, O='#3b2216';
+    const gear = Object.assign({}, S.game.gear, G.worn||{}), x=p.x, y=p.y, f=p.face, a=p.on?Math.sin(p.anim)*4:2, O='#3b2216', SK='#e0a37e';
     ctx.save(); ctx.translate(x+6, y); ctx.scale(f,1); ctx.lineJoin='round'; ctx.lineCap='round';
     if (G.shield>0){ ctx.strokeStyle='rgba(120,200,255,.85)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(0,9,13,0,7); ctx.stroke(); }
     if (G.turbo>0){ ctx.fillStyle='rgba(255,210,63,.7)'; ctx.fillRect(-16,6,6,1.5); ctx.fillRect(-18,10,8,1.5); }
     // Umhang (weinrot, weht)
     const wave = Math.sin(G.t/5)*1.5 + Math.min(4, Math.abs(p.vx)*1.5);
     ctx.fillStyle='#8e2433'; ctx.strokeStyle='#4a0f1a'; ctx.lineWidth=0.8; ctx.beginPath(); ctx.moveTo(-2,5); ctx.quadraticCurveTo(-8-wave,8,-9-wave,13+Math.sin(G.t/4)); ctx.lineTo(-3,12); ctx.closePath(); ctx.fill(); ctx.stroke();
-    // Beine + Sandalen
-    ctx.strokeStyle='#e0a37e'; ctx.lineWidth=2.4; ctx.beginPath(); ctx.moveTo(0,12); ctx.lineTo(a*0.8, 17); ctx.moveTo(0,12); ctx.lineTo(-a*0.8,17); ctx.stroke();
-    ctx.fillStyle = gear.shoes ? '#ff6a3c' : '#7a4a24'; [a*0.8,-a*0.8].forEach(fx=>{ ctx.fillRect(fx-2,16.6,5,2.4); });
-    if (!gear.shoes){ ctx.strokeStyle='#7a4a24'; ctx.lineWidth=0.8; [a*0.8,-a*0.8].forEach(fx=>{ ctx.beginPath(); ctx.moveTo(fx-1,15); ctx.lineTo(fx+2,16.6); ctx.stroke(); }); }
-    if (gear.socks){ ctx.fillStyle='#fff'; ctx.fillRect(a*0.8-1,15.2,2,1.3); ctx.fillRect(-a*0.8-1,15.2,2,1.3); }
-    // Tunika (creme) mit Gürtel
-    ctx.fillStyle = gear.shirt ? '#e9f3f6' : '#f1e6cf'; ctx.strokeStyle=O; ctx.lineWidth=0.8; ctx.beginPath(); ctx.moveTo(-4,5); ctx.lineTo(4,5); ctx.lineTo(5.5,13); ctx.lineTo(-5.5,13); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.fillStyle='#6b3a1e'; ctx.fillRect(-4.6,9,9.2,1.4); ctx.fillStyle='#d9a640'; ctx.fillRect(-0.6,8.8,1.6,1.8);
-    ctx.fillStyle='#8e2433'; ctx.beginPath(); ctx.moveTo(-4,5); ctx.lineTo(3,5); ctx.lineTo(-1,8); ctx.fill(); ctx.fillStyle='#d9a640'; ctx.beginPath(); ctx.arc(1.5,5.6,1,0,7); ctx.fill();
-    if (gear.bib && G.cfg.mode==='boss'){ ctx.fillStyle='#fff'; ctx.fillRect(-2.5,10.2,5,2.6); ctx.fillStyle='#8e2433'; ctx.fillRect(-1.5,11,3,0.8); }
-    ctx.strokeStyle='#e0a37e'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(1,7); ctx.lineTo(-a*0.6+3,10.5); ctx.stroke();
-    if (gear.watch){ ctx.fillStyle='#222'; ctx.fillRect(-a*0.6+2,9.4,2,2); }
+    // Trinkflasche auf dem Rücken (hinter dem Körper)
+    if (gear.bottle){ ctx.fillStyle='#3a8fd6'; ctx.strokeStyle='#1d4f7a'; ctx.lineWidth=0.6; ctx.fillRect(-6.2,5.6,2.6,5); ctx.strokeRect(-6.2,5.6,2.6,5); ctx.fillStyle='#e8eef3'; ctx.fillRect(-5.8,4.6,1.8,1.1); }
+    // Beine
+    ctx.strokeStyle=SK; ctx.lineWidth=2.4; ctx.beginPath(); ctx.moveTo(0,12); ctx.lineTo(a*0.8, 17); ctx.moveTo(0,12); ctx.lineTo(-a*0.8,17); ctx.stroke();
+    // Socken
+    if (gear.socks){ ctx.fillStyle='#ffffff'; ctx.strokeStyle='#9aa'; ctx.lineWidth=0.4; [a*0.8,-a*0.8].forEach(fx=>{ ctx.fillRect(fx-1.4,14.4,2.8,2.4); ctx.fillStyle='#8e2433'; ctx.fillRect(fx-1.4,14.4,2.8,0.6); ctx.fillStyle='#fff'; }); }
+    // Schuhe: Laufschuhe oder Sandalen
+    if (gear.shoes){ [a*0.8,-a*0.8].forEach(fx=>{ ctx.fillStyle='#ff6a3c'; ctx.fillRect(fx-2,16.2,5.6,2.2); ctx.fillStyle='#fff'; ctx.fillRect(fx-2,18.2,5.8,0.9); ctx.fillStyle='#2f5f9e'; ctx.fillRect(fx,16.6,2,0.6); }); }
+    else { ctx.fillStyle='#7a4a24'; [a*0.8,-a*0.8].forEach(fx=>ctx.fillRect(fx-2,17.4,5,1.4)); ctx.strokeStyle='#7a4a24'; ctx.lineWidth=0.8; [a*0.8,-a*0.8].forEach(fx=>{ ctx.beginPath(); ctx.moveTo(fx-1,15); ctx.lineTo(fx+2,17.4); ctx.stroke(); }); }
+    ctx.strokeStyle=O; ctx.lineWidth=0.8;
+    if (gear.shirt){ // Funktionsshirt (Singlet) + kurze Laufhose
+      ctx.fillStyle='#22313f'; ctx.beginPath(); ctx.moveTo(-4.6,10.4); ctx.lineTo(4.6,10.4); ctx.lineTo(5,13.4); ctx.lineTo(0.6,13.4); ctx.lineTo(0,12.4); ctx.lineTo(-0.6,13.4); ctx.lineTo(-5,13.4); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#22b3b8'; ctx.beginPath(); ctx.moveTo(-3.6,4.6); ctx.lineTo(-1.6,4.6); ctx.quadraticCurveTo(0.4,6.4,2.2,4.6); ctx.lineTo(3.8,4.6); ctx.lineTo(4.6,10.8); ctx.lineTo(-4.6,10.8); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#ffd23f'; ctx.fillRect(-4.3,7.2,8.6,0.8);
+    } else { // Tunika (creme) mit Gürtel und Fibel
+      ctx.fillStyle='#f1e6cf'; ctx.beginPath(); ctx.moveTo(-4,5); ctx.lineTo(4,5); ctx.lineTo(5.5,13); ctx.lineTo(-5.5,13); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#6b3a1e'; ctx.fillRect(-4.6,9,9.2,1.4); ctx.fillStyle='#d9a640'; ctx.fillRect(-0.6,8.8,1.6,1.8);
+      ctx.fillStyle='#8e2433'; ctx.beginPath(); ctx.moveTo(-4,5); ctx.lineTo(3,5); ctx.lineTo(-1,8); ctx.fill(); ctx.fillStyle='#d9a640'; ctx.beginPath(); ctx.arc(1.5,5.6,1,0,7); ctx.fill();
+    }
+    // Energie-Gels am Hüftgurt
+    if (gear.gel){ ctx.fillStyle='#2a2a2a'; ctx.fillRect(-4.8,10.2,9.6,1.2); ctx.fillStyle='#ffcf33'; ctx.fillRect(-4.2,9.2,1.6,2.2); ctx.fillRect(2.6,9.2,1.6,2.2); ctx.fillStyle='#e05a2a'; ctx.fillRect(-4.2,9.2,1.6,0.6); ctx.fillRect(2.6,9.2,1.6,0.6); }
+    // Startnummer
+    if (gear.bib){ ctx.fillStyle='#fff'; ctx.strokeStyle='#999'; ctx.lineWidth=0.4; ctx.fillRect(-2.6,6.6,5.2,3.2); ctx.strokeRect(-2.6,6.6,5.2,3.2); ctx.fillStyle='#8e2433'; ctx.fillRect(-1.8,7.6,3.6,1.2); ctx.fillStyle='#333'; [-2.3,2.1].forEach(bx=>ctx.fillRect(bx,6.8,0.4,0.4)); }
+    // Arm (+ Pulsuhr)
+    ctx.strokeStyle=SK; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(1,6.5); ctx.lineTo(-a*0.6+3,10.5); ctx.stroke();
+    if (gear.watch){ const wx=-a*0.6+3, wy=10.2; ctx.fillStyle='#1b1b1b'; ctx.fillRect(wx-1.6,wy-1.4,2.6,2.2); ctx.fillStyle='#5cff9d'; ctx.fillRect(wx-1,wy-0.9,1.4,1.1); }
     // Kopf: Locken + Bart
     ctx.fillStyle='#e8ad86'; ctx.strokeStyle=O; ctx.lineWidth=0.7; ctx.beginPath(); ctx.arc(0.6,2,3.4,0,7); ctx.fill(); ctx.stroke();
-    ctx.fillStyle='#4a2a18'; for (let k=0;k<6;k++){ ctx.beginPath(); ctx.arc(-3.2+k*1.35, -1.3+Math.sin(k*2)*0.6, 1.6, 0, 7); ctx.fill(); }
+    ctx.fillStyle='#4a2a18'; const curls = gear.cap ? [0,4,5] : [0,1,2,3,4,5]; curls.forEach(k=>{ ctx.beginPath(); ctx.arc(-3.2+k*1.35, -1.3+Math.sin(k*2)*0.6, 1.6, 0, 7); ctx.fill(); });
     ctx.beginPath(); ctx.arc(-3.4,1.2,1.6,0,7); ctx.fill();
     ctx.beginPath(); ctx.moveTo(-1,3.6); ctx.quadraticCurveTo(1.6,7,3.9,3.3); ctx.lineTo(2.6,3.1); ctx.quadraticCurveTo(1,4.6,-0.4,3.3); ctx.fill();
-    if (gear.cap){ ctx.fillStyle='#ffcc4d'; ctx.fillRect(-3.8,-2.8,7.5,2.2); ctx.fillRect(2,-1.4,4,1.2); }
+    if (gear.cap){ ctx.fillStyle='#ffcc4d'; ctx.strokeStyle='#a5791a'; ctx.lineWidth=0.5; ctx.beginPath(); ctx.moveTo(-3.6,-0.6); ctx.quadraticCurveTo(0.4,-5.4,4,-0.8); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillRect(2.4,-1.4,4.4,1.3); ctx.fillStyle='#8e2433'; ctx.fillRect(-3.4,-1.2,7,0.8); }
     ctx.fillStyle='#222'; ctx.fillRect(2.1,1.1,1,1); ctx.fillStyle='#fff'; ctx.fillRect(1.6,3.6,2,0.7);
     ctx.restore();
   }
@@ -1784,9 +1942,42 @@ function renderLogin(mode){
 }
 function togglePw(b){ const i=b.previousElementSibling; const show = i.type==='password'; i.type = show?'text':'password'; b.textContent = show?'verbergen':'anzeigen'; }
 async function afterLogin(){ S = normalize(await Store.loadData()); applyTestDate();
-  if (S.profile && S.weeks.length && (S.v||1) < 3){ replanFromNow(S); S.v = 3; save(); }
+  if (S.profile && S.weeks.length && (S.v||1) < 4){ replanFromNow(S); S.v = 4; save(); }
   if (S.profile && S.weeks.length){ syncUnlocks(); renderApp('today'); } else renderSetup(); }
 async function logout(){ closeSheet(); await Store.logout(); S=null; renderLogin('login'); }
+
+/* ---------- Trainingstage ---------- */
+const WD_LONG = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
+function daySel(name, v, none){ return `<select name="${name}">${none?`<option value="" ${v==null?'selected':''}>kein Krafttraining</option>`:''}${WD_LONG.map((w,i)=>`<option value="${i}" ${v===i?'selected':''}>${w}</option>`).join('')}</select>`; }
+function daysFields(d){
+  return `<fieldset class="days"><legend>Deine Trainingstage</legend>
+    <p class="small muted">An wie vielen Tagen pro Woche möchtest du laufen?</p>
+    <div class="row dnrow"><label class="radio"><input type="radio" name="dn" value="2" ${d.n===2?'checked':''}> 2 Tage</label><label class="radio"><input type="radio" name="dn" value="3" ${d.n!==2?'checked':''}> 3 Tage</label></div>
+    <label><span class="dl3">🟠 Schneller Dauerlauf am</span><span class="dl2">🏃 Zweiter Lauf am <small>(abwechselnd schneller Dauerlauf und Intervalllauf)</small></span>${daySel('dA', d.A)}</label>
+    <label class="dl3">🔴 Intervalllauf am${daySel('dB', d.B)}</label>
+    <label>🟢 Langer gemütlicher Lauf am${daySel('dL', d.L)}</label>
+    <label>💪 Krafttraining am${daySel('dK', d.K, true)}</label>
+    <p class="small muted">Höchstens 3 Läufe pro Woche (Vorgabe der Kursleitung). Tipp: Nach einer intensiven Einheit einen lockeren Tag oder Ruhetag einplanen (Aderhold, 2018, S. 105).</p>
+    <div class="dwarn"></div></fieldset>`;
+}
+function readDays(f){
+  const n = +f.get('dn')===2 ? 2 : 3, K = f.get('dK');
+  return { n, A:+f.get('dA'), B:+f.get('dB'), L:+f.get('dL'), K: K===''||K==null ? null : +K };
+}
+function bindDays(form){
+  const upd = () => { const d = readDays(new FormData(form)); form.querySelectorAll('.dl3').forEach(e=>e.classList.toggle('hidden', d.n===2)); form.querySelectorAll('.dl2').forEach(e=>e.classList.toggle('hidden', d.n!==2));
+    const c = checkDays(d); form.querySelector('.dwarn').innerHTML = c.err ? `<p class="err">${esc(c.err)}</p>` : (c.warn||[]).map(w=>`<p class="warnbox small">${esc(w)}</p>`).join(''); };
+  form.querySelectorAll('.days select, .days input').forEach(e=>e.onchange=upd); upd();
+}
+function daysSummary(d){ const it = d.n===2 ? [[d.A,'2. Lauf (abwechselnd)'],[d.L,'langer Lauf']] : [[d.A,'schneller Dauerlauf'],[d.B,'Intervalllauf'],[d.L,'langer Lauf']]; if (d.K!=null) it.push([d.K,'Krafttraining']);
+  return it.sort((a,b)=>a[0]-b[0]).map(([x,t])=>`<b>${WD[x]}</b> ${t}`).join(' · '); }
+function openDays(){
+  sheet(`<h3>📅 Trainingstage ändern</h3><p class="muted small">Ab dieser Woche wird dein Plan auf die neuen Tage verteilt; Erledigtes bleibt erhalten.</p>
+    <form id="df">${daysFields(daysOf(S.profile))}<div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn">Übernehmen</button></div></form>`);
+  bindDays($('#df'));
+  $('#df').onsubmit = e => { e.preventDefault(); const d = readDays(new FormData(e.target)); const c = checkDays(d); if (c.err) return;
+    changeDays(S, d); syncUnlocks(); save(); closeSheet(); renderApp('plan'); toastMsg('📅 Trainingstage übernommen – Plan angepasst.'); };
+}
 
 /* ---------- Plan-Fragen ---------- */
 function renderSetup(){
@@ -1796,6 +1987,8 @@ function renderSetup(){
       <label>Was ist die längste Strecke, die du in den letzten Wochen gelaufen bist?<div class="unit"><input name="longest" type="number" step="0.5" min="5" max="42" inputmode="decimal" placeholder="z. B. 10" required><span>km</span></div></label>
       <label>Wie schnell bist du durchschnittlich bei deinen Läufen unterwegs?<div class="unit"><input name="avg" placeholder="z. B. 6:15" inputmode="numeric" required><span>min/km</span></div><small>Durchschnittstempo pro Kilometer, z. B. aus deiner Laufuhr oder App.</small></label>
       <label>Bei welchem Tempo fühlst du dich beim Laufen richtig wohl?<div class="unit"><input name="comfort" placeholder="z. B. 6:45" inputmode="numeric" required><span>min/km</span></div><small>Das Tempo, bei dem du locker laufen und dich noch gut unterhalten kannst.</small></label>
+      <label>Wie viele Kilometer läufst du zurzeit ungefähr pro Woche?<div class="unit"><input name="weekKm" type="number" step="1" min="0" max="80" inputmode="numeric" placeholder="z. B. 15"><span>km</span></div><small>Dein Plan startet bei diesem Umfang (höchstens ${START_MAX} km) und steigert sich dann langsam. Leer lassen, wenn du es nicht weißt.</small></label>
+      ${daysFields(DEFAULT_DAYS)}
       <label>Welches Zeitziel setzt du dir für den Halbmarathon?<div class="unit"><input name="goal" placeholder="z. B. 2:10" inputmode="numeric"><span>Stunden : Minuten</span></div><small>Leer lassen, wenn du einfach ankommen willst. Du kannst dein Ziel später jederzeit ändern.</small></label>
       <fieldset><legend>Herzfrequenz</legend>
         <label class="radio"><input type="radio" name="hr" value="max" checked> Ich kenne meine maximale Herzfrequenz</label>
@@ -1808,7 +2001,10 @@ function renderSetup(){
       <button class="btn big">Meinen Plan erstellen</button>
     </form></div>`;
   document.querySelectorAll('input[name=hr]').forEach(r=>r.onchange=()=>document.querySelectorAll('.sub').forEach(d=>d.classList.toggle('hidden', d.dataset.for!==r.value || !r.checked)));
+  bindDays($('#setupForm'));
   $('#setupForm').onsubmit = e => { e.preventDefault(); const f=new FormData(e.target);
+    const days = readDays(f), dc = checkDays(days); if (dc.err) return $('#setErr').textContent = dc.err;
+    const weekKm = +String(f.get('weekKm')||'').replace(',','.') || null;
     const longest=+String(f.get('longest')).replace(',','.'), avg=parseTime(f.get('avg')), comfort=parseTime(f.get('comfort'));
     if (!(longest>=5)) return $('#setErr').textContent='Die längste Strecke sollte mindestens 5 km sein.';
     if (!avg || avg<150 || avg>720) return $('#setErr').textContent='Bitte gib dein Durchschnittstempo als Minuten:Sekunden pro km ein (z. B. 6:15).';
@@ -1816,7 +2012,7 @@ function renderSetup(){
     const goalRaw=f.get('goal'); const goal=parseGoal(goalRaw); if (String(goalRaw||'').trim() && (!goal || goal<3600 || goal>4*3600)) return $('#setErr').textContent='Bitte gib dein Zeitziel als Stunden:Minuten ein (z. B. 2:10) – oder lass das Feld leer.';
     const hr=f.get('hr'); const est = estimateLevel(avg, comfort);
     const game = S && S.game ? S.game : blank().game; S = normalize(null); S.game = game;
-    S.profile = { name: Store.user.name, start: f.get('start'), race: RACE_DEFAULT, longest, avg, comfort, tenK: est.tenK, level: est.level, goal,
+    S.profile = { name: Store.user.name, start: f.get('start'), race: RACE_DEFAULT, longest, avg, comfort, tenK: est.tenK, level: est.level, goal, days, weekKm,
       hfmax: hr==='max' ? (+f.get('hfmax')||null) : null, age: hr==='age' ? (+f.get('age')||null) : null, noHR: hr==='none' };
     buildPlan(S); syncUnlocks(); save(); renderApp('today'); };
 }
@@ -1867,10 +2063,11 @@ function sessionHTML(wi, si){
     <button class="chk" data-act="done" aria-label="erledigt">${s.done?'✓':''}</button>
     <div class="sx"><div class="sd">${WD[(parseD(s.date).getDay()+6)%7]} ${niceD(s.date,{day:'2-digit',month:'2-digit'})}${isToday?' · <b>heute</b>':''}</div>
       <div class="sl">${esc(sessionLabel(s))}</div>
-      <div class="sm"><a href="#" data-act="info">${esc(T0.name||'')} ⓘ</a>${pace?' · '+esc(pace):''}</div>
+      <div class="sm"><a href="#" data-act="info">${CAT_OF[s.code]?CATS[CAT_OF[s.code]].icon+' '+esc(CATS[CAT_OF[s.code]].name):esc(T0.name||'')} ⓘ</a>${pace?' · '+esc(pace):''}</div>
+      ${s.code==='EDL+ST' && s.arg.includes('/')?`<div class="sm">Steht am nächsten Tag ein Wettkampf an, nur ${esc(s.arg.split('/')[1])} km.</div>`:''}
       ${intensity(s.code)?`<div class="sm">${esc(intensity(s.code))}</div>`:''}
-      ${s.orig?`<div class="sm">Im Buch ${s.orig} km – gekürzt für den 3-Läufe-Plan.</div>`:''}
-      ${s.code==='KT'?`<div class="sm">8 Übungen mit dem eigenen Körpergewicht – tippe auf „Krafttraining ⓘ“.${s.wk?' Läufst du am Samstag einen 10-km-Wettkampf, lass es diese Woche weg.':''}</div>`:''}
+      ${s.orig?`<div class="sm">Im Buch ${String(s.orig).replace('.',',')} km – angepasst, damit dein Wochenumfang langsam steigt.</div>`:''}
+      ${s.code==='KT'?`<div class="sm">10 Übungen mit dem eigenen Körpergewicht. <button class="lnk" onclick="event.stopPropagation(); openStrength()">💪 Übungen ansehen</button>${s.wk?' Läufst du am Tag danach einen 10-km-Wettkampf, lass es diese Woche weg.':''}</div>`:''}
       ${S.weeks[wi].flag==='reentry'?'<div class="sm warn">Wiedereinstieg: Tempo bewusst ruhiger, auf dein Körpergefühl achten.</div>':''}
       ${s.done ? `<div class="logsum">${esc(logSummary(s))||'Daten eintragen'} <a href="#" data-act="log">✎ bearbeiten</a></div>`:''}
     </div>
@@ -1906,9 +2103,51 @@ function afterKm(before){
   if (newly.length && !isCreator()){ const i=newly[newly.length-1]; toastMsg('🎉 Level '+(i+1)+' „'+GT[S.game.lang].levels[i].name+'“ freigeschaltet!'); }
   else if (after>before) toastMsg(MOTIVATION[(dayIndex()+Math.floor(after))%MOTIVATION.length].t);
 }
-function typeInfo(code){ const t=TYPES[code]; if(!t) return;
+function catBody(k){ const c=CATS[k], P=myPaces(); const pr = P ? catPace(k,P) : '';
+  return `<p>${esc(c.what)}</p><p><b>Wofür?</b> ${esc(c.why)}</p><p>❤️ <b>Mit Puls:</b> ${esc(c.hf)}</p><p>🗣️ <b>Nach Gefühl:</b> ${esc(c.feel)}</p>${pr?`<p>⏱️ <b>Dein Tempo:</b> ${esc(pr)}</p>`:''}
+    <p class="small muted">📖 <b>Im Buch:</b> ${esc(c.book)}</p><span class="src">${esc(c.src)}</span>`; }
+function catPace(k,P){ if (k==='G') return fmtPace(P.EDL)+'–'+fmtPace(P.RDL)+' min/km'; if (k==='S') return 'zügig '+fmtPace(P.IDL)+', schnell '+fmtPace(P.TDL)+' min/km'; if (k==='I') return 'schnelle Abschnitte '+fmtPace(P.WHL1)+'–'+fmtPace(P.WHL3)+' min/km, im Renntempo '+fmtPace(P.HM)+' min/km'; return ''; }
+function typeInfo(code){ const k=CAT_OF[code];
+  if (k){ const t=TYPES[code], c=CATS[k];
+    return sheet(`<h3>${c.icon} ${esc(c.name)}</h3>${catBody(k)}
+      <div class="ffbox light"><b>Diese Einheit</b><p class="small">${esc(t.what)}</p>${intensity(code)?`<p class="small">${esc(intensity(code))}</p>`:''}<p class="small muted">Im Buch: ${esc(t.name)} (${esc(code)}) · ${esc(t.src)}</p>${isCreator()&&t.dev?`<p class="devnote">🛠 ${esc(t.dev)}</p>`:''}</div>
+      <p class="small muted">${esc(HF_NOTE)}</p><button class="btn" onclick="closeSheet()">OK</button>`); }
+  const t=TYPES[code]; if(!t) return;
   sheet(`<h3>${esc(t.name)}</h3><p>${esc(t.what)}</p>${t.list?`<ol class="small">${t.list.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`:''}<p><b>Wofür?</b> ${esc(t.why)}</p>${t.hf?`<p><b>Mit Pulsmessung:</b> ${esc(t.hf)}</p>`:''}${t.feel?`<p><b>Ohne Pulsmessung:</b> ${esc(t.feel)}</p>`:''}
+    ${code==='KT'?`<button class="btn ghost" onclick="openStrength()">💪 Übungen ansehen</button>`:''}
     ${isCreator()&&t.dev?`<p class="devnote">🛠 ${esc(t.dev)}</p>`:''}<p class="src">${esc(t.src)}</p><p class="small muted">${esc(HF_NOTE)}</p><button class="btn" onclick="closeSheet()">OK</button>`); }
+
+/* ---------- Rubrik Krafttraining ---------- */
+// einfache Strichfiguren (eigene Zeichnungen der App, angelehnt an die Beschreibungen)
+const FIGS = {
+  plank:  { h:[16,37], l:[[22,41,52,46],[52,46,88,51],[52,46,86,43],[22,41,24,52],[24,52,12,52]], a:[[86,43,88,36]] },
+  crunch: { h:[30,33], l:[[36,38,56,51],[56,51,70,37],[70,37,82,52],[36,40,44,44],[38,44,46,40]], a:[[30,26,34,22]] },
+  kneel:  { h:[50,9], l:[[50,15,50,34],[50,34,50,53],[50,53,74,53],[44,22,56,26],[44,26,56,22]], a:[[58,12,62,8]] },
+  side:   { h:[18,35], l:[[23,40,56,44],[56,44,88,52],[23,40,24,52],[24,52,12,52]], a:[[56,48,56,40]] },
+  abduct: { h:[12,46], l:[[18,49,50,51],[50,51,64,54],[64,54,54,55],[50,51,86,34],[24,49,28,40]], a:[[78,46,84,36]] },
+  bridge: { h:[14,48], l:[[19,50,50,40],[50,40,64,33],[64,33,72,53],[50,40,88,28],[22,51,34,53]], a:[[50,46,50,38]] },
+  push:   { h:[22,36], l:[[28,40,56,44],[56,44,70,53],[70,53,88,53],[28,40,22,47],[22,47,30,53]], a:[[22,30,22,24]] },
+  adduct: { h:[46,10], l:[[46,16,46,44],[46,44,32,32],[32,32,24,52],[46,44,60,32],[60,32,68,52],[36,32,56,32]], a:[[28,26,24,22],[64,26,68,22]] },
+  squat:  { h:[42,8], l:[[42,14,44,31],[44,31,55,42],[55,42,49,55],[44,31,35,41],[35,41,28,46],[42,20,70,22]], a:[[59,38,59,47]], w:true },
+  calf:   { h:[46,6], l:[[46,12,46,32],[46,32,46,46],[46,46,50,48],[46,32,36,38],[46,18,66,20]], a:[[54,46,54,40]], w:true, step:true }
+};
+function strengthFig(k){ const f=FIGS[k]; if(!f) return '';
+  return `<svg class="kfig" viewBox="0 0 100 60" aria-hidden="true"><line x1="4" y1="55.5" x2="96" y2="55.5" class="kg"/>${f.w?'<line x1="70" y1="4" x2="70" y2="55" class="kg"/>':''}${f.step?'<rect x="38" y="48" width="22" height="7" class="ks"/>':''}
+    ${f.l.map(([a,b,c,d])=>`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}"/>`).join('')}<circle cx="${f.h[0]}" cy="${f.h[1]}" r="5" class="kh"/>${(f.a||[]).map(([a,b,c,d])=>`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" class="ka" marker-end="url(#kar)"/>`).join('')}</svg>`; }
+function strengthHTML(){
+  return `<div class="kbasics">${STRENGTH.basics.map(b=>`<div><b>${esc(b.t)}</b><p class="small">${esc(b.d)} <span class="src">(${esc(b.src)})</span></p></div>`).join('')}</div>
+    <h4 class="mt">Kräftigungsprogramm – 10 Übungen ohne Geräte</h4><p class="small muted">Je 2–3 Serien × 10 Wiederholungen, langsam und kontrolliert. Haken setzen, was du heute geschafft hast.</p>
+    <svg width="0" height="0" style="position:absolute"><defs><marker id="kar" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c8735a"/></marker></defs></svg>
+    <div class="kgrid">${STRENGTH.program.map(e=>`<label class="kex"><input type="checkbox" class="kchk" data-k="${e.n}"><div class="kfw">${strengthFig(e.icon)}<span class="kn">${e.n}</span></div><div><b>${esc(e.title)}</b><p class="small">${esc(e.how)}</p></div></label>`).join('')}</div>
+    <p class="src">${esc(STRENGTH.programSrc)}; Zeichnungen: eigene vereinfachte Darstellung der App</p>
+    <h4 class="mt">Lauf-ABC – Kräftigung beim Laufen</h4><p class="small">${esc(STRENGTH.abcIntro)} <span class="src">(${esc(STRENGTH.abcIntroSrc)})</span></p>
+    <div class="kabc">${STRENGTH.abc.map(a=>`<div class="kabci"><div><b>${esc(a.title)}</b><p class="small">${esc(a.how)}</p></div><span class="kdose">${esc(a.dose)}</span></div>`).join('')}</div>
+    <p class="src">${esc(STRENGTH.abcSrc)}</p>`;
+}
+function bindStrength(root){ const key='mwah-kt-'+todayS(); let st={}; try{ st=JSON.parse(localStorage.getItem(key)||'{}'); }catch(e){}
+  root.querySelectorAll('.kchk').forEach(c=>{ c.checked=!!st[c.dataset.k]; c.onchange=()=>{ st[c.dataset.k]=c.checked; try{ localStorage.setItem(key, JSON.stringify(st)); }catch(e){}
+    const n=root.querySelectorAll('.kchk:checked').length; if (n===STRENGTH.program.length) toastMsg('💪 Alle 10 Übungen geschafft – stark!'); }; }); }
+function openStrength(){ sheet(`<h3>💪 Krafttraining – Übungsvorschläge</h3>${strengthHTML()}<button class="btn mt" onclick="closeSheet()">Fertig</button>`); bindStrength($('#sheet')); }
 
 /* ---------- Plan ---------- */
 function renderPlan(){
@@ -1918,15 +2157,16 @@ function renderPlan(){
     const done = w.sessions.filter(s=>s.done).length, km = w.sessions.reduce((a,s)=>a+(s.km||0),0);
     return head + `<details class="week ${wi===cur?'cur':''} ${w.flag||''}" ${wi===cur?'open':''}><summary><span class="wn">W${wi+1}</span><span class="wd">${niceD(w.monday,{day:'2-digit',month:'2-digit'})}</span><span class="wt">Woche ${w.i+1}${w.flag==='reentry'?' · Wiedereinstieg':''}</span><span class="wk">${km?Math.round(km)+' km':''}</span><span class="wdn">${done}/${w.sessions.length}</span></summary>${weekSessions(wi)}</details>`;
   }).join('');
-  $('#view').innerHTML = `<div class="sec-h"><h2>Dein Plan</h2><button class="btn sm ghost" onclick="openGoal()">Ziel ändern</button></div>
+  $('#view').innerHTML = `<div class="sec-h"><h2>Dein Plan</h2><div class="row"><button class="btn sm ghost" onclick="openDays()">Tage ändern</button><button class="btn sm ghost" onclick="openGoal()">Ziel ändern</button></div></div>
     <section class="card"><p><b>Dein Ausgangsniveau:</b> längster Lauf ${String(p.longest||'–').replace('.',',')} km · Wohlfühltempo ${p.comfort?fmtPace(p.comfort):'–'} min/km · Ø ${p.avg?fmtPace(p.avg):'–'} min/km</p>
       <p>Daraus ergibt sich etwa eine 10-km-Leistung von <b>${fmtTime(p.tenK)}</b> min.</p>
       <p>🎯 <b>Dein Ziel: ${goalText(p.goal)}</b> → Halbmarathon-Plan <b>${esc(hmPlan.target)}</b>${p.goal?'':' (der ruhigste Plan – ideal, um gut anzukommen)'}.</p>
       ${ambitious?`<p class="warnbox">Dein Ziel ist ehrgeizig: Dieser Plan setzt etwa 10 km in ${fmtTime(HM_REQ[hmKey])} min voraus, nach deinen Angaben liegst du derzeit bei ca. ${fmtTime(p.tenK)} min. Die erreichbare Zeit realistisch einschätzen und lieber verhaltener angehen (Aderhold, 2018, S. 141).</p>`:''}
-      <details class="gl"><summary class="small"><b>So schätzt die App dein Niveau</b></summary><p class="small">Dein <b>Wohlfühltempo</b> wird als extensiver Dauerlauf gewertet: Aderhold beschreibt die Belastung, bei der man sich wohlfühlt und noch unterhalten kann, mit 60–75 % der maximalen Herzfrequenz – das entspricht etwa dem regenerativen bis extensiven Dauerlauf (Aderhold, 2018, S. 138 f.). Dass dein <b>Durchschnittstempo</b> zwischen extensivem und intensivem Dauerlauf liegt, ist eine <b>Annahme der App</b>, die so nicht in den Büchern steht. Aus beidem berechnet die App mit Aderholds Tempoformeln (S. 89) deine 10-km-Leistung und nimmt vorsichtshalber den langsameren Wert.</p></details>
+      <details class="gl"><summary class="small"><b>So schätzt die App dein Niveau</b></summary><p class="small">Dein <b>Wohlfühltempo</b> wird als gemütlicher Dauerlauf gewertet (im Buch: extensiver Dauerlauf): Aderhold beschreibt die Belastung, bei der man sich wohlfühlt und noch unterhalten kann, mit 60–75 % der maximalen Herzfrequenz – das entspricht etwa dem regenerativen bis extensiven Dauerlauf (Aderhold, 2018, S. 138 f.). Dass dein <b>Durchschnittstempo</b> zwischen gemütlichem und zügigem Dauerlauf liegt (im Buch: zwischen extensivem und intensivem Dauerlauf), ist eine <b>Annahme der App</b>, die so nicht in den Büchern steht. Aus beidem berechnet die App mit Aderholds Tempoformeln (S. 89) deine 10-km-Leistung und nimmt vorsichtshalber den langsameren Wert.</p></details>
       <p class="src">Pläne: Aderhold, 2018, S. 468–481</p></section>
-    <section class="card note"><p class="small">🏃 <b>Höchstens 3 Läufe pro Woche</b> mit meist bis zu 25 km, in den Wochen mit dem längsten Lauf bis zu 30 km. Dazu einmal pro Woche <b>Krafttraining</b>. Die Einheiten stammen aus Aderholds Plänen. Erhalten bleiben die zentralen Einheiten Tempodauerlauf, Wiederholungsläufe und langer Lauf (Aderhold, 2018, S. 138 f.); gekürzt wird zuerst der Montagslauf, dann das Fahrtspiel, zuletzt der lange Lauf. Die Umfangsgrenze ist eine Vorgabe der Kursleitung, sie steht nicht in den Büchern.</p></section>
-    <p class="muted small">Die Wochentage sind Vorschläge – verschiebe Einheiten, wie es in deinen Alltag passt, und lass zwischen fordernden Einheiten Ruhetage. Tippe auf eine Trainingsform (ⓘ) für die Erklärung.</p>
+    <section class="card note"><p class="small">📅 <b>Deine Woche:</b> ${daysSummary(daysOf(p))}</p>
+      <p class="small">📈 <b>Langsam steigern:</b> Dein Plan beginnt bei etwa ${String(p.startKm||'–').replace('.',',')} km pro Woche und steigert sich bis zum Halbmarathon-Block gleichmäßig auf bis zu 25 km, in den Wochen mit dem längsten Lauf auf bis zu 30 km. Jede 4. Woche ist eine leichtere Entlastungswoche. Aderhold rät, langsam aufzubauen, den Kilometerumfang bedächtig zu steigern und die langen Läufe kontinuierlich zu verlängern (Aderhold, 2018, S. 102), mit Entlastungswochen im Rhythmus 3:1 (S. 101). Die genaue Umsetzung (Startwert, gleichmäßige Steigerung, ca. 20 % weniger in Entlastungswochen) ist eine <b>Annahme der App</b>; die Obergrenzen von 3 Läufen und 25/30 km sind eine Vorgabe der Kursleitung.</p></section>
+    <p class="muted small">Passt ein Tag mal nicht, verschiebe die Einheit – und lass zwischen fordernden Einheiten Ruhetage. Tippe auf eine Trainingsform (ⓘ) für die Erklärung.</p>
     ${S.notices.length?`<div class="card note">${S.notices.map(n=>`<p>ℹ️ ${esc(n)}</p>`).join('')}</div>`:''}
     ${S.pauses.length?`<div class="card"><b>Eingetragene Pausen</b>${S.pauses.map(x=>`<p class="small">${niceD(x.from)} – ${niceD(x.to)} (${({fieber:'Krankheit mit Fieber',erkaeltung:'Erkältung',verletzung:'Verletzung',sonst:'Sonstiges'})[x.reason]})</p>`).join('')}</div>`:''}
     ${html}
@@ -2074,29 +2314,31 @@ async function renderRank(){
 function renderKnow(){
   const P = myPaces(); const used = ['RDL','R-EDL','EDL','EDL+ST','EDL/WK','IDL','I-TDL','TDL','TDL/EDL','FS','WHL','WHL/WKT','KT','-'];
   $('#view').innerHTML = `<h2>Wissen & Rechner</h2>
-    <section class="card"><h3>🏃 Die Trainingsformen</h3><p class="muted small">Mit Pulsuhr orientierst du dich an der Herzfrequenz, ohne Pulsmessung an deinem Gefühl beim Sprechen.</p>
-      ${used.map(k=>{ const t=TYPES[k]; return `<details class="gl"><summary><b>${esc(t.name)}</b> <span class="muted small">${esc(k==='-'?'P/AT':k)}</span></summary>
-        <p>${esc(t.what)}</p>${t.list?`<ol class="small">${t.list.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`:''}<p><b>Wofür?</b> ${esc(t.why)}</p>${t.hf?`<p>❤️ <b>Mit Puls:</b> ${esc(t.hf)}</p>`:''}${t.feel?`<p>🗣️ <b>Nach Gefühl:</b> ${esc(t.feel)}</p>`:''}${P&&paceFor(k,'1x1',P)&&k!=='WHL'?`<p>⏱️ <b>Dein Tempo:</b> ${esc(paceFor(k,'',P))}</p>`:''}
-        ${isCreator()&&t.dev?`<p class="devnote">🛠 ${esc(t.dev)}</p>`:''}<span class="src">${esc(t.src)}</span></details>`; }).join('')}
-      <div class="ffbox light"><b>Ohne Pulsuhr – die Sprech-Regel</b><p class="small">Kannst du während des Laufens noch gut sprechen, bist du im langsamen Dauerlauf (ca. 70 % HFmax). Kannst du gerade noch sprechen, im lockeren Dauerlauf (75–80 %). Den schnellen Dauerlauf läufst du so, dass du die ganze Einheit mit maximaler, aber konstanter Geschwindigkeit schaffst.</p><span class="src">Beck, 2024, S. 162</span></div>
+    <nav class="chips"><button data-t="k-kraft">💪 Krafttraining</button><button data-t="k-formen">🏃 Trainingsformen</button><button data-t="k-mm">✨ Magic Mile</button><button data-t="k-rech">⏱️ Rechner</button><button data-t="k-race">🏁 Renntag</button><button data-t="k-fakt">📚 Fakten</button></nav>
+    <section class="card" id="k-kraft"><h3>💪 Krafttraining – Übungsvorschläge</h3>${strengthHTML()}</section>
+    <section class="card" id="k-formen"><h3>🏃 Die Laufarten</h3><p class="muted small">In deinem Plan gibt es drei Laufarten – dazu Krafttraining und Ruhetage. Mit Pulsuhr orientierst du dich an der Herzfrequenz, ohne Pulsmessung an deinem Gefühl beim Sprechen.</p>
+      ${['G','S','I'].map(k=>`<details class="gl"><summary><b>${CATS[k].icon} ${esc(CATS[k].name)}</b></summary>${catBody(k)}</details>`).join('')}
+      ${['KT','-'].map(k=>{ const t=TYPES[k]; return `<details class="gl"><summary><b>${k==='KT'?'💪':'😴'} ${esc(t.name)}</b></summary><p>${esc(t.what)}</p><p><b>Wofür?</b> ${esc(t.why)}</p>${k==='KT'?'<p class="small">Übungen: siehe „Krafttraining“ oben.</p>':''}<span class="src">${esc(t.src)}</span></details>`; }).join('')}
+      <div class="ffbox light"><b>Ohne Pulsuhr – die Sprech-Regel</b><p class="small">🟢 Gemütlich: Du kannst noch gut sprechen. 🟠 Schnell: Bei zügigen Einheiten kannst du gerade noch sprechen, bei schnellen läufst du die ganze Strecke mit maximaler, aber konstanter Geschwindigkeit. 🔴 Intervalle: schnelle Abschnitte wie der schnelle Dauerlauf, in den Pausen wieder gut sprechen können.</p><span class="src">Beck, 2024, S. 162</span></div>
       <p class="small muted">${esc(HF_NOTE)}</p></section>
-    <section class="card"><h3>✨ Magic Mile</h3>
+    <section class="card" id="k-mm"><h3>✨ Magic Mile</h3>
       <p>Die Magic Mile ist ein kurzer Leistungstest aus den Halbmarathon-Programmen von Jeff und Barbara Galloway. Du läufst eine Meile – das sind 1,609 km, auf der Laufbahn etwa vier Runden – auf Zeit. In Galloways Plänen taucht der Test regelmäßig donnerstags auf, zum Beispiel als „1 Meile Magic Mile + 3 Meilen“.</p>
       <p><b>So rechnest du:</b> Magic-Mile-Zeit × 1,2 = das Tempo pro Meile, das du aktuell im Halbmarathon laufen könntest. Das gilt bei höchstens 14 °C und wenn du die langen Läufe und Tempoeinheiten deines Plans absolviert hast.</p>
       <p><b>Zielwahl:</b> Nach dem ersten Test darfst du dir ein Ziel setzen, das bis zu 15 s/km (20 s pro Meile) schneller ist als die Prognose – oder jedes langsamere.</p>
       <p><b>Lange Läufe:</b> Prognose-Tempo + 3 Minuten pro Meile – so bleiben sie wirklich locker. Bei Wärme über 14 °C zusätzlich pro 2 °C etwa 20 s/km langsamer.</p>
       <span class="src">Galloway & Galloway, 2019, S. 49 ff.</span>
       <label>Deine Zeit für 1 Meile (mm:ss)<input id="mm" placeholder="z. B. 9:30"></label><div id="mmr"></div></section>
-    <section class="card"><h3>⏱️ Tempo-Rechner</h3><p class="small muted">Trainingstempi aus einer 10-km-Zeit (Aderhold, 2018, S. 89) und Halbmarathon-Prognose (Beck, 2024).</p>
+    <section class="card" id="k-rech"><h3>⏱️ Tempo-Rechner</h3><p class="small muted">Trainingstempi aus einer 10-km-Zeit (Aderhold, 2018, S. 89) und Halbmarathon-Prognose (Beck, 2024).</p>
       <label>10-km-Zeit (mm:ss)<input id="tk" value="${S.profile.tenK?fmtTime(S.profile.tenK):''}" placeholder="z. B. 58:30"></label><div id="tkr"></div></section>
     <section class="card"><h3>🌡️ Wärme-Anpassung</h3><p class="small muted">Ab 14 °C pro 2 °C etwa 20 s/km langsamer (Galloway & Galloway, 2019, S. 49).</p>
       <label>Temperatur (°C)<input id="tc" type="number" placeholder="z. B. 20"></label><div id="tcr"></div></section>
-    <section class="card"><h3>🏁 Renntag & Tapering</h3>${RACE_TIPS.map(t=>`<p>• ${esc(t.t)} <span class="src">(${esc(t.src)})</span></p>`).join('')}</section>
-    <h2 class="mt">Fakten nach Rubriken</h2>
+    <section class="card" id="k-race"><h3>🏁 Renntag & Tapering</h3>${RACE_TIPS.map(t=>`<p>• ${esc(t.t)} <span class="src">(${esc(t.src)})</span></p>`).join('')}</section>
+    <h2 class="mt" id="k-fakt">Fakten nach Rubriken</h2>
     ${FACT_CATS.map(c=>`<details class="factcat"><summary><span class="fci">${c.icon}</span><span><b>${esc(c.name)}</b><small>${esc(c.intro)}</small></span></summary>
       ${FACTS.filter(f=>f.cat===c.id).map(f=>`<div class="factitem"><h4>${esc(f.title)}</h4><p>${esc(f.de)}</p><span class="src">${esc(f.src)}</span></div>`).join('')}</details>`).join('')}`;
+  bindStrength($('#view')); document.querySelectorAll('.chips button').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.t).scrollIntoView({behavior:'smooth', block:'start'}));
   const calc = () => { const t = parseTime($('#tk').value); if (!t){ $('#tkr').innerHTML=''; return; } const p=paces(t);
-    $('#tkr').innerHTML = `<table class="tbl">${[['Tempodauerlauf (TDL)',p.TDL],['Intensiver Dauerlauf (IDL)',p.IDL],['Extensiver Dauerlauf (EDL)',p.EDL],['Regenerativer Dauerlauf (RDL)',p.RDL],['Wiederholungslauf 1.000 m',p.WHL1],['Wiederholungslauf 2.000 m',p.WHL2],['Wiederholungslauf 3.000 m',p.WHL3]].map(r=>`<tr><td>${r[0]}</td><td><b>${fmtPace(r[1])}</b> min/km</td></tr>`).join('')}
+    $('#tkr').innerHTML = `<table class="tbl">${[['🟠 Schneller Dauerlauf – schnell',p.TDL],['🟠 Schneller Dauerlauf – zügig',p.IDL],['🟢 Gemütlicher Dauerlauf',p.EDL],['🟢 Gemütlich – sehr ruhig',p.RDL],['🔴 Intervalle à 1 km',p.WHL1],['🔴 Intervalle à 2 km',p.WHL2],['🔴 Intervalle à 3 km',p.WHL3]].map(r=>`<tr><td>${r[0]}</td><td><b>${fmtPace(r[1])}</b> min/km</td></tr>`).join('')}
       <tr class="hl"><td>Halbmarathon-Prognose (× 2,2234)</td><td><b>${fmtTime(p.HMtime)}</b> h · ${fmtPace(p.HM)} min/km</td></tr></table>
       ${t!==S.profile.tenK?'<button class="btn sm ghost" id="tks">Für meine Tempoangaben übernehmen</button>':''}`;
     const b=$('#tks'); if (b) b.onclick = () => { S.profile.tenK=t; save(); toastMsg('Übernommen – dein Plan zeigt jetzt diese Tempi.'); calc(); }; };
