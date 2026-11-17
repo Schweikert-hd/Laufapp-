@@ -46,10 +46,13 @@ hr{ border:none; border-top:1px solid var(--line); margin:16px 0; }
 .loading{ padding:40vh 0; text-align:center; color:var(--muted); }
 /* Login */
 .auth{ padding-top:env(safe-area-inset-top); }
-.hero-art{ margin:0 -16px; position:relative; }
-.hero-art img{ display:block; width:100%; aspect-ratio:1/1; object-fit:cover; max-height:62vh; object-position:center 55%; }
-.hero-art::after{ content:''; position:absolute; left:0; right:0; bottom:0; height:38%; background:linear-gradient(to bottom, rgba(247,239,226,0), var(--bg)); }
-.apptitle{ position:relative; margin:-64px 0 14px; text-align:center; font-size:2.05rem; font-style:italic; color:var(--wine2); text-shadow:0 2px 0 #fff6e6; }
+.hero-art{ margin:0 -16px 10px; position:relative; text-align:center; }
+.hero-art img{ display:block; width:100%; max-width:min(100%, 50vh); margin:0 auto; aspect-ratio:1/1; height:auto; object-fit:contain; border-radius:0 0 18px 18px; }
+.hero-art::after{ display:none; }
+.apptitle{ position:relative; margin:4px 0 10px; text-align:center; font-size:1.6rem; font-style:italic; color:var(--wine2); }
+.auth{ max-width:520px; margin:0 auto; }
+.auth .seg{ margin:6px 0 10px; } .auth .seg button{ padding:7px; }
+.auth .card{ padding:12px 14px; margin:8px 0 16px; } .auth label{ margin:8px 0 2px; font-size:.85rem; } .auth input{ padding:9px 11px; margin-top:4px; } .auth .btn.big{ padding:11px; margin-top:6px; } .auth .err{ min-height:0; margin:4px 0; }
 .seg{ display:flex; background:#efe2cf; border-radius:14px; padding:4px; gap:4px; margin:10px 0; }
 .seg button{ flex:1; border:none; background:transparent; padding:9px; border-radius:11px; font:600 .92rem var(--font); color:var(--muted); cursor:pointer; }
 .seg button.on{ background:var(--card); color:var(--wine); box-shadow:0 1px 3px rgba(80,40,20,.15); }
@@ -168,6 +171,10 @@ details.factcat summary{ list-style:none; display:flex; gap:12px; align-items:ce
 details.factcat summary span:last-child{ display:flex; flex-direction:column; } details.factcat summary small{ color:var(--muted); font-size:.8rem; }
 .factitem{ border-top:1px solid var(--line); padding:12px 0; } .factitem h4{ color:var(--wine); } .factitem p{ margin:.2em 0 .3em; }
 .apa{ padding-left:2em; text-indent:-2em; font-size:1rem; }
+#gS{ background:rgba(217,166,64,.35); font-size:1.4rem; }
+body::before{ content:''; position:fixed; left:0; right:0; bottom:0; height:200px; background:var(--skyline) repeat-x left bottom / 640px 200px; opacity:.09; pointer-events:none; z-index:0; }
+#app{ position:relative; z-index:1; }
+.warnbox{ background:#fff3dc; border:1px solid #f0d9a8; border-radius:10px; padding:8px 10px; font-size:.86rem; }
 </style>
 </head>
 <body>
@@ -180,7 +187,7 @@ details.factcat summary span:last-child{ display:flex; flex-direction:column; } 
     <div style="position:relative;display:inline-block;line-height:0"><canvas id="gc" width="840" height="480"></canvas><div id="gpanel" class="gpanel hidden"></div></div>
     <div class="rotate-hint">📱↻ Tipp: Handy quer halten für ein größeres Spielfeld · Tip: rotate your phone</div>
     <div id="gBossBtns" style="display:none"><button id="gDrink">🥤</button><button id="gGel">⚡</button></div>
-    <div class="gtouch"><div class="grp"><button id="gL" aria-label="links">◀</button><button id="gR" aria-label="rechts">▶</button></div><div class="grp"><button id="gJ" aria-label="springen">⤒</button></div></div>
+    <div class="gtouch"><div class="grp"><button id="gL" aria-label="links">◀</button><button id="gR" aria-label="rechts">▶</button></div><div class="grp"><button id="gS" aria-label="Brezel werfen">🥨</button><button id="gJ" aria-label="springen">⤒</button></div></div>
   </div>
   <div id="gToast"></div>
 </div>
@@ -190,7 +197,8 @@ details.factcat summary span:last-child{ display:flex; flex-direction:column; } 
 const RACE_DEFAULT = '2027-04-25';
 const APP_NAME = 'Mein Weg zum Atos-Halbmarathon';
 const CREATOR_NAME = 'Laura';        // Ersteller-Konto: voller Zugriff zum Testen
-const UNLOCK_ALL_DATE = '2027-04-23'; // ab hier: alle Level + Bosskampf für alle
+const UNLOCK_ALL_DATE = '2027-04-24'; // Level 8 + alle noch gesperrten Level + Bosskampf für alle
+const LEVEL_PCT = [null, null, 0.35, 0.50, 0.65, 0.80, 0.95, null]; // Level 1/2: 5/10 km, Level 8: Datum
 const RACE_NAME = 'ATOS Halbmarathon Heidelberg 2027';
 
 /* Abkürzungen im Plan: '-' = P/AT (Pause oder alternatives Training), 'P' = Pause */
@@ -327,6 +335,9 @@ const LEVELS = {
   k50: { label: '10 km in ca. 50 min', a: 'A50', hm: 'H150' },
   k46: { label: '10 km in ca. 46–47 min oder schneller', a: 'A46', hm: 'H145' }
 };
+/* Zeitziel -> nächstliegender Halbmarathon-Plan (Aderhold, 2018, S. 480 f.); ohne Ziel: ankommen -> ruhigster Plan */
+const HM_REQ = { H215: 3600, H200: 3300, H150: 3000, H145: 2820 }; // Voraussetzung lt. Plan: 10 km in ca. …
+function hmPlanForGoal(goal){ if (!goal) return 'H215'; const m = goal/60; if (m >= 130) return 'H215'; if (m >= 117) return 'H200'; if (m >= 108.5) return 'H150'; return 'H145'; }
 function levelFrom10k(sec){ const m = sec/60;
   if (m > 62.5) return 'k65'; if (m > 57.5) return 'k60'; if (m > 52.5) return 'k55'; if (m > 48.5) return 'k50'; return 'k46'; }
 /* Vorbereitungsblöcke nach längstem Lauf: Galloway & Galloway (2019) setzen für die Zeitziel-Programme
@@ -334,64 +345,66 @@ function levelFrom10k(sec){ const m = sec/60;
 function preBlocks(longestKm, level){ const a = LEVELS[level].a;
   if (longestKm < 8) return ['FG1','FG2',a]; if (longestKm < 11) return ['FG2',a]; return [a]; }
 
-/* Trainingsformen – ausführlich, mit Gefühls-Variante ohne Pulsmessung (Beck, 2024, S. 162) */
+/* Trainingsformen: Tempo nach Aderhold (2018, S. 89); Pulsbereiche und Gefühl nach Beck (2024, Zonentabelle S. 110, Erläuterungen S. 162).
+   HF_NOTE wird in der App angezeigt. */
+const HF_NOTE = 'Pulsbereiche und Gefühl: Beck (2024, S. 110, 162). Die Zuordnung zu Aderholds Laufarten erfolgt über die Prozentwerte der maximalen Herzfrequenz (220 − Lebensalter, Beck, 2024, S. 162).';
 const TYPES = {
-  'RDL':  { name:'Regenerativer Dauerlauf', hf:'65–70 % HFmax',
+  'RDL':  { name:'Regenerativer Dauerlauf', hf:'60–69 % HFmax',
     what:'Ein sehr ruhiger Lauf, der vor allem der Erholung dient. Er hält die Beine in Bewegung, ohne neue Ermüdung zu erzeugen.',
     why:'Fördert die Regeneration zwischen fordernden Einheiten.',
-    feel:'Ganz locker – du kannst dich während des Laufens noch gut unterhalten.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 162' },
-  'R-EDL':{ name:'Ruhiger langer Lauf', hf:'65–75 % HFmax',
+    feel:'Langsamer Dauerlauf: Du kannst während des Laufens noch gut sprechen.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 110, 162' },
+  'R-EDL':{ name:'Ruhiger langer Lauf', hf:'60–70 % HFmax',
     what:'Langer, ruhiger Lauf im Bereich zwischen regenerativem und extensivem Dauerlauf. Hier zählt die Dauer, nicht das Tempo.',
     why:'Baut Grundlagenausdauer auf und gewöhnt Sehnen, Bänder und Muskeln an längere Belastung.',
-    feel:'Locker – du kannst dich während des Laufens noch gut unterhalten.', src:'Aderhold, 2018, S. 468; Beck, 2024, S. 162',
+    feel:'Langsamer Dauerlauf: Du kannst während des Laufens noch gut sprechen.', src:'Aderhold, 2018, S. 468; Beck, 2024, S. 110, 162',
     dev:'Lesart der App für „R-EDL“ – Abkürzung im Buch nicht erklärt.' },
-  'E-RDL':{ name:'Ruhiger langer Lauf (eher regenerativ)', hf:'65–75 % HFmax',
+  'E-RDL':{ name:'Ruhiger langer Lauf (eher regenerativ)', hf:'60–70 % HFmax',
     what:'Wie der ruhige lange Lauf, aber eher am ruhigen Ende – zum Abschluss eines Trainingszyklus.',
     why:'Grundlagenausdauer mit Fokus auf Erholung.',
-    feel:'Sehr locker – Unterhalten fällt dir leicht.', src:'Aderhold, 2018, S. 468; Beck, 2024, S. 162',
+    feel:'Langsamer Dauerlauf: Du kannst während des Laufens noch gut sprechen.', src:'Aderhold, 2018, S. 468; Beck, 2024, S. 110, 162',
     dev:'Lesart der App für „E-RDL“ – Abkürzung im Buch nicht erklärt.' },
-  'EDL':  { name:'Extensiver Dauerlauf', hf:'70–75 % HFmax',
+  'EDL':  { name:'Extensiver Dauerlauf', hf:'ca. 70 % HFmax',
     what:'Der klassische lockere Grundlagenlauf. Samstags ist er der lange Lauf der Woche, der dich Schritt für Schritt an die 21,1 km heranführt.',
     why:'Verbessert die aerobe Ausdauer – die Basis für den Halbmarathon.',
-    feel:'Locker – du kannst während des Laufens noch gut sprechen.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 162' },
-  'EDL+ST':{ name:'Lockerer Lauf mit Steigerungen', hf:'70–75 % HFmax (Steigerungen schneller)',
+    feel:'Langsamer Dauerlauf: Du kannst während des Laufens noch gut sprechen.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 110, 162' },
+  'EDL+ST':{ name:'Lockerer Lauf mit Steigerungen', hf:'ca. 70 % HFmax (Steigerungen schneller)',
     what:'Ein extensiver Dauerlauf, an dessen Ende einige Steigerungsläufe stehen: etwa 100 m, langsam beginnend und immer schneller werdend; bei ca. 80 m ist die höchste Geschwindigkeit erreicht und wird kurz gehalten – mit langen, kraftvollen Schritten.',
     why:'Hält dich „spritzig“ und schult einen kraftvollen Laufstil, ohne zu ermüden.',
-    feel:'Dauerlauf locker (noch gut sprechen), Steigerungen bis fast ganz schnell.', src:'Aderhold, 2018, S. 469 ff.; Beck, 2024, S. 162',
+    feel:'Dauerlauf: noch gut sprechen. Steigerungen: auf den letzten Metern maximale Geschwindigkeit.', src:'Aderhold, 2018, S. 469 ff.; Beck, 2024, S. 162',
     dev:'„8/2 km“ wird gedeutet als: 2 km, wenn am nächsten Tag ein Wettkampf ansteht, sonst 8 km.' },
-  'EDL/WK':{ name:'Langer Lauf oder 10-km-Wettkampf', hf:'70–75 % HFmax bzw. Wettkampf',
+  'EDL/WK':{ name:'Langer Lauf oder 10-km-Wettkampf', hf:'ca. 70 % HFmax bzw. 90–95 % im 10-km-Wettkampf',
     what:'Entweder ein lockerer langer Lauf – oder ein 10-km-Aufbauwettkampf als Leistungstest. Aus einer 10-km-Zeit etwa zwei Wochen vor dem Halbmarathon lässt sich die Zielzeit abschätzen (× 2,2234).',
     why:'Der Wettkampf zeigt dir deinen aktuellen Leistungsstand.',
-    feel:'Als Dauerlauf: locker. Als Wettkampf: das schnellste Tempo, das du gleichmäßig über 10 km halten kannst.', src:'Aderhold, 2018, S. 469 ff.; Beck, 2024' },
+    feel:'Als Dauerlauf: noch gut sprechen. Als Wettkampf: maximale, aber konstante Geschwindigkeit.', src:'Aderhold, 2018, S. 469 ff.; Beck, 2024, S. 162' },
   'IDL':  { name:'Intensiver Dauerlauf', hf:'75–80 % HFmax',
     what:'Ein zügiger Dauerlauf, schneller als der lockere Lauf, aber noch gut kontrollierbar (Tempo: Tempodauerlauf + 25 s/km).',
     why:'Verbessert die Ausdauer bei höherem Tempo.',
-    feel:'Zügig – du kannst beim Laufen gerade noch sprechen.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 162' },
-  'I-TDL':{ name:'Zügiger bis schneller Dauerlauf', hf:'75–90 % HFmax',
+    feel:'Lockerer Dauerlauf: Du kannst beim Laufen gerade noch sprechen.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 110, 162' },
+  'I-TDL':{ name:'Zügiger bis schneller Dauerlauf', hf:'75–89 % HFmax',
     what:'Ein Dauerlauf im Bereich zwischen intensivem Dauerlauf und Tempodauerlauf – die Brücke zum schnelleren Training.',
     why:'Bereitet auf Tempodauerläufe und das Renntempo vor.',
-    feel:'Von „gerade noch sprechen“ bis „schnell, aber gleichmäßig haltbar“.', src:'Aderhold, 2018, S. 469 ff.; Beck, 2024, S. 162',
+    feel:'Vom lockeren Dauerlauf (gerade noch sprechen) bis zum schnellen Dauerlauf (maximale, aber konstante Geschwindigkeit).', src:'Aderhold, 2018, S. 469 ff.; Beck, 2024, S. 110, 162',
     dev:'Lesart der App für „I-TDL“ – Abkürzung im Buch nicht erklärt.' },
-  'TDL':  { name:'Tempodauerlauf', hf:'80–90 % HFmax',
+  'TDL':  { name:'Tempodauerlauf', hf:'83–89 % HFmax',
     what:'Ein schneller Dauerlauf an der aeroben Schwelle. Das Tempo liegt etwa 15 s/km langsamer als dein 10-km-Wettkampftempo.',
     why:'Hebt deine Schwelle an – du kannst ein höheres Tempo länger halten.',
-    feel:'Schnell, aber so, dass du das Tempo über die ganze Strecke gleichmäßig halten kannst.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 162' },
-  'TDL/EDL':{ name:'Tempodauerlauf oder lockerer Dauerlauf', hf:'70–90 % HFmax',
+    feel:'Schneller Dauerlauf: so, dass du die ganze Einheit mit maximaler, aber konstanter Geschwindigkeit laufen kannst.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 110, 162' },
+  'TDL/EDL':{ name:'Tempodauerlauf oder lockerer Dauerlauf', hf:'ca. 70 % bzw. 83–89 % HFmax',
     what:'Je nach Tagesform läufst du einen Tempodauerlauf oder einen extensiven Dauerlauf.',
     why:'Gibt dir Spielraum, auf dein Körpergefühl zu hören.',
-    feel:'Gut erholt: schnell, aber gleichmäßig. Müde: locker (noch gut sprechen).', src:'Aderhold, 2018, S. 480 f.; Beck, 2024, S. 162' },
-  'FS':   { name:'Fahrtspiel', hf:'wechselnd',
+    feel:'Gut erholt: schneller Dauerlauf (maximal, aber konstant). Müde: langsamer Dauerlauf (noch gut sprechen).', src:'Aderhold, 2018, S. 480 f.; Beck, 2024, S. 162' },
+  'FS':   { name:'Fahrtspiel', hf:'wechselnd, ca. 70 % bis 83–89 % HFmax',
     what:'Ein Lauf mit Tempowechseln. Ein Beispiel: 1 km, 2 km, 3 km, 2 km, 1 km im schnellen Dauerlauf, dazwischen jeweils 3 Minuten langsamer Dauerlauf.',
     why:'Bringt Abwechslung und trainiert verschiedene Tempobereiche in einer Einheit.',
-    feel:'Abwechselnd schnell (gleichmäßig haltbar) und locker (gut sprechen).', src:'Aderhold, 2018, S. 469 ff.; Beck, 2024, S. 162' },
-  'WHL':  { name:'Wiederholungsläufe', hf:'über dem Tempodauerlauf',
+    feel:'Abwechselnd schneller Dauerlauf und langsamer Dauerlauf (noch gut sprechen).', src:'Aderhold, 2018, S. 469 ff.; Beck, 2024, S. 162' },
+  'WHL':  { name:'Wiederholungsläufe', hf:'83–89 % HFmax (Schwellenzone)',
     what:'Schnelle Abschnitte über 1.000 bis 3.000 m, dazwischen Trabpausen im langsamen Dauerlauf. Davor und danach je etwa 10 Minuten ein- und auslaufen.',
     why:'Steigern Tempohärte und Kraftausdauer.',
-    feel:'Schnell – deutlich schneller als dein Tempodauerlauf; in den Pausen locker traben.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 162' },
+    feel:'Schnelle Abschnitte, dazwischen langsamer Dauerlauf zur Erholung.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 110, 162' },
   'WHL/WKT':{ name:'Wiederholungsläufe im Renntempo', hf:'85–88 % HFmax',
     what:'Abschnitte genau in deinem geplanten Halbmarathon-Tempo, mit Trabpausen dazwischen.',
     why:'Du bekommst ein sicheres Gefühl für dein Renntempo.',
-    feel:'Genau das Tempo, mit dem du am Renntag deine Zielzeit erreichen willst.', src:'Aderhold, 2018, S. 480 f.; Beck, 2024, S. 162' },
+    feel:'Renntempo: das Tempo, mit dem du am Renntag deine Zielzeit erreichen willst.', src:'Aderhold, 2018, S. 480 f.; Beck, 2024, S. 162' },
   'HM':   { name:'Halbmarathon!', hf:'ca. 85–88 % HFmax',
     what:'Renntag in Heidelberg – 21,1 km.', why:'Dein Ziel!',
     feel:'Gleichmäßig in deinem geplanten Renntempo, die erste Hälfte etwas ruhiger.', src:'Beck, 2024, S. 162' },
@@ -465,8 +478,8 @@ const FACTS = [
     de:'Im Grunde brauchst du nur ein gutes Paar Laufschuhe – und für schlechtes Wetter Funktionskleidung. Ein Herzfrequenz-Messgerät hilft, im richtigen Belastungsbereich zu trainieren.',
     en:'All you really need is a good pair of running shoes – plus functional clothing for bad weather.', src:'Aderhold, 2018, S. 140' },
   { id:'hfmax', cat:'ausruestung', title:'Maximalpuls schätzen',
-    de:'Der Maximalpuls ist der höchste Pulswert bei maximaler Anstrengung. Faustformel: 220 minus Lebensalter. Kannst du deinen Puls nicht messen, orientierst du dich am Gefühl: Kannst du noch gut sprechen, gerade noch sprechen – oder gar nicht mehr?',
-    en:'Max heart rate rule of thumb: 220 minus your age.', src:'Beck, 2024, S. 162' },
+    de:'Der Maximalpuls ist der höchste Pulswert bei maximaler Anstrengung. Faustformel: 220 minus Lebensalter. Beck teilt die Belastung in Zonen ein: 60–69 % langsamer Dauerlauf zur Regeneration, 70–80 % ruhiger bis lockerer Dauerlauf für die aerobe Ausdauer, 83–89 % Schwellenzone für Intervalle. Ohne Pulsmessung hilft das Gefühl: noch gut sprechen (ca. 70 %) oder gerade noch sprechen (75–80 %).',
+    en:'Max heart rate rule of thumb: 220 minus your age.', src:'Beck, 2024, S. 110, 162' },
   { id:'waerme', cat:'strecke', title:'Wärme bremst',
     de:'Ab 14 °C solltest du pro 2 °C mehr etwa 20 s/km langsamer laufen – bei langen Läufen und im Rennen. Wer bei 24 °C sein normales Tempo läuft, zahlt später drauf.',
     en:'Above 14 °C, run about 20 s/km slower for every extra 2 °C.', src:'Galloway & Galloway, 2019, S. 49' },
@@ -474,8 +487,8 @@ const FACTS = [
     de:'Rückenwind mit 15 km/h macht dich etwa 5 % schneller – doch der Vorteil von Rückenwind ist nur etwa halb so groß wie der Nachteil von Gegenwind. Eine Runde mit Hin- und Rückweg im Wind ist also immer langsamer als bei Windstille.',
     en:'A 15 km/h tailwind makes you about 5% faster – but its benefit is only about half the headwind penalty.', src:'Aderhold, 2018' },
   { id:'berg', cat:'strecke', fun:true, title:'Was bergauf verloren geht …',
-    de:'… holst du bergab nicht ganz wieder auf. Profilierte Strecken sind deshalb immer langsamer als flache. Der Heidelberger Halbmarathon mit seinen Anstiegen ist dafür das beste Beispiel – plane dein Tempo entsprechend.',
-    en:'Time lost uphill is never fully regained downhill – hilly courses are always slower.', src:'Aderhold, 2018' },
+    de:'… kannst du bergab nicht wieder einholen. Profilierte Strecken sind deshalb immer langsamer als flache. Der Heidelberger Halbmarathon mit seinen Anstiegen ist dafür das beste Beispiel – plane dein Tempo entsprechend.',
+    en:'Time lost uphill cannot be regained downhill – hilly courses are always slower.', src:'Aderhold, 2018' },
   { id:'5149', cat:'tempo', title:'Die 51/49-Regel',
     de:'Lauf die erste Streckenhälfte in etwa 51 % der Gesamtzeit und die zweite in 49 %. Wer zu schnell startet, verliert in der zweiten Hälfte etwa doppelt so viel Zeit, wie er vorne gewonnen hat. Und: In der zweiten Hälfte andere zu überholen, motiviert enorm.',
     en:'51/49 rule: first half in about 51% of your time, second half in 49%.', src:'Beck, 2024' },
@@ -513,10 +526,10 @@ const FACTS = [
     de:'Halte den Tag vor deinem langen Lauf frei von anstrengendem Training. So gehst du ausgeruht in die wichtigste Einheit der Woche.',
     en:'Keep the day before your long run free of strenuous training.', src:'Galloway & Galloway, 2019, S. 49' },
   { id:'walking', cat:'training', fun:true, title:'Was deine Gelenke aushalten',
-    de:'Beim Gehen wirkt etwa das 1- bis 1,5-Fache deines Körpergewichts auf die Gelenke, beim Laufen das 3- bis 5-Fache. Kein Wunder, dass Ruhetage so wichtig sind.',
+    de:'Beim Gehen wirkt etwa das 1- bis 1,5-Fache deines Körpergewichts auf die Gelenke, beim Laufen das 3- bis 5-Fache.',
     en:'Walking puts 1–1.5 times your body weight on your joints; running 3–5 times.', src:'Aderhold, 2018, S. 140' },
   { id:'50km', cat:'training', fun:true, title:'Mehr ist nicht immer gesünder',
-    de:'Mehr als 50 Laufkilometer pro Woche scheinen keinen zusätzlichen gesundheitlichen Effekt zu bringen. Für die Leistung kann mehr Umfang sinnvoll sein – für die Gesundheit reicht weniger.',
+    de:'Mehr als 50 Laufkilometer pro Woche scheinen keinen zusätzlichen gesundheitlichen Effekt zu bringen.',
     en:'More than 50 km a week does not seem to add further health benefits.', src:'Aderhold, 2018, S. 141' },
   { id:'endorphin', cat:'training', fun:true, title:'Das gute Gefühl danach',
     de:'Endorphine sorgen für das gute Gefühl nach dem Training und sollen schmerzhemmend wirken.',
@@ -581,11 +594,12 @@ function sessionLabel(s){
 /* Kanonische Blockfolge für ein Niveau + längsten Lauf */
 function canonFor(p){
   const seq=[]; preBlocks(p.longest||11, p.level).forEach(b => PLANS[b].weeks.forEach((w,i)=>seq.push({b, i, pre:true})));
-  PLANS[LEVELS[p.level].hm].weeks.forEach((w,i)=>seq.push({b:LEVELS[p.level].hm, i, pre:false}));
+  const hm = hmPlanForGoal(p.goal); PLANS[hm].weeks.forEach((w,i)=>seq.push({b:hm, i, pre:false}));
   return seq;
 }
 /* Niveau aus Wohlfühl- und Durchschnittstempo schätzen (Formeln: Aderhold, 2018, S. 89):
-   Wohlfühltempo ≈ extensiver Dauerlauf (EDL = TDL × 1,25); Durchschnittstempo ≈ Mitte zwischen EDL und IDL (IDL = TDL + 25 s).
+   Wohlfühltempo ≈ extensiver Dauerlauf (EDL = TDL × 1,25) – gestützt auf Aderhold, 2018, S. 138 f. (wohlfühlen/unterhalten = 60–75 % HFmax);
+   Durchschnittstempo ≈ Mitte zwischen EDL und IDL (IDL = TDL + 25 s) – ANNAHME DER APP, nicht aus den Büchern.
    Es wird die vorsichtigere (langsamere) Schätzung genommen; 10-km-Tempo = TDL − 15 s. */
 function estimateLevel(avgSec, comfortSec){
   const t1 = comfortSec/1.25, t2 = (2*avgSec - 25)/2.25; const TDL = Math.max(t1, t2);
@@ -683,9 +697,8 @@ function applyPause(state, from, to, reason){
   return msgs;
 }
 
-/* Niveau/Ziel ändern ab aktueller Woche */
-function changeLevel(state, level){
-  state.profile.level = level;
+/* Plan ab aktueller Woche neu berechnen (z. B. nach Zieländerung) */
+function replanFromNow(state){
   const cur = mondayOf(todayS());
   const keep = state.weeks.filter(w=>w.monday < cur);
   state.canon = canonFor(state.profile);
@@ -693,9 +706,13 @@ function changeLevel(state, level){
   const n = daysBetween(cur, raceMon)/7 + 1;
   const r = fitWeeks(state.canon, 0, n);
   const neu = r.list.map((k,j)=>Object.assign(makeWeek(addDays(cur,7*j), state.canon[k]), {ci:k}));
+  // bereits erledigte Einheiten der laufenden Woche übernehmen
+  const old = state.weeks.find(w=>w.monday===cur);
+  if (old && neu[0]) old.sessions.forEach(o=>{ if (o.done){ const t = neu[0].sessions.find(x=>x.date===o.date); if (t) Object.assign(t,{done:true,kmDone:o.kmDone,time:o.time,hr:o.hr,hm:o.hm,km:o.kmDone!=null?t.km:o.km}); else state.extra.push({date:o.date, km:o.kmDone!=null?o.kmDone:(o.km||0), time:o.time, hr:o.hr, hm:o.hm}); } });
   const last = neu[neu.length-1]; if (last) last.sessions.forEach(s=>{ if(s.code==='HM') s.date=state.profile.race; });
   state.weeks = keep.concat(neu); state.notices = r.notes; state.game.thresholds = computeThresholds(state);
 }
+function changeGoal(state, goal){ state.profile.goal = goal || null; replanFromNow(state); }
 
 /* Tempi nach Aderhold (2018, S. 89; nach Wenzel, 1991) */
 function paces(tenKsec){
@@ -718,16 +735,11 @@ function paceFor(code, arg, P){
   return '';
 }
 
-/* Level-Schwellen: 5, 10, 20 km – danach nach geplanten Wochenkilometern gleichmäßig verteilt,
-   so dass Level 8 spätestens bis zum 22.04. erreichbar ist (80 % des Plans genügen). Ab UNLOCK_ALL_DATE ist ohnehin alles frei. */
+/* Level-Schwellen: Level 1 bei 5 km, Level 2 bei 10 km, Level 3–7 bei 35/50/65/80/95 % der geplanten Gesamtkilometer.
+   Level 8 (und alles noch Gesperrte) wird am UNLOCK_ALL_DATE freigeschaltet. */
 function computeThresholds(state){
-  const end = addDays(UNLOCK_ALL_DATE,-1); let cum=0; const pts=[];
-  state.weeks.forEach(w=>w.sessions.forEach(s=>{ if (s.date<=end){ cum += (s.km||0); pts.push({d:s.date, c:cum}); } }));
-  const th=[5,10,20]; if (!pts.length) return th.concat([40,60,80,100,120]);
-  const i20 = Math.max(0, pts.findIndex(p=>p.c>=20/0.8));
-  for (let k=1;k<=5;k++){ const idx = Math.min(pts.length-1, Math.round(i20 + (pts.length-1-i20)*k/5));
-    let v = Math.round(pts[idx].c*0.8/5)*5; v = Math.max(v, th[th.length-1]+5); th.push(v); }
-  return th;
+  const tot = plannedKm(state);
+  return LEVEL_PCT.map((f,i)=> i===0 ? 5 : i===1 ? 10 : f==null ? null : Math.max(15, Math.round(tot*f)));
 }
 function totalKm(state){
   let k=0; state.weeks.forEach(w=>w.sessions.forEach(s=>{ if(s.done) k += (s.kmDone!=null? s.kmDone : (s.km||0)); }));
@@ -837,11 +849,11 @@ const GEAR = [
     bossDe:'Mehr Sprungkraft gegen den Schweinehund.', bossEn:'Extra jump power against the beast.',
     tipDe:'Als Ausrüstung brauchst du vor allem ein Paar Laufschuhe – und nach 800–1.000 km ein neues (Aderhold, 2018, S. 104, 140).', tipEn:'Above all you need a pair of running shoes – and a new pair after 800–1,000 km (Aderhold, 2018).' },
   { id:'socks', icon:'🧦', de:'Laufsocken', en:'Running socks', bossDe:'+1 Herz', bossEn:'+1 heart',
-    tipDe:'Vor und nach jedem Lauf je etwa 10 Minuten ein- und auslaufen (Beck, 2024, S. 162).', tipEn:'Warm up and cool down for about 10 minutes before and after each run (Beck, 2024).' },
+    tipDe:'Vor und nach jedem Lauf je etwa 10 Minuten ein- und auslaufen – außer beim langsamen Dauerlauf (Beck, 2024, S. 162).', tipEn:'Warm up and cool down for about 10 minutes before and after each run – except for slow easy runs (Beck, 2024).' },
   { id:'shirt', icon:'🎽', de:'Funktionsshirt', en:'Running shirt', bossDe:'+1 Herz', bossEn:'+1 heart',
     tipDe:'Für schlechtes Wetter empfiehlt sich Funktionskleidung (Aderhold, 2018, S. 140).', tipEn:'For bad weather, functional sportswear is recommended (Aderhold, 2018).' },
   { id:'watch', icon:'⌚', de:'Pulsuhr', en:'Heart-rate watch', bossDe:'Zeigt dir, wie lange der Schweinehund verwundbar ist.', bossEn:'Shows how long the beast is vulnerable.',
-    tipDe:'Ein Herzfrequenz-Messgerät hilft, im richtigen Bereich zu trainieren – z. B. extensiver Dauerlauf bei 70–75 % HFmax (Aderhold, 2018).', tipEn:'A heart-rate monitor helps you train in the right zone – e.g. easy runs at 70–75% of max HR (Aderhold, 2018).' },
+    tipDe:'Ein Herzfrequenz-Messgerät hilft, im richtigen Bereich zu trainieren – z. B. langsamer Dauerlauf bei ca. 70 % der maximalen Herzfrequenz (Aderhold, 2018, S. 138 f.; Beck, 2024, S. 162).', tipEn:'A heart-rate monitor helps you train in the right zone – e.g. slow easy runs at about 70% of max HR (Beck, 2024).' },
   { id:'cap', icon:'🧢', de:'Laufkappe', en:'Running cap', bossDe:'Schild: blockt einen Treffer.', bossEn:'Shield: blocks one hit.',
     tipDe:'Wärme bremst: ab 14 °C pro 2 °C etwa 20 s/km langsamer laufen (Galloway & Galloway, 2019).', tipEn:'Heat slows you down: above 14 °C run about 20 s/km slower per 2 °C (Galloway & Galloway, 2019).' },
   { id:'bottle', icon:'🥤', de:'Trinkflasche', en:'Water bottle', bossDe:'Einmal trinken = 1 Herz zurück.', bossEn:'Drink once = 1 heart back.',
@@ -857,7 +869,7 @@ const GT = {
   title:'Heidelberg Run – Die Jagd nach dem Schweinehund',
   intro:'Heidelberg, kurz vor dem ATOS Halbmarathon. Über Nacht hat der innere Schweinehund – halb Schwein, halb Hund – deine komplette Laufausrüstung in der ganzen Stadt versteckt und seine Gehilfen, die kleinen Schweinehunde, losgeschickt. Sein Plan: Am Renntag sollst du auf seinem Sofa bleiben! Doch der Brückenaffe von der Alten Brücke hat alles beobachtet. „Hol dir deine Sachen zurück“, raunt er, „Stück für Stück – und mit jedem Trainingskilometer wirst du stärker.“',
   levels:[
-   {name:'Neckarwiese', story:'Am Neckarufer wärmst du dich auf. Zwischen Liegewiesen und Pfützen blitzt etwas – deine Laufschuhe! Aber Vorsicht: Überall lauern kleine Schweinehunde und rufen dir Ausreden zu. Spring ihnen auf den Kopf!'},
+   {name:'Neckarwiese', story:'Am Neckarufer wärmst du dich auf. Zwischen Liegewiesen und Pfützen blitzt etwas – deine Laufschuhe! Aber Vorsicht: Überall lauern kleine Schweinehunde und rufen dir Ausreden zu. Spring ihnen auf den Kopf – oder schieß sie mit deinen gesammelten Brezeln k.o.!'},
    {name:'Alte Brücke', story:'Der Brückenaffe grinst: „Deine Socken hat er über die Alte Brücke getragen.“ Auf der Brücke pfeift der Wind – Gegenwind bremst mehr, als Rückenwind hilft!'},
    {name:'Philosophenweg', story:'Hoch über dem Neckar schlängelt sich der Philosophenweg. Bergauf verlorene Zeit holst du bergab nicht ganz auf – also gleichmäßig bleiben. Irgendwo hier hängt dein Funktionsshirt.'},
    {name:'Hauptstraße', story:'Durch die Altstadt, vorbei an Läden und Cafés. Mitten im Trubel hat der Schweinehund deine Pulsuhr verloren.'},
@@ -866,7 +878,7 @@ const GT = {
    {name:'Heiligenberg', story:'Auf dem Heiligenberg, zwischen Thingstätte und alten Klostermauern, liegt dein Energie-Gel. Im Wald wimmelt es von kleinen Schweinehunden …'},
    {name:'Bismarckplatz bei Nacht', story:'Letzte Station: Nachts am Bismarckplatz. Der Schweinehund hat deine Startnummer – schnapp sie dir, dann steht dem Renntag nichts mehr im Weg!'}
   ],
-  boss:'Bosskampf: Der innere Schweinehund', bossStory:'Renntag! Am Start in der Altstadt wartet der innere Schweinehund persönlich – in voller Rüstung, sein Sofa im Schlepptau. Er wirft mit Sofakissen und springt dich an. Spring ihm auf den Helm, wenn er nach einem Sprung benommen ist!',
+  boss:'Bosskampf: Der innere Schweinehund', bossStory:'Renntag! Am Start in der Altstadt wartet der innere Schweinehund persönlich – in voller Rüstung, sein Sofa im Schlepptau. Er wirft mit Sofakissen und springt dich an. Spring ihm auf den Helm, wenn er nach einem Sprung benommen ist! Deine Brezeln aus allen Leveln sind dein Wurfvorrat – an der Rüstung prallen sie ab, nur wenn er benommen ist, treffen sie.',
   bossWin:'Geschafft! Der innere Schweinehund ist besiegt. Jetzt nichts wie hin zum Start – gleichmäßig loslaufen und die zweite Hälfte genießen!',
   xmas:'Weihnachtsmarkt-Lauf', xmasStory:'Heiligabend in Heidelberg: Auf dem Weihnachtsmarkt in der Altstadt sind Geschenke verloren gegangen. Sammle sie ein und bring sie zum großen Weihnachtsbaum – aber pass auf die kleinen Schweinehunde mit Weihnachtsmütze auf!',
   xmasWin:'Frohe Weihnachten! Alle Geschenke sind am Baum. Gönn dir die Feiertage – Erholung gehört zum Training.',
@@ -878,7 +890,7 @@ const GT = {
   bossLocked:'Der Bosskampf öffnet sich in den letzten Tagen vor dem Halbmarathon – ab', specialLocked:'Freigeschaltet ab',
   pretzels:'Brezeln', gifts:'Geschenke', sparklers:'Wunderkerzen', time:'Zeit', funfact:'Fun Fact', drink:'Trinken', gel:'Gel',
   excuses:['Zu kalt!','Morgen!','Keine Zeit!','Regen!','Zu müde!','Sofa!','Später!','Ach, nö!'],
-  gearTitle:'Deine Ausrüstung', story:'Geschichte', lang:'Sprache', controls:'Steuerung: ◀ ▶ laufen, ⤒ springen (Tastatur: Pfeile + Leertaste)',
+  gearTitle:'Deine Ausrüstung', story:'Geschichte', lang:'Sprache', controls:'Steuerung: ◀ ▶ laufen, ⤒ springen, 🥨 Brezel werfen (Tastatur: Pfeile, Leertaste, X)',
   bossGear:'So hilft dir deine Ausrüstung im Bosskampf:', start:'Start', level:'Level', hp:'Schweinehund',
   advent:'Adventskalender', door:'Türchen', openFrom:'öffnet am', funFact:'Fun Fact', realFact:'Echter Fakt', bonus:'Bonus-Minispiel', source:'Quelle'
  },
@@ -886,7 +898,7 @@ const GT = {
   title:'Heidelberg Run – Chasing the Inner Couch Beast',
   intro:'Heidelberg, just before the ATOS Half Marathon. Overnight, your inner couch beast – the "Schweinehund", half pig, half dog – has hidden all your running gear across the city and sent out its helpers, the little couch beasts. Its plan: keep you on its sofa on race day! But the Bridge Monkey from the Old Bridge saw everything. "Get your things back," he whispers, "piece by piece – every training kilometre makes you stronger."',
   levels:[
-   {name:'Neckar Meadow', story:'You warm up on the banks of the Neckar. Between lawns and puddles something shines – your running shoes! Careful: little couch beasts lurk everywhere, shouting excuses. Jump on their heads!'},
+   {name:'Neckar Meadow', story:'You warm up on the banks of the Neckar. Between lawns and puddles something shines – your running shoes! Careful: little couch beasts lurk everywhere, shouting excuses. Jump on their heads – or knock them out with the pretzels you collect!'},
    {name:'Old Bridge', story:'The Bridge Monkey grins: "He carried your socks across the Old Bridge." The wind is blowing on the bridge – a headwind slows you more than a tailwind helps!'},
    {name:'Philosophers\' Walk', story:'High above the Neckar winds the Philosophers\' Walk. Time lost uphill is never fully regained downhill – so keep it steady. Your running shirt is somewhere up here.'},
    {name:'Main Street', story:'Through the old town, past shops and cafés. In the hustle and bustle the beast dropped your heart-rate watch.'},
@@ -895,7 +907,7 @@ const GT = {
    {name:'Heiligenberg', story:'On the Heiligenberg, between the Thingstätte and old monastery walls, lies your energy gel. The forest is swarming with little couch beasts …'},
    {name:'Bismarckplatz by Night', story:'Final stop: Bismarckplatz at night. The beast has your race bib – grab it and nothing can stop you on race day!'}
   ],
-  boss:'Boss fight: The Inner Couch Beast', bossStory:'Race day! At the start in the old town the inner couch beast awaits – in full armour, its sofa in tow. It throws sofa cushions and leaps at you. Jump on its helmet while it is dazed after a leap!',
+  boss:'Boss fight: The Inner Couch Beast', bossStory:'Race day! At the start in the old town the inner couch beast awaits – in full armour, its sofa in tow. It throws sofa cushions and leaps at you. Jump on its helmet while it is dazed after a leap! The pretzels from all levels are your ammo – they bounce off its armour and only hit while it is dazed.',
   bossWin:'You did it! The inner couch beast is defeated. Off to the start – begin evenly and enjoy the second half!',
   xmas:'Christmas Market Run', xmasStory:'Christmas Eve in Heidelberg: presents have gone missing at the Christmas market in the old town. Collect them and bring them to the big Christmas tree – but watch out for little couch beasts wearing Santa hats!',
   xmasWin:'Merry Christmas! All presents are under the tree. Enjoy the holidays – rest is part of training.',
@@ -907,65 +919,106 @@ const GT = {
   bossLocked:'The boss fight opens in the last days before the half marathon – from', specialLocked:'Unlocks on',
   pretzels:'Pretzels', gifts:'Presents', sparklers:'Sparklers', time:'Time', funfact:'Fun fact', drink:'Drink', gel:'Gel',
   excuses:['Too cold!','Tomorrow!','No time!','Rain!','Too tired!','Couch!','Later!','Nah!'],
-  gearTitle:'Your gear', story:'Story', lang:'Language', controls:'Controls: ◀ ▶ run, ⤒ jump (keyboard: arrows + space)',
+  gearTitle:'Your gear', story:'Story', lang:'Language', controls:'Controls: ◀ ▶ run, ⤒ jump, 🥨 throw a pretzel (keyboard: arrows, space, X)',
   bossGear:'How your gear helps in the boss fight:', start:'Start', level:'Level', hp:'Couch beast',
   advent:'Advent calendar', door:'Door', openFrom:'opens on', funFact:'Fun fact', realFact:'Real fact', bonus:'Bonus mini-game', source:'Source'
  }
 };
 
-/* ===================== MUSIK =====================
+/* ===================== MUSIK & SOUNDS =====================
    Eigene Kompositionen, live per Web Audio erzeugt – keine fremden Aufnahmen, daher lizenzfrei.
-   „level“: heroisches Abenteuer-Thema in d-Moll · „boss“: düsteres, schnelleres Kampfthema in c-Moll mit Chor. */
+   „retro“: fröhliches 8-Bit-Jump-'n'-Run-Thema (Level & Specials) · „boss“: tiefes, episches Kampfthema mit Chor und Pauken.
+   Sounds: Brezel, Ausrüstung, Sprung, Wurf, K.O., Treffer, Level geschafft, Sieges-Fanfare. */
 const Music = (() => {
-  let ac = null, master = null, timer = 0, cur = null, step = 0, nextT = 0, noiseBuf = null;
+  let ac = null, master = null, sfxOut = null, timer = 0, cur = null, step = 0, nextT = 0, noiseBuf = null, pulse12 = null, pulse25 = null;
   const N = n => { const m = n.match(/^([A-G])(#|b)?(\d)$/); const base = {C:0,D:2,E:4,F:5,G:7,A:9,B:11}[m[1]] + (m[2]==='#'?1:m[2]==='b'?-1:0); return 440*Math.pow(2,(base + (+m[3]+1)*12 - 69)/12); };
-  const TRACKS = {
-    level: { bpm:136, chords:[['D3','F3','A3'],['Bb2','D3','F3'],['F2','A2','C3'],['C3','E3','G3'],['D3','F3','A3'],['Bb2','D3','F3'],['G2','Bb2','D3'],['A2','C#3','E3']],
-      lead:[[['D5',2],['A4',1],['D5',1],['F5',2],['E5',1],['D5',1]],[['F5',2],['D5',1],['F5',1],['Bb5',2],['A5',1],['F5',1]],[['A5',3],['G5',1],['F5',2],['C5',2]],[['E5',2],['G5',2],['C6',3],[null,1]],
-            [['D6',2],['C6',1],['A5',1],['F5',2],['A5',2]],[['Bb5',2],['A5',1],['G5',1],['F5',2],['D5',2]],[['G5',2],['Bb5',2],['D6',2],['C6',1],['Bb5',1]],[['A5',4],['C#6',2],['E6',2]]],
-      kick:[0,4,7], snare:[2,6], gallop:false, wave:'square', choir:false },
-    boss: { bpm:156, chords:[['C3','Eb3','G3'],['C3','Eb3','G3'],['Ab2','C3','Eb3'],['Bb2','D3','F3'],['C3','Eb3','G3'],['C3','Eb3','G3'],['Db3','F3','Ab3'],['G2','B2','D3']],
-      lead:[[['C5',3],['G4',1],['C5',1],['D5',1],['Eb5',2]],[['D5',2],['C5',1],['Bb4',1],['G4',4]],[['Ab4',2],['C5',2],['Eb5',3],['D5',1]],[['D5',2],['F5',2],['Bb5',4]],
-            [['C6',3],['Bb5',1],['G5',2],['Eb5',2]],[['F5',2],['Eb5',1],['D5',1],['C5',4]],[['Db5',2],['F5',2],['Ab5',2],['Db6',2]],[['B5',4],['D6',2],['G5',2]]],
-      kick:[0,1,2,3,4,5,6,7], snare:[2,6], gallop:true, wave:'sawtooth', choir:true }
-  };
+  const muted = () => !!(S && S.game && S.game.muted);
+  function pulseWave(duty){ const n=64, re=new Float32Array(n), im=new Float32Array(n); for (let k=1;k<n;k++){ re[k]=0; im[k]=(2/(k*Math.PI))*Math.sin(k*Math.PI*duty); } return ac.createPeriodicWave(re, im); }
   function ensure(){ if (!ac){ const C = window.AudioContext||window.webkitAudioContext; if (!C) return null; ac = new C();
-      const comp = ac.createDynamicsCompressor(); master = ac.createGain(); master.gain.value = 0.0001; master.connect(comp); comp.connect(ac.destination);
-      noiseBuf = ac.createBuffer(1, ac.sampleRate*0.5, ac.sampleRate); const d = noiseBuf.getChannelData(0); for (let i=0;i<d.length;i++) d[i]=Math.random()*2-1; }
+      const comp = ac.createDynamicsCompressor(); comp.connect(ac.destination);
+      master = ac.createGain(); master.gain.value = 0.0001; master.connect(comp);
+      sfxOut = ac.createGain(); sfxOut.gain.value = 0.5; sfxOut.connect(comp);
+      noiseBuf = ac.createBuffer(1, ac.sampleRate*0.6, ac.sampleRate); const d = noiseBuf.getChannelData(0); for (let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+      pulse12 = pulseWave(0.125); pulse25 = pulseWave(0.25); }
     if (ac.state==='suspended') ac.resume(); return ac; }
-  function env(g, t, a, peak, dec){ g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(peak,t+a); g.gain.exponentialRampToValueAtTime(0.0001,t+a+dec); }
-  function tone(freq, t, dur, type, vol, cutoff){ const o=ac.createOscillator(), g=ac.createGain(), f=ac.createBiquadFilter(); o.type=type; o.frequency.value=freq;
-    f.type='lowpass'; f.frequency.value=cutoff; o.connect(f); f.connect(g); g.connect(master); env(g,t,0.01,vol,dur); o.start(t); o.stop(t+dur+0.05); }
-  function lead(freq, t, dur, tr){ const o=ac.createOscillator(), o2=ac.createOscillator(), g=ac.createGain(), f=ac.createBiquadFilter(), lfo=ac.createOscillator(), lg=ac.createGain();
-    o.type=tr.wave; o2.type='sawtooth'; o.frequency.value=freq; o2.frequency.value=freq; o2.detune.value=7; lfo.frequency.value=5.5; lg.gain.value=freq*0.008; lfo.connect(lg); lg.connect(o.frequency);
-    f.type='lowpass'; f.frequency.setValueAtTime(900,t); f.frequency.linearRampToValueAtTime(2600,t+0.08); o.connect(f); o2.connect(f); f.connect(g); g.connect(master);
-    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.09,t+0.03); g.gain.setValueAtTime(0.08,t+Math.max(0.04,dur*0.8)); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-    [o,o2,lfo].forEach(x=>{ x.start(t); x.stop(t+dur+0.05); }); }
-  function pad(notes, t, dur, tr){ notes.forEach(n=>{ [-8,8].forEach(dt=>{ const o=ac.createOscillator(), g=ac.createGain(), f=ac.createBiquadFilter(); o.type='sawtooth'; o.frequency.value=N(n)*(tr.choir?2:1); o.detune.value=dt;
-      f.type=tr.choir?'bandpass':'lowpass'; f.frequency.value=tr.choir?750:1100; f.Q.value=tr.choir?3:0.7; o.connect(f); f.connect(g); g.connect(master);
-      g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(tr.choir?0.035:0.022,t+0.25); g.gain.setValueAtTime(tr.choir?0.03:0.02,t+dur-0.2); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.start(t); o.stop(t+dur+0.05); }); }); }
-  function kick(t, big){ const o=ac.createOscillator(), g=ac.createGain(); o.frequency.setValueAtTime(big?120:150,t); o.frequency.exponentialRampToValueAtTime(42,t+0.25); o.connect(g); g.connect(master); env(g,t,0.005,big?0.55:0.4,big?0.5:0.28); o.start(t); o.stop(t+0.6); }
-  function noise(t, dur, vol, hp){ const s=ac.createBufferSource(), f=ac.createBiquadFilter(), g=ac.createGain(); s.buffer=noiseBuf; f.type='highpass'; f.frequency.value=hp; s.connect(f); f.connect(g); g.connect(master); env(g,t,0.003,vol,dur); s.start(t); s.stop(t+dur+0.05); }
-  function schedule(){
-    const tr = TRACKS[cur]; if (!tr) return; const e8 = 60/tr.bpm/2, bars = tr.chords.length;
-    while (nextT < ac.currentTime + 0.15){
-      const bar = Math.floor(step/8) % bars, s8 = step % 8, t = nextT;
-      if (s8===0){ pad(tr.chords[bar], t, e8*8, tr); if (bar===0) noise(t, 1.2, 0.07, 4000);
-        let pos=0; tr.lead[bar].forEach(([n,d])=>{ if (n) lead(N(n), t+pos*e8, d*e8*0.95, tr); pos+=d; }); }
-      const root = N(tr.chords[bar][0]) / 2;
-      tone(s8%2 ? root*2 : root, t, e8*0.9, 'sawtooth', 0.12, 420);
-      if (tr.gallop) tone(root, t+e8/2, e8*0.45, 'sawtooth', 0.09, 380);
-      if (tr.kick.includes(s8)) kick(t, s8===0);
-      if (tr.snare.includes(s8)) noise(t, 0.16, 0.16, 1500);
-      if (bar===bars-1 && s8>=6){ noise(t, 0.08, 0.1, 900); noise(t+e8/2, 0.08, 0.1, 900); }
-      nextT += e8; step++;
+  function osc(type, freq){ const o = ac.createOscillator(); if (type==='p12') o.setPeriodicWave(pulse12); else if (type==='p25') o.setPeriodicWave(pulse25); else o.type = type; o.frequency.value = freq; return o; }
+  function note(dest, type, freq, t, dur, vol, opt){ opt = opt||{};
+    const o = osc(type, freq), g = ac.createGain(); let last = o;
+    if (opt.cut){ const f = ac.createBiquadFilter(); f.type = opt.band ? 'bandpass' : 'lowpass'; f.frequency.value = opt.cut; if (opt.q) f.Q.value = opt.q; o.connect(f); last = f; }
+    if (opt.slide) o.frequency.exponentialRampToValueAtTime(opt.slide, t+dur);
+    if (opt.vib){ const l=ac.createOscillator(), lg=ac.createGain(); l.frequency.value=5; lg.gain.value=freq*0.01; l.connect(lg); lg.connect(o.frequency); l.start(t); l.stop(t+dur+0.05); }
+    last.connect(g); g.connect(dest);
+    const a = opt.att || 0.005; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t+a);
+    if (opt.hold) g.gain.setValueAtTime(vol, t+Math.max(a, dur*opt.hold)); g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+    o.start(t); o.stop(t+dur+0.05); }
+  function noise(dest, t, dur, vol, hp, lp){ const s=ac.createBufferSource(), f=ac.createBiquadFilter(), g=ac.createGain(); s.buffer=noiseBuf; f.type=lp?'lowpass':'highpass'; f.frequency.value=lp||hp; s.connect(f); f.connect(g); g.connect(dest);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.004); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); s.start(t); s.stop(t+dur+0.05); }
+  function timpani(dest, t, f, vol, dur){ const o=ac.createOscillator(), g=ac.createGain(); o.frequency.setValueAtTime(f*1.5,t); o.frequency.exponentialRampToValueAtTime(f,t+0.08); o.connect(g); g.connect(dest);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.start(t); o.stop(t+dur+0.05); noise(dest,t,0.12,vol*0.25,0,500); }
+
+  /* ---- Retro-Thema (C-Dur, 150 bpm) ---- */
+  const RETRO = { bpm:150, chords:[['C3','G3','E4'],['A2','E3','C4'],['F2','C3','A3'],['G2','D3','B3'],['C3','G3','E4'],['A2','E3','C4'],['D3','A3','F4'],['C3','G3','E4']],
+    bass:['C2','A1','F1','G1','C2','A1','D2','C2'], fifth:['G2','E2','C2','D2','G2','E2','A2','G2'],
+    lead:[[['E5',1],['G5',1],['C6',2],['G5',1],['E5',1],['G5',2]],[['A5',2],['E5',1],['A5',1],['C6',2],['B5',1],['A5',1]],[['F5',1],['A5',1],['C6',1],['A5',1],['F5',2],['A5',2]],[['G5',2],['B5',1],['D6',1],['G6',3],[null,1]],
+          [['E6',1],['D6',1],['C6',1],['G5',1],['E5',2],['C5',2]],[['A5',1],['B5',1],['C6',1],['E6',1],['D6',2],['C6',2]],[['D6',2],['C6',1],['B5',1],['G5',2],['B5',2]],[['C6',4],['G5',2],['C6',2]]] };
+  /* ---- Episches Boss-Thema (c-Moll, tief, 128 bpm) ---- */
+  const BOSS = { bpm:128, chords:[['C3','Eb3','G3'],['C3','Eb3','G3'],['Ab2','C3','Eb3'],['Bb2','D3','F3'],['C3','Eb3','G3'],['F2','Ab2','C3'],['Db3','F3','Ab3'],['G2','B2','D3']],
+    root:['C1','C1','Ab0','Bb0','C1','F1','Db1','G1'],
+    lead:[[['C4',3],['G3',1],['C4',1],['D4',1],['Eb4',2]],[['D4',2],['C4',1],['Bb3',1],['G3',4]],[['Ab3',2],['C4',2],['Eb4',3],['D4',1]],[['D4',2],['F4',2],['Bb4',4]],
+          [['C5',3],['Bb4',1],['G4',2],['Eb4',2]],[['F4',2],['Eb4',1],['D4',1],['C4',4]],[['Db4',2],['F4',2],['Ab4',2],['Db5',2]],[['B4',4],['D5',2],['G4',2]]] };
+
+  function scheduleRetro(t, s8, bar){ const tr=RETRO, e8=60/tr.bpm/2;
+    if (s8===0){ let pos=0; tr.lead[bar].forEach(([n,d])=>{ if (n) note(master,'p25',N(n),t+pos*e8,d*e8*0.9,0.11,{hold:0.6}); pos+=d; }); }
+    note(master,'triangle', N(s8%2 ? tr.fifth[bar] : tr.bass[bar]), t, e8*0.8, 0.28, {hold:0.7});
+    const ch=tr.chords[bar]; note(master,'p12', N(ch[s8%3])*2, t, e8*0.45, 0.035); note(master,'p12', N(ch[(s8+1)%3])*2, t+e8/2, e8*0.4, 0.03);
+    noise(master, t, 0.03, 0.05, 7000);
+    if (s8===0 || s8===4) note(master,'triangle', 140, t, 0.09, 0.4, {slide:45});
+    if (s8===2 || s8===6) noise(master, t, 0.09, 0.12, 1800);
+  }
+  function scheduleBoss(t, s8, bar){ const tr=BOSS, e8=60/tr.bpm/2;
+    if (s8===0){ const ch=tr.chords[bar];
+      ch.forEach(n=>[-9,9].forEach(dt=>{ note(master,'sawtooth', N(n)*(1+dt/1200), t, e8*8, 0.03, {cut:520, band:true, q:2.5, att:0.35, hold:0.85}); }));   // Chor (tief)
+      ch.forEach(n=>note(master,'sawtooth', N(n)/2, t, e8*8, 0.022, {cut:380, att:0.2, hold:0.9}));                                                            // tiefe Streicher
+      let pos=0; tr.lead[bar].forEach(([n,d])=>{ if (n){ note(master,'sawtooth', N(n), t+pos*e8, d*e8*0.95, 0.07, {cut:1100, att:0.04, hold:0.8, vib:true}); note(master,'square', N(n)/2, t+pos*e8, d*e8*0.95, 0.05, {cut:600, att:0.05, hold:0.8}); } pos+=d; }); // Blechbläser
+      if (bar===0) noise(master, t, 2.2, 0.06, 3000);
     }
+    const r = N(tr.root[bar]); note(master,'sawtooth', r*2, t, e8*0.45, 0.14, {cut:300}); note(master,'sawtooth', r*2, t+e8/2, e8*0.4, 0.1, {cut:280});   // Ostinato
+    if (s8===0 || s8===4) timpani(master, t, r*2, 0.5, 0.7);
+    if (s8===3 || s8===7) timpani(master, t, r*3, 0.25, 0.4);
+    if (s8===2 || s8===6) noise(master, t, 0.18, 0.1, 1200);
+    if (bar===7 && s8>=4){ timpani(master, t+e8/2, r*3, 0.25, 0.25); }
+  }
+  function schedule(){
+    const bpm = cur==='boss' ? BOSS.bpm : RETRO.bpm, e8 = 60/bpm/2;
+    while (nextT < ac.currentTime + 0.15){ const bar = Math.floor(step/8) % 8, s8 = step % 8;
+      if (cur==='boss') scheduleBoss(nextT, s8, bar); else scheduleRetro(nextT, s8, bar);
+      nextT += e8; step++; }
   }
   const api = {
-    play(name){ if (S && S.game && S.game.muted) return; try { if (!ensure()) return; } catch(e){ return; } if (cur===name && timer) return; api.stop(true);
-      cur = name; step = 0; nextT = ac.currentTime + 0.08; const t=ac.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(0.0001,t); master.gain.exponentialRampToValueAtTime(0.32,t+0.6);
+    play(name){ if (muted()) return; try { if (!ensure()) return; } catch(e){ return; } name = name==='boss' ? 'boss' : 'retro'; if (cur===name && timer) return; api.stop(true);
+      cur = name; step = 0; nextT = ac.currentTime + 0.08; const t=ac.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(0.0001,t); master.gain.exponentialRampToValueAtTime(name==='boss'?0.4:0.3,t+0.5);
       schedule(); timer = setInterval(schedule, 40); },
-    stop(now){ if (timer){ clearInterval(timer); timer = 0; } cur = null; if (!ac) return; const t=ac.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(Math.max(0.0001,master.gain.value),t); master.gain.exponentialRampToValueAtTime(0.0001, t+(now?0.05:0.8)); },
+    stop(now){ if (timer){ clearInterval(timer); timer = 0; } cur = null; if (!ac) return; const t=ac.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(Math.max(0.0001,master.gain.value),t); master.gain.exponentialRampToValueAtTime(0.0001, t+(now?0.05:0.6)); },
+    sfx(kind){ if (muted()) return; try { if (!ensure()) return; } catch(e){ return; } const t = ac.currentTime + 0.01, o = sfxOut;
+      if (kind==='coin'){ note(o,'p25',N('B5'),t,0.07,0.25); note(o,'p25',N('E6'),t+0.07,0.22,0.25); }
+      else if (kind==='item'){ ['C5','E5','G5','C6','E6','G6','C7'].forEach((n,i)=>note(o,'p25',N(n),t+i*0.055,0.12,0.22)); note(o,'triangle',N('C4'),t,0.45,0.3); }
+      else if (kind==='jump'){ note(o,'p25',300,t,0.16,0.12,{slide:700}); }
+      else if (kind==='throw'){ note(o,'p12',900,t,0.1,0.12,{slide:300}); noise(o,t,0.05,0.08,3000); }
+      else if (kind==='ko'){ note(o,'square',600,t,0.25,0.18,{slide:120}); noise(o,t,0.12,0.15,800); }
+      else if (kind==='stomp'){ note(o,'square',220,t,0.12,0.22,{slide:80}); }
+      else if (kind==='hurt'){ note(o,'sawtooth',400,t,0.3,0.18,{slide:90}); }
+      else if (kind==='klonk'){ note(o,'square',1400,t,0.06,0.1); note(o,'triangle',700,t,0.15,0.15); }
+      else if (kind==='bosshit'){ timpani(o,t,90,0.6,0.5); note(o,'sawtooth',300,t,0.3,0.15,{slide:100,cut:900}); }
+      else if (kind==='clear'){ [['G5',0],['C6',0.12],['E6',0.24],['G6',0.36],['E6',0.6],['G6',0.72]].forEach(([n,d],i)=>note(o,'p25',N(n),t+d,i===5?0.6:0.11,0.22,{hold:0.6})); note(o,'triangle',N('C4'),t+0.72,0.6,0.3); }
+      else if (kind==='lose'){ ['E5','D#5','D5','C#5'].forEach((n,i)=>note(o,'p25',N(n),t+i*0.18,0.2,0.18)); note(o,'p25',N('C5'),t+0.72,0.5,0.18,{slide:N('C4')}); }
+      else if (kind==='fanfare'){ // Sieges-Fanfare: Blechbläser + Pauken
+        const brass = (n, d, len, v) => { note(o,'sawtooth',N(n),t+d,len,v,{cut:2200,att:0.03,hold:0.8,vib:len>0.5}); note(o,'square',N(n)/2,t+d,len,v*0.6,{cut:1200,att:0.03,hold:0.8}); };
+        brass('G4',0,0.14,0.16); brass('G4',0.16,0.14,0.16); brass('G4',0.32,0.14,0.16); brass('C5',0.5,0.55,0.18);
+        brass('G4',1.1,0.18,0.15); brass('C5',1.3,0.18,0.16); brass('E5',1.5,0.18,0.17); brass('G5',1.7,1.6,0.2);
+        brass('E5',1.7,1.6,0.12); brass('C5',1.7,1.6,0.12); note(o,'sawtooth',N('C3'),t+1.7,1.6,0.12,{cut:500,att:0.05,hold:0.8});
+        for (let i=0;i<10;i++) timpani(o, t+1.1+i*0.06, 98, 0.18+i*0.02, 0.2); timpani(o, t+1.7, 65, 0.7, 1.4); noise(o, t+1.7, 1.6, 0.12, 4000);
+      }
+    },
     get playing(){ return cur; }
   };
   return api;
@@ -977,7 +1030,7 @@ function toggleMusic(){ S.game.muted = !S.game.muted; save(); const b=document.g
 const Game = (() => {
   const T = 20, VW = 420, VH = 240, ROWS = 12;
   let cv, ctx, scale = 2, G = null, raf = 0, last = 0, acc = 0;
-  const keys = { left:false, right:false, jump:false, drink:false, gel:false };
+  const keys = { left:false, right:false, jump:false, drink:false, gel:false, shoot:false };
   const L = () => GT[(S.game && S.game.lang) || 'de'];
 
   function rng(seed){ let a = seed>>>0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -1068,7 +1121,8 @@ const Game = (() => {
     const maxH = boss ? 3 + (gearN.socks?1:0) + (gearN.shirt?1:0) : 3;
     G = { cfg, theme, lv, t:0, cam:0, coins:0, totalCoins: lv.ents.filter(e=>e.t==='coin').length, hearts:maxH, maxH,
       p:{ x:2*T, y:(boss?10:9)*T-18, w:12, h:18, vx:0, vy:0, on:false, face:1, inv:0, coy:0, buf:0, anim:0 },
-      spawn:{ x:2*T, y:7*T }, parts:[], shots:[], sparks:[], snow:[], shake:0, state:'play', gotItem:false,
+      spawn:{ x:2*T, y:7*T }, parts:[], shots:[], pretz:[], cool:0, sparks:[], snow:[], shake:0, state:'play', gotItem:false,
+      ammo: boss ? Math.min(30, Object.values(S.game.best||{}).reduce((a,b)=>a+b,0) || (isCreator()?30:0)) : 0,
       shield: boss && gearN.cap ? 1 : 0, drink: boss && gearN.bottle ? 1 : 0, gelUse: boss && gearN.gel ? 1 : 0, turbo:0,
       boss: boss ? { x:15*T, y:10*T-44, w:52, h:44, vx:0, vy:0, hp:6, st:'intro', tm:70, face:-1, on:true, flash:0 } : null };
     document.getElementById('gBossBtns').style.display = boss ? 'flex' : 'none';
@@ -1092,10 +1146,10 @@ const Game = (() => {
   function hurt(){
     const p = G.p; if (p.inv>0 || G.state!=='play') return;
     if (G.shield>0){ G.shield--; p.inv=60; puff(p.x+6,p.y+9,'#7fd3ff',12); return; }
-    G.hearts--; p.inv = 90; p.vy = -4; p.vx = -p.face*2.5; G.shake = 8; puff(p.x+6,p.y+9,'#ff6b6b',10);
+    G.hearts--; Music.sfx('hurt'); p.inv = 90; p.vy = -4; p.vx = -p.face*2.5; G.shake = 8; puff(p.x+6,p.y+9,'#ff6b6b',10);
     if (G.hearts<=0) endGame(false);
   }
-  function fall(){ G.hearts--; G.shake=8; if (G.hearts<=0) return endGame(false); Object.assign(G.p,{ x:G.spawn.x, y:G.spawn.y, vx:0, vy:0, inv:60 }); }
+  function fall(){ G.hearts--; G.shake=8; Music.sfx('hurt'); if (G.hearts<=0) return endGame(false); Object.assign(G.p,{ x:G.spawn.x, y:G.spawn.y, vx:0, vy:0, inv:60 }); }
 
   function step(){
     const p = G.p, lv = G.lv, boss = G.boss; G.t++;
@@ -1107,23 +1161,35 @@ const Game = (() => {
     if (keys.jump && !p.held){ p.buf = 7; p.held = true; } if (!keys.jump) p.held = false;
     if (p.buf>0) p.buf--; if (p.on) p.coy = 6; else if (p.coy>0) p.coy--;
     const J = (boss && S.game.gear.shoes) ? 8.4 : 7.6;
-    if (p.buf>0 && p.coy>0){ p.vy = -J; p.buf=0; p.coy=0; }
+    if (p.buf>0 && p.coy>0){ p.vy = -J; p.buf=0; p.coy=0; Music.sfx('jump'); }
     if (!keys.jump && p.vy < -3) p.vy = -3;
     moveBody(p, lv); p.anim += Math.abs(p.vx)*0.12; if (p.inv>0) p.inv--;
     if (p.y > ROWS*T+30) fall();
     if (keys.drink && G.drink>0 && G.hearts<G.maxH){ G.drink--; G.hearts++; puff(p.x+6,p.y,'#5bc0ff',14); updateBossBtns(); }
     if (keys.gel && G.gelUse>0){ G.gelUse--; G.turbo = 360; puff(p.x+6,p.y,'#ffd23f',14); updateBossBtns(); }
     keys.drink = keys.gel = false;
+    // Brezel werfen
+    if (G.cool>0) G.cool--;
+    if (keys.shoot && G.cool<=0 && G.ammo>0){ G.ammo--; G.cool=14; Music.sfx('throw'); G.pretz.push({ x:p.x+6+p.face*6, y:p.y+6, vx:p.face*5.2+p.vx*0.4, vy:-1.6, w:9, h:9, life:70, rot:0 }); }
+    for (const b of G.pretz){ b.x+=b.vx; b.y+=b.vy; b.vy+=0.16; b.rot+=0.35*Math.sign(b.vx); b.life--;
+      const tv = tileAt(lv, Math.floor((b.x+4)/T), Math.floor((b.y+4)/T)); if (tv>0 && tv!==3){ b.dead=true; puff(b.x+4,b.y+4,'#d9a640',5); continue; }
+      for (const e of lv.ents){ if (e.t==='enemy' && e.alive && hit(b,e)){ e.alive=false; e.ko=60; e.vy=-3.5; e.spin=0; b.dead=true; Music.sfx('ko'); puff(e.x+7,e.y+7,'#ffd23f',10); break; } }
+      const bo = G.boss; if (!b.dead && bo && bo.st!=='dead' && hit(b,bo)){ b.dead=true;
+        if (bo.st==='stun'){ bo.hp-=0.5; bo.flash=16; Music.sfx('bosshit'); puff(b.x,b.y,'#ffd23f',10); if (bo.hp<=0){ bo.st='dead'; endGame(true); return; } }
+        else { puff(b.x,b.y,'#e4e1dc',6); G.klonk=20; Music.sfx('klonk'); } }
+      if (b.life<=0) b.dead=true; }
+    G.pretz = G.pretz.filter(b=>!b.dead); if (G.klonk>0) G.klonk--;
+    for (const e of lv.ents){ if (e.t==='enemy' && !e.alive && e.ko>0){ e.ko--; e.y+=e.vy; e.vy+=0.3; e.spin+=0.25; } }
 
     for (const e of lv.ents){
-      if (e.t==='coin' && !e.got && hit(p,e)){ e.got=true; G.coins++; puff(e.x+6,e.y+6,'#ffd23f',5); }
-      else if (e.t==='item' && !e.got && hit(p,e)){ e.got=true; G.gotItem=true; puff(e.x+8,e.y+8,'#fff',20); toast(GEAR[e.gear].icon+' '+GEAR[e.gear][S.game.lang]+'!'); }
+      if (e.t==='coin' && !e.got && hit(p,e)){ e.got=true; G.coins++; G.ammo++; Music.sfx('coin'); puff(e.x+6,e.y+6,'#ffd23f',5); }
+      else if (e.t==='item' && !e.got && hit(p,e)){ e.got=true; G.gotItem=true; Music.sfx('item'); puff(e.x+8,e.y+8,'#fff',20); toast(GEAR[e.gear].icon+' '+GEAR[e.gear][S.game.lang]+'!'); }
       else if (e.t==='check' && !e.on && p.x > e.x){ e.on=true; G.spawn={ x:e.x, y:e.y-10 }; }
       else if (e.t==='goal' && p.x+p.w > e.x+16){ endGame(true); return; }
       else if (e.t==='enemy' && e.alive){
         e.x += e.vx; const fx = e.vx<0 ? e.x-1 : e.x+e.w+1, ty = Math.floor((e.y+e.h+2)/T), tx=Math.floor(fx/T);
         if (!solid(lv,tx,ty) || solid(lv,tx,Math.floor((e.y+e.h-2)/T))) e.vx = -e.vx;
-        if (hit(p,e)){ if (p.vy>0 && p.y+p.h-e.y < 10){ e.alive=false; p.vy=-6; puff(e.x+7,e.y+7,'#b48cff',12); } else hurt(); }
+        if (hit(p,e)){ if (p.vy>0 && p.y+p.h-e.y < 10){ e.alive=false; p.vy=-6; Music.sfx('stomp'); puff(e.x+7,e.y+7,'#b48cff',12); } else hurt(); }
       }
     }
     // Silvester: Timer + Funken
@@ -1151,7 +1217,7 @@ const Game = (() => {
     else if (b.st==='hurt'){ b.vx=0; if (--b.tm<=0){ b.st='walk'; b.tm=90; } }
     if (hit(p,b) && b.st!=='dead'){
       const fromTop = p.vy>0 && p.y+p.h - b.y < 14;
-      if (fromTop && b.st==='stun'){ b.hp--; b.flash=30; p.vy=-7.5; puff(b.x+b.w/2,b.y,'#ffd23f',16); G.shake=8;
+      if (fromTop && b.st==='stun'){ b.hp--; b.flash=30; Music.sfx('bosshit'); p.vy=-7.5; puff(b.x+b.w/2,b.y,'#ffd23f',16); G.shake=8;
         if (b.hp<=0){ b.st='dead'; endGame(true); } else { b.st='hurt'; b.tm=40; } }
       else if (fromTop){ p.vy=-6.5; }
       else if (b.st!=='stun' && b.st!=='hurt') hurt();
@@ -1176,10 +1242,12 @@ const Game = (() => {
       if (e.t==='item' && !e.got){ ctx.fillStyle='rgba(255,255,200,'+(0.35+0.25*Math.sin(G.t/8))+')'; ctx.beginPath(); ctx.arc(e.x+8,e.y+8,13,0,7); ctx.fill(); emoji(GEAR[e.gear].icon, e.x+8, e.y+9+Math.sin(G.t/10)*2, 15); }
       if (e.t==='check'){ ctx.fillStyle='#555'; ctx.fillRect(e.x, e.y, 2, 26); ctx.fillStyle = e.on ? '#3ccf6e' : '#e04848'; ctx.beginPath(); ctx.moveTo(e.x+2,e.y); ctx.lineTo(e.x+14,e.y+5); ctx.lineTo(e.x+2,e.y+10); ctx.fill(); }
       if (e.t==='goal') goal(e);
-      if (e.t==='enemy' && e.alive) excuse(e);
+      if (e.t==='enemy' && e.alive) excuse(e); else if (e.t==='enemy' && e.ko>0) koPig(e);
     }
     G.sparks.forEach(s=>{ ctx.fillStyle='#ffdd55'; ctx.beginPath(); ctx.arc(s.x+4,s.y+4,3+Math.random()*1.5,0,7); ctx.fill(); ctx.fillStyle='rgba(255,120,40,.6)'; ctx.fillRect(s.x+3,s.y-8,2,8); });
     if (G.boss) drawBoss(G.boss);
+    G.pretz.forEach(b=>{ ctx.save(); ctx.translate(b.x+4.5,b.y+4.5); ctx.rotate(b.rot); emoji(G.cfg.mode==='boss'?'🥨':G.cfg.collect,0,0,10); ctx.restore(); });
+    if (G.klonk && G.boss){ ctx.fillStyle='#fff'; ctx.font='bold 9px system-ui'; ctx.textAlign='center'; ctx.fillText(S.game.lang==='de'?'Klonk! Erst wenn er benommen ist!':'Clonk! Only when it is dazed!', G.boss.x+G.boss.w/2, G.boss.y-28); }
     G.shots.forEach(s=>{ ctx.fillStyle='#8e2433'; rr(s.x,s.y,12,9,3); ctx.fill(); ctx.strokeStyle='#d9a640'; ctx.lineWidth=1; ctx.stroke(); ctx.fillStyle='#4a0f1a'; ctx.beginPath(); ctx.arc(s.x+6,s.y+4.5,1,0,7); ctx.fill(); });
     drawPlayer(G.p);
     G.parts.forEach(q=>{ ctx.globalAlpha=q.life/30; ctx.fillStyle=q.c; ctx.fillRect(q.x,q.y,3,3); }); ctx.globalAlpha=1;
@@ -1224,8 +1292,10 @@ const Game = (() => {
     ctx.fillStyle='#fff'; ctx.beginPath(); ctx.moveTo(8,8); ctx.lineTo(8.8,10); ctx.lineTo(9.6,8); ctx.fill();
     ctx.restore();
     if (G.cfg.mode==='xmas'){ ctx.fillStyle='#e53935'; ctx.beginPath(); ctx.moveTo(e.x+8,e.y+bob); ctx.lineTo(e.x+17,e.y+bob); ctx.lineTo(e.x+15,e.y-8+bob); ctx.fill(); ctx.fillStyle='#fff'; ctx.fillRect(e.x+8,e.y-1+bob,9,2); }
-    if (Math.abs(e.x - G.p.x) < 110){ ctx.font='bold 7px system-ui'; const w = ctx.measureText(e.txt).width+6; ctx.fillStyle='rgba(255,250,240,.95)'; rr(e.x+7-w/2, e.y-14+bob, w, 10, 3); ctx.fill(); ctx.fillStyle='#7b3f8c'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(e.txt, e.x+7, e.y-9+bob); }
+    if (e.txt && Math.abs(e.x - G.p.x) < 110){ ctx.font='bold 7px system-ui'; const w = ctx.measureText(e.txt).width+6; ctx.fillStyle='rgba(255,250,240,.95)'; rr(e.x+7-w/2, e.y-14+bob, w, 10, 3); ctx.fill(); ctx.fillStyle='#7b3f8c'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(e.txt, e.x+7, e.y-9+bob); }
   }
+  function koPig(e){ ctx.save(); ctx.translate(e.x+7.5, e.y+7); ctx.rotate(e.spin); ctx.translate(-(e.x+7.5), -(e.y+7)); const al=e.alive; excuse(Object.assign({}, e, { txt:'', vx:-1 })); ctx.restore();
+    if (e.ko>30){ ctx.fillStyle='#fff'; ctx.strokeStyle='#7b3f8c'; ctx.lineWidth=2.5; ctx.font='bold 10px system-ui'; ctx.textAlign='center'; ctx.strokeText('K.O.!', e.x+8, e.y-12); ctx.fillText('K.O.!', e.x+8, e.y-12); } }
   function drawPlayer(p){
     if (p.inv>0 && Math.floor(p.inv/4)%2) return;
     const gear = S.game.gear, x=p.x, y=p.y, f=p.face, a=p.on?Math.sin(p.anim)*4:2, O='#3b2216';
@@ -1296,9 +1366,10 @@ const Game = (() => {
     const l = L(); ctx.textBaseline='middle'; ctx.textAlign='left';
     ctx.fillStyle='rgba(30,18,12,.55)'; ctx.fillRect(0,0,VW,24);
     let hx=8; for (let i=0;i<G.maxH;i++){ emoji(i<G.hearts?'❤️':'🖤', hx+6, 12, 11); hx+=15; }
-    if (G.shield) emoji('🛡️', hx+6, 12, 11);
+    if (G.shield){ emoji('🛡️', hx+6, 12, 11); hx+=15; }
+    emoji('🥨', hx+10, 12, 11); ctx.fillStyle='#fff1e8'; ctx.font='bold 10px system-ui'; ctx.textAlign='left'; ctx.fillText('×'+G.ammo, hx+17, 12.5);
     ctx.fillStyle='#fff1e8'; ctx.font='bold 11px system-ui';
-    if (G.cfg.mode!=='boss'){ emoji(G.cfg.collect, VW-70, 12, 12); ctx.fillStyle='#fff1e8'; ctx.textAlign='left'; ctx.fillText(G.coins+'/'+G.totalCoins, VW-60, 12); }
+    if (G.cfg.mode!=='boss'){ emoji(G.cfg.collect, VW-70, 12, 12); ctx.fillStyle='#fff1e8'; ctx.font='bold 11px system-ui'; ctx.textAlign='left'; ctx.fillText(G.coins+'/'+G.totalCoins, VW-60, 12); }
     if (G.cfg.timer!=null){ const s=Math.ceil(G.cfg.timer/60); ctx.textAlign='center'; ctx.fillStyle = s<=10?'#ff8a7a':'#fff'; ctx.font='bold 14px system-ui'; ctx.fillText('⏱ '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0'), VW/2, 13); }
     if (G.boss){ const b=G.boss; ctx.textAlign='center'; ctx.font='bold 9px system-ui'; ctx.fillStyle='#ffd7cc'; ctx.fillText(l.hp, VW/2, 8);
       ctx.fillStyle='rgba(0,0,0,.4)'; ctx.fillRect(VW/2-50,14,100,6); ctx.fillStyle='#9d5cb1'; ctx.fillRect(VW/2-50,14,100*Math.max(0,b.hp)/6,6); }
@@ -1312,21 +1383,63 @@ const Game = (() => {
       ctx.fillStyle='#fdf6c8'; ctx.beginPath(); ctx.arc(340,40,14,0,7); ctx.fill(); }
     if (day){ ctx.fillStyle='rgba(255,236,190,.55)'; ctx.beginPath(); ctx.arc(345,52,26,0,7); ctx.fill(); ctx.fillStyle='#fff3cf'; ctx.beginPath(); ctx.arc(345,52,15,0,7); ctx.fill();
       for (let i=0;i<5;i++){ const cx=((i*113 - cam*0.06)%(VW+120)+VW+120)%(VW+120)-60, cy=24+(i%3)*16; ctx.fillStyle='rgba(255,255,255,.85)'; ctx.beginPath(); ctx.ellipse(cx,cy,22,7,0,0,7); ctx.ellipse(cx+14,cy-4,13,7,0,0,7); ctx.ellipse(cx-12,cy-2,10,5,0,0,7); ctx.fill(); } }
-    hills(cam*0.15, night?'#1f2c55':G.theme.snow?'#c9d9e6':'#9cc08a', 120, 30, 1); hills(cam*0.3, night?'#18234a':G.theme.snow?'#b3c7d8':'#6f9d5f', 145, 26, 2);
+    const farHill = night?'#1f2c55':G.theme.snow?'#c9d9e6':'#9cc08a', city = night ? '#2a3058' : G.theme.snow ? '#a9bccd' : '#b9897a';
     const layer = (f, sp, fn) => { const off = cam*f; const i0 = Math.floor(off/sp)-1; for (let i=i0;i<i0+Math.ceil(VW/sp)+3;i++) fn(i*sp - off, i); };
-    if (kind==='meadow') layer(0.55, 70, (x,i)=>{ if(hash(i)<0.6) tree(x, 175, 0.8+hash(i+1)*0.5, '#3f8a3a'); });
-    if (kind==='bridge'){ layer(0.4, 420, (x)=>bridge(x+40, 150)); }
-    if (kind==='hills') layer(0.5, 46, (x,i)=>{ ctx.strokeStyle='rgba(60,110,50,.35)'; ctx.beginPath(); ctx.moveTo(x,180); ctx.lineTo(x+30,140); ctx.stroke(); if(hash(i)<0.4) tree(x,170,0.8,'#4d8a45'); });
-    if (kind==='oldtown' || kind==='xmas') layer(0.5, 52, (x,i)=>house(x, 190, i));
-    if (kind==='xmas') layer(0.7, 120, (x,i)=>stall(x, 196, i));
-    if (kind==='castle'){ layer(0.25, 520, (x)=>castle(x+200, 112)); layer(0.55, 80, (x,i)=>{ if(hash(i)<0.5) tree(x,180,1,'#3e7f3a'); }); }
-    if (kind==='forest' || kind==='forest2') layer(0.55, 34, (x,i)=>tree(x, 185, 0.9+hash(i)*0.6, i%2?'#2f6b34':'#3d7f3f'));
-    if (kind==='forest2') layer(0.35, 600, (x)=>{ ctx.strokeStyle='rgba(120,100,80,.6)'; ctx.lineWidth=2; for(let k=0;k<5;k++){ ctx.beginPath(); ctx.ellipse(x+120,150,60-k*9,16-k*2.5,0,Math.PI,0); ctx.stroke(); } ctx.lineWidth=1; });
-    if (kind==='night'){ layer(0.5, 48, (x,i)=>house(x, 200, i, true)); layer(0.8, 90, (x)=>{ ctx.fillStyle='#333'; ctx.fillRect(x,150,2,60); ctx.fillStyle='rgba(255,230,140,.9)'; ctx.beginPath(); ctx.arc(x+1,150,4,0,7); ctx.fill(); }); }
-    if (kind==='nye'){ layer(0.3, 500, (x)=>bridge(x+60, 160, true)); fireworks(); }
+    const sky = (sc, base, par, col, lights) => { const W=640*sc, off=(cam*par)%W; ctx.save(); ctx.translate(0, base-186*sc); ctx.scale(sc,sc); for (let k=-1;k<3;k++) skyline(ctx, (k*W-off)/sc, col||city); ctx.restore();
+      if (lights){ ctx.fillStyle='rgba(255,215,120,.8)'; for (let k=-1;k<3;k++) for (let i=0;i<24;i++){ ctx.fillRect(k*W-off+(260+hash(i)*370)*sc, base-2-hash(i+5)*14*sc, 1.4, 1.4); } } };
+    const river = (y, h) => { ctx.fillStyle = night ? '#1d3a6b' : '#5d9bc9'; ctx.fillRect(0,y,VW,h); ctx.fillStyle='rgba(255,255,255,.35)'; for(let i=0;i<12;i++){ const xx=((i*41 - cam*0.25 + G.t*0.3)%VW+VW)%VW; ctx.fillRect(xx, y+3+(i%3)*(h/4), 9, 1.2); } };
+    if (kind==='meadow'){ hills(cam*0.15, farHill, 120, 30, 1); sky(0.55, 166, 0.2); river(166, 14);           // Neckarwiese: Blick über den Neckar auf Altstadt und Schloss
+      ctx.fillStyle='#8cbf5a'; ctx.fillRect(0,180,VW,60); layer(0.55, 70, (x,i)=>{ if(hash(i)<0.45) tree(x, 188, 0.8+hash(i+1)*0.5, '#3f8a3a'); else if (hash(i)<0.7){ ctx.fillStyle=['#d9534f','#5bc0de','#f0ad4e'][i%3]; ctx.fillRect(x+10,190,16,6); } }); }
+    if (kind==='bridge'){ hills(cam*0.15, farHill, 120, 30, 1); sky(0.42, 148, 0.12); river(148, 92);              // Alte Brücke mit Brückentor und Brückenaffe
+      layer(0.4, 420, (x)=>{ bridge(x+40, 150); ctx.fillStyle='#6b5a4a'; ctx.beginPath(); ctx.arc(x+28,136,4,0,7); ctx.fill(); ctx.fillRect(x+25,139,6,7); ctx.beginPath(); ctx.arc(x+28,133,2.2,0,7); ctx.fill(); }); }
+    if (kind==='hills'){ hills(cam*0.12, farHill, 105, 28, 1); river(146, 8); sky(0.5, 146, 0.15);              // Philosophenweg: Blick hinunter auf Neckar, Altstadt und Schloss
+      ctx.fillStyle = '#7fae66'; ctx.beginPath(); ctx.moveTo(0,VH); ctx.lineTo(0,168); for(let x=0;x<=VW;x+=20) ctx.lineTo(x, 168 - 10*Math.sin((x+cam*0.5)/70)); ctx.lineTo(VW,VH); ctx.fill();
+      layer(0.5, 40, (x,i)=>{ ctx.fillStyle='rgba(150,130,100,.55)'; ctx.fillRect(x,176+(i%3)*9,38,2.5); ctx.strokeStyle='rgba(70,110,50,.6)'; ctx.beginPath(); for(let v=0;v<5;v++){ ctx.moveTo(x+4+v*8,184); ctx.lineTo(x+4+v*8,176); } ctx.stroke(); if(hash(i)<0.25) tree(x+20,178,0.9,'#4d8a45'); }); }
+    if (kind==='oldtown'){ hills(cam*0.15, farHill, 115, 30, 1); layer(0.3, 640, (x)=>churchTower(x+300, 200, 1.5)); layer(0.5, 52, (x,i)=>house(x, 196, i, false, true)); } // Hauptstraße
+    if (kind==='castle'){ hills(cam*0.15, farHill, 120, 30, 1); layer(0.22, 560, (x)=>castle(x+150, 118));      // Schlossgarten
+      layer(0.55, 48, (x,i)=>{ ctx.fillStyle='#4f8a43'; rr(x+4,176,40,16,8); ctx.fill(); ctx.fillStyle='rgba(255,255,255,.15)'; rr(x+8,178,32,4,2); ctx.fill(); if (i%5===0){ ctx.fillStyle='#d9cbb5'; ctx.fillRect(x+20,166,8,24); ctx.beginPath(); ctx.arc(x+24,166,6,0,7); ctx.fill(); } }); }
+    if (kind==='forest'){ hills(cam*0.15, farHill, 110, 30, 1); sky(0.3, 150, 0.08);                             // Himmelsleiter: Steinstufen durch den Wald
+      layer(0.4, 300, (x)=>{ ctx.fillStyle='#8f8372'; for(let k=0;k<14;k++){ ctx.fillRect(x+k*14, 196-k*6, 14, 4); } ctx.fillStyle='rgba(90,80,70,.35)'; for(let k=0;k<14;k++) ctx.fillRect(x+k*14, 199-k*6, 14, 1.2); });
+      layer(0.55, 30, (x,i)=>tree(x, 190, 0.9+hash(i)*0.7, i%2?'#2f6b34':'#3d7f3f')); }
+    if (kind==='forest2'){ hills(cam*0.15, farHill, 115, 30, 1); sky(0.3, 155, 0.08);                            // Heiligenberg: Thingstätte und Klosterruine
+      layer(0.35, 600, (x)=>{ ctx.strokeStyle='rgba(150,135,115,.85)'; ctx.lineWidth=2; for(let k=0;k<5;k++){ ctx.beginPath(); ctx.ellipse(x+120,170,64-k*10,18-k*3,0,Math.PI,0); ctx.stroke(); } ctx.lineWidth=1;
+        ctx.fillStyle='#a89a88'; ctx.fillRect(x+330,136,90,44); ctx.fillStyle= G.theme.sky[1]; for(let k=0;k<4;k++){ ctx.beginPath(); ctx.moveTo(x+340+k*20,180); ctx.lineTo(x+340+k*20,152); ctx.arc(x+345+k*20,152,5,Math.PI,0); ctx.lineTo(x+350+k*20,180); ctx.fill(); } ctx.fillStyle='#a89a88'; ctx.fillRect(x+398,116,14,22); });
+      layer(0.55, 36, (x,i)=>{ if(hash(i)<0.7) tree(x, 192, 0.9+hash(i)*0.6, i%2?'#2f6b34':'#3d7f3f'); }); }
+    if (kind==='night'){ layer(0.25, 300, (x)=>{ ctx.fillStyle='#2b2f45'; ctx.fillRect(x+40,110,120,90); for(let r=0;r<6;r++) for(let c=0;c<8;c++){ ctx.fillStyle = hash(r*8+c+x)<0.55?'#ffd77a':'#22263a'; ctx.fillRect(x+48+c*14,118+r*13,8,7); } }); // Bismarckplatz
+      layer(0.5, 48, (x,i)=>house(x, 200, i, true));
+      { const tx = ((G.t*0.8 - cam*0.6) % 900 + 900) % 900 - 200; ctx.fillStyle='#3d6fb6'; rr(tx,176,150,22,5); ctx.fill(); ctx.fillStyle='#e9eef5'; ctx.fillRect(tx,192,150,3); for(let w=0;w<8;w++){ ctx.fillStyle='#ffe9a8'; ctx.fillRect(tx+8+w*17,180,11,8); } ctx.strokeStyle='#222'; ctx.beginPath(); ctx.moveTo(tx+70,176); ctx.lineTo(tx+80,160); ctx.lineTo(tx+90,160); ctx.stroke(); }
+      layer(0.8, 90, (x)=>{ ctx.fillStyle='#333'; ctx.fillRect(x,150,2,60); ctx.fillStyle='rgba(255,230,140,.9)'; ctx.beginPath(); ctx.arc(x+1,150,4,0,7); ctx.fill(); }); }
+    if (kind==='xmas'){ hills(cam*0.15, farHill, 115, 30, 1); layer(0.3, 640, (x)=>churchTower(x+260, 196, 1.5)); layer(0.5, 52, (x,i)=>house(x, 190, i)); layer(0.7, 120, (x,i)=>stall(x, 196, i)); } // Weihnachtsmarkt am Marktplatz
+    if (kind==='nye'){ hills(cam*0.15, farHill, 120, 30, 1); river(160, 80); sky(0.5, 160, 0.15, '#2a3058', true); layer(0.3, 500, (x)=>bridge(x+60, 172, true)); fireworks(); }
     if (kind==='finish'){ layer(0.0, 60, (x,i)=>house(x, 200, i)); sofa(250,182); ctx.fillStyle='rgba(0,0,0,.35)'; for(let i=0;i<40;i++){ const hx=i*11; ctx.beginPath(); ctx.arc(hx, 192+Math.sin(G.t/8+i)*2, 5,0,7); ctx.fill(); }
       ctx.fillStyle='#8e2433'; ctx.fillRect(110,40,200,18); ctx.fillStyle='#fff'; ctx.font='bold 11px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('ATOS HALBMARATHON 2027',210,49); }
   }
+  function churchTower(x, base, sc){ ctx.save(); ctx.translate(x, base); ctx.scale(sc,sc); const col = G.theme.night ? '#2b2f45' : '#c8735a';    // Heiliggeistkirche
+    ctx.fillStyle=col; ctx.fillRect(-40,-34,70,34); ctx.beginPath(); ctx.moveTo(-42,-34); ctx.lineTo(-5,-46); ctx.lineTo(32,-34); ctx.fill();
+    ctx.fillRect(26,-86,16,86); ctx.fillStyle = G.theme.night ? '#3a3f5e' : '#6f7f6a'; ctx.beginPath(); ctx.ellipse(34,-92,9,8,0,0,7); ctx.fill(); ctx.fillRect(31,-108,6,12);
+    ctx.beginPath(); ctx.ellipse(34,-110,4.5,4,0,0,7); ctx.fill(); ctx.beginPath(); ctx.moveTo(32,-112); ctx.lineTo(34,-128); ctx.lineTo(36,-112); ctx.fill();
+    ctx.fillStyle = G.theme.night ? '#ffd77a' : '#f3e6cf'; ctx.beginPath(); ctx.arc(34,-70,4,0,7); ctx.fill(); ctx.fillStyle='#333'; ctx.fillRect(33.5,-73,1,3);
+    ctx.restore(); }
+  /* Heidelberger Silhouette: Schloss am Hang, Jesuitenkirche, Heiliggeistkirche, Altstadtdächer, Alte Brücke mit Brückentor */
+  function skyline(c, x0, col){
+    c.fillStyle = col; const B = 186;
+    c.beginPath(); c.moveTo(x0-20,B); c.bezierCurveTo(x0+30,B-40,x0+60,B-58,x0+120,B-60); c.bezierCurveTo(x0+190,B-62,x0+240,B-50,x0+300,B); c.fill();      // Schlossberg
+    const cb = B-56;
+    c.fillRect(x0+72,cb-26,128,30);                                                                                  // Ottheinrichs-/Friedrichsbau
+    for (let g=0; g<4; g++){ const gx=x0+80+g*30; c.beginPath(); c.moveTo(gx,cb-26); c.lineTo(gx,cb-34); c.lineTo(gx+4,cb-34); c.lineTo(gx+4,cb-40); c.lineTo(gx+8,cb-40); c.lineTo(gx+8,cb-46); c.lineTo(gx+12,cb-46); c.lineTo(gx+12,cb-40); c.lineTo(gx+16,cb-40); c.lineTo(gx+16,cb-34); c.lineTo(gx+20,cb-34); c.lineTo(gx+20,cb-26); c.fill(); } // Treppengiebel
+    c.fillRect(x0+48,cb-36,24,40); for (let m=0;m<4;m++) c.fillRect(x0+48+m*7,cb-41,4,5);                              // Dicker Turm
+    c.fillRect(x0+194,cb-60,16,64); c.beginPath(); c.moveTo(x0+192,cb-60); c.lineTo(x0+202,cb-76); c.lineTo(x0+212,cb-60); c.fill(); // Glockenturm
+    c.beginPath(); c.moveTo(x0+214,cb+4); c.lineTo(x0+214,cb-22); c.lineTo(x0+219,cb-28); c.lineTo(x0+223,cb-20); c.lineTo(x0+228,cb-30); c.lineTo(x0+234,cb-18); c.lineTo(x0+234,cb+4); c.fill(); // Pulverturm (Ruine)
+    for (let h=0; h<18; h++){ const hx=x0+250+h*22, hh=12+((h*37)%13); c.fillRect(hx,B-hh,20,hh); c.beginPath(); c.moveTo(hx-1,B-hh); c.lineTo(hx+10,B-hh-9); c.lineTo(hx+21,B-hh); c.fill(); } // Altstadtdächer
+    c.fillRect(x0+300,B-62,11,62); c.beginPath(); c.moveTo(x0+298,B-62); c.lineTo(x0+305.5,B-74); c.lineTo(x0+313,B-62); c.fill();          // Jesuitenkirche
+    c.fillRect(x0+352,B-34,70,34); c.beginPath(); c.moveTo(x0+350,B-34); c.lineTo(x0+387,B-46); c.lineTo(x0+424,B-34); c.fill();          // Heiliggeistkirche Schiff
+    c.fillRect(x0+418,B-86,16,86); c.beginPath(); c.ellipse(x0+426,B-92,9,8,0,0,7); c.fill(); c.fillRect(x0+423,B-108,6,12);              // Turm + Haube
+    c.beginPath(); c.ellipse(x0+426,B-110,4.5,4,0,0,7); c.fill(); c.beginPath(); c.moveTo(x0+424,B-112); c.lineTo(x0+426,B-128); c.lineTo(x0+428,B-112); c.fill();
+    c.fillRect(x0+470,B-50,11,50); c.fillRect(x0+486,B-50,11,50);                                                     // Brückentor
+    [[475.5],[491.5]].forEach(([tx])=>{ c.beginPath(); c.ellipse(x0+tx,B-54,7,6,0,0,7); c.fill(); c.beginPath(); c.moveTo(x0+tx-2,B-58); c.lineTo(x0+tx,B-70); c.lineTo(x0+tx+2,B-58); c.fill(); });
+    c.fillRect(x0+497,B-20,150,6); for (let a=0;a<4;a++) c.fillRect(x0+525+a*36,B-16,9,16);                               // Alte Brücke
+  }
+  function skylineURL(color){ const cv2=document.createElement('canvas'); cv2.width=640; cv2.height=200; const c2=cv2.getContext('2d'); skyline(c2, 0, color); return cv2.toDataURL(); }
   function hills(off, c, base, amp, k){ ctx.fillStyle=c; ctx.beginPath(); ctx.moveTo(0,VH); for (let x=0;x<=VW;x+=10){ const w=(x+off)/90; ctx.lineTo(x, base - amp*(0.5+0.5*Math.sin(w*k*0.7)+0.3*Math.sin(w*2.3))); } ctx.lineTo(VW,VH); ctx.fill(); }
   function tree(x,y,s,c){ ctx.fillStyle='#6b4a2b'; ctx.fillRect(x-1.5*s,y-6*s,3*s,10*s); ctx.fillStyle=G.theme.night?'#1c3324':c; ctx.beginPath(); ctx.arc(x,y-12*s,9*s,0,7); ctx.fill(); ctx.fillStyle='rgba(255,240,180,.18)'; ctx.beginPath(); ctx.arc(x+2*s,y-15*s,4*s,0,7); ctx.fill(); }
   function sofa(x,y){ ctx.strokeStyle='#4a0f1a'; ctx.lineWidth=1.4; ctx.fillStyle='#8e2433'; rr(x,y-28,74,22,7); ctx.fill(); ctx.stroke(); rr(x-6,y-14,86,14,5); ctx.fill(); ctx.stroke();
@@ -1334,21 +1447,30 @@ const Game = (() => {
     ctx.fillStyle='#4a0f1a'; for(let k=0;k<5;k++) for(let r=0;r<2;r++){ ctx.beginPath(); ctx.arc(x+8+k*14+r*7,y-23+r*7,1.1,0,7); ctx.fill(); } }
   function sofa(x,y){ ctx.fillStyle='#8a1a14'; ctx.strokeStyle='#1a0303'; ctx.lineWidth=1.5; rr(x,y-26,70,20,6); ctx.fill(); ctx.stroke(); rr(x-6,y-14,82,14,5); ctx.fill(); ctx.stroke(); rr(x+8,y-24,22,12,4); ctx.fillStyle='#c0392b'; ctx.fill(); ctx.stroke();
     ctx.fillStyle='#1a0303'; for(let k=0;k<4;k++){ ctx.beginPath(); ctx.arc(x+12+k*16,y-19,1.2,0,7); ctx.fill(); } }
-  function house(x,y,i,night){ const h=40+hash(i)*30, w=40; const cols=['#f1e4cc','#e9c8a0','#f5ead8','#e6b9a6','#efd9b4']; ctx.fillStyle = G.theme.night ? '#2b2f45' : cols[i%5]; ctx.fillRect(x,y-h,w,h); ctx.fillStyle = G.theme.night?'#3a2a36':'#a3473a'; ctx.beginPath(); ctx.moveTo(x-3,y-h); ctx.lineTo(x+w/2,y-h-16); ctx.lineTo(x+w+3,y-h); ctx.fill();
+  function house(x,y,i,night,awn){ const h=40+hash(i)*30, w=40; const cols=['#f1e4cc','#e9c8a0','#f5ead8','#e6b9a6','#efd9b4']; ctx.fillStyle = G.theme.night ? '#2b2f45' : cols[i%5]; ctx.fillRect(x,y-h,w,h); ctx.fillStyle = G.theme.night?'#3a2a36':'#a3473a'; ctx.beginPath(); ctx.moveTo(x-3,y-h); ctx.lineTo(x+w/2,y-h-16); ctx.lineTo(x+w+3,y-h); ctx.fill();
     for (let r=0;r<Math.floor(h/16);r++) for (let c=0;c<3;c++){ ctx.fillStyle = G.theme.night ? (hash(i*9+r*3+c)<0.6?'#ffd77a':'#22263a') : '#6a5040'; ctx.fillRect(x+5+c*12, y-h+6+r*16, 6, 8); }
+    if (awn){ ctx.fillStyle=['#8e2433','#2f6b5a','#c9962e','#5b6fa8'][i%4]; ctx.beginPath(); ctx.moveTo(x+2,y-14); ctx.lineTo(x+38,y-14); ctx.lineTo(x+41,y-8); ctx.lineTo(x-1,y-8); ctx.fill(); ctx.fillStyle='rgba(255,255,255,.35)'; for(let k=0;k<5;k++) ctx.fillRect(x+3+k*8,y-14,4,6); }
     if (G.cfg.mode==='xmas'){ for(let k=0;k<6;k++){ ctx.fillStyle=['#ff5252','#ffd23f','#7cff8a'][(k+Math.floor(G.t/20))%3]; ctx.beginPath(); ctx.arc(x+2+k*7, y-h+1, 1.5,0,7); ctx.fill(); } } }
   function stall(x,y,i){ ctx.fillStyle='#7a4a2a'; ctx.fillRect(x,y-22,44,22); ctx.fillStyle = i%2?'#c62828':'#2e7d32'; ctx.beginPath(); ctx.moveTo(x-4,y-22); ctx.lineTo(x+22,y-34); ctx.lineTo(x+48,y-22); ctx.fill(); ctx.fillStyle='#ffd77a'; ctx.fillRect(x+4,y-18,36,6); }
   function bridge(x,y,night){ ctx.fillStyle = night?'#2a2f4a':'#c98e6c'; ctx.fillRect(x, y-8, 300, 10); for (let k=0;k<6;k++){ ctx.beginPath(); ctx.arc(x+25+k*50, y+30, 22, Math.PI, 0); ctx.lineTo(x+47+k*50,y+2); ctx.lineTo(x+3+k*50,y+2); ctx.fill(); }
     ctx.fillStyle = night?'#323856':'#b77a5c'; ctx.fillRect(x-30, y-46, 14, 48); ctx.fillRect(x-12, y-46, 14, 48); ctx.fillStyle=night?'#262a40':'#7c5a48'; ctx.beginPath(); ctx.moveTo(x-32,y-46); ctx.lineTo(x-23,y-60); ctx.lineTo(x-14,y-46); ctx.moveTo(x-14,y-46); ctx.lineTo(x-5,y-60); ctx.lineTo(x+4,y-46); ctx.fill(); }
-  function castle(x,y){ ctx.fillStyle='#c8735a'; ctx.fillRect(x,y,120,46); ctx.fillRect(x-14,y-20,26,66); ctx.fillRect(x+100,y-10,30,56); for(let k=0;k<6;k++) ctx.fillRect(x+6+k*20,y-6,10,8); ctx.fillStyle='#6a3426'; for(let k=0;k<5;k++) ctx.fillRect(x+12+k*22,y+12,7,12); ctx.fillStyle='rgba(255,255,255,.2)'; ctx.fillRect(x-14,y-20,26,3); }
+  function castle(x,y){ const c1='#c8735a', c2='#a85a44', win='#6a3426';
+    ctx.fillStyle='#7fae66'; ctx.beginPath(); ctx.moveTo(x-120,VH); ctx.bezierCurveTo(x-60,y+30,x,y+40,x+60,y+44); ctx.bezierCurveTo(x+180,y+46,x+240,y+60,x+300,VH); ctx.fill();
+    ctx.fillStyle=c1; ctx.fillRect(x,y,150,46);
+    for (let g=0; g<4; g++){ const gx=x+8+g*36; ctx.beginPath(); ctx.moveTo(gx,y); ctx.lineTo(gx,y-8); ctx.lineTo(gx+5,y-8); ctx.lineTo(gx+5,y-15); ctx.lineTo(gx+10,y-15); ctx.lineTo(gx+10,y-22); ctx.lineTo(gx+16,y-22); ctx.lineTo(gx+16,y-15); ctx.lineTo(gx+21,y-15); ctx.lineTo(gx+21,y-8); ctx.lineTo(gx+26,y-8); ctx.lineTo(gx+26,y); ctx.fill(); }
+    ctx.fillStyle=c2; ctx.fillRect(x-30,y-12,30,58); for(let m=0;m<5;m++) ctx.fillRect(x-30+m*7,y-18,4,6);
+    ctx.fillStyle=c1; ctx.fillRect(x+150,y-40,18,86); ctx.fillStyle='#5a6b5a'; ctx.beginPath(); ctx.moveTo(x+147,y-40); ctx.lineTo(x+159,y-58); ctx.lineTo(x+171,y-40); ctx.fill();
+    ctx.fillStyle=c2; ctx.beginPath(); ctx.moveTo(x+172,y+46); ctx.lineTo(x+172,y-6); ctx.lineTo(x+178,y-12); ctx.lineTo(x+183,y-4); ctx.lineTo(x+189,y-14); ctx.lineTo(x+196,y-2); ctx.lineTo(x+196,y+46); ctx.fill();
+    ctx.fillStyle=win; for(let r=0;r<2;r++) for(let k=0;k<9;k++) ctx.fillRect(x+8+k*16,y+8+r*18,6,10);
+    ctx.fillStyle='rgba(255,255,255,.15)'; ctx.fillRect(x-30,y-12,30,3); }
   function fireworks(){ for (let k=0;k<3;k++){ const ph=(G.t+k*53)%160; if (ph>80) continue; const cx=80+((k*137+Math.floor((G.t+k*53)/160)*91)%260), cy=40+k*18; const col=['#ff5a8a','#ffd23f','#7cd6ff'][k];
       for (let i=0;i<14;i++){ const an=i/14*6.283; ctx.fillStyle=col; ctx.globalAlpha=1-ph/80; ctx.fillRect(cx+Math.cos(an)*ph*0.5, cy+Math.sin(an)*ph*0.5+ph*0.08, 2, 2); } ctx.globalAlpha=1; } }
   function confetti(){ if (G.t%2) return; for (let i=0;i<3;i++) G.parts.push({ x:G.cam+Math.random()*VW, y:-4, vx:(Math.random()-0.5), vy:1+Math.random(), life:120, c:['#ff5a8a','#ffd23f','#7cd6ff','#3ccf6e'][i%4] }); }
 
   /* ---------- Ende ---------- */
   function endGame(win, why){
-    if (G.state!=='play') return; G.state = win ? 'win' : 'lose'; Music.stop();
-    setTimeout(()=>Game.onEnd && Game.onEnd(G.cfg.mode, G.cfg.idx, { win, why, coins:G.coins, total:G.totalCoins, item:G.gotItem }), win?900:500);
+    if (G.state!=='play') return; G.state = win ? 'win' : 'lose'; Music.stop(true); Music.sfx(win ? (G.cfg.mode==='boss' ? 'fanfare' : 'clear') : 'lose');
+    const cfg = G.cfg, res = { win, why, coins:G.coins, total:G.totalCoins, item:G.gotItem }; setTimeout(()=>{ if (G && G.cfg===cfg && Game.onEnd) Game.onEnd(cfg.mode, cfg.idx, res); }, win ? (cfg.mode==='boss' ? 3200 : 1100) : 900);
   }
 
   /* ---------- Loop, Größe, Eingaben ---------- */
@@ -1363,8 +1485,8 @@ const Game = (() => {
 
   function init(){
     cv = document.getElementById('gc'); ctx = cv.getContext('2d');
-    bindTouch('gL','left'); bindTouch('gR','right'); bindTouch('gJ','jump'); bindTouch('gDrink','drink'); bindTouch('gGel','gel');
-    const km = { ArrowLeft:'left', ArrowRight:'right', ArrowUp:'jump', ' ':'jump', a:'left', d:'right', w:'jump' };
+    bindTouch('gL','left'); bindTouch('gR','right'); bindTouch('gJ','jump'); bindTouch('gS','shoot'); bindTouch('gDrink','drink'); bindTouch('gGel','gel');
+    const km = { ArrowLeft:'left', ArrowRight:'right', ArrowUp:'jump', ' ':'jump', a:'left', d:'right', w:'jump', x:'shoot', X:'shoot', f:'shoot', Enter:'shoot' };
     addEventListener('keydown', e=>{ if (!G) return; if (km[e.key]){ keys[km[e.key]]=true; e.preventDefault(); } if (e.key==='1') keys.drink=true; if (e.key==='2') keys.gel=true; });
     addEventListener('keyup', e=>{ if (km[e.key]) keys[km[e.key]]=false; });
     addEventListener('resize', resize);
@@ -1375,7 +1497,7 @@ const Game = (() => {
     stop(){ cancelAnimationFrame(raf); raf=0; G=null; Object.keys(keys).forEach(k=>keys[k]=false); Music.stop(); },
     pause(){ if (G) G.state = G.state==='play' ? 'paused' : G.state; },
     resume(){ if (G && G.state==='paused'){ G.state='play'; Music.play(G.cfg.mode==='boss'?'boss':'level'); } },
-    get state(){ return G; }, onEnd:null
+    get state(){ return G; }, onEnd:null, skylineURL
   };
 })();
 
@@ -1530,15 +1652,19 @@ function applyTestDate(){ TEST_DATE = (isCreator() && S && S.dev.testDate) ? S.d
 /* ---------- Hilfen ---------- */
 function curWeekIdx(){ const m = mondayOf(todayS()); let i = S.weeks.findIndex(w=>w.monday===m); if (i<0) i = todayS() < S.weeks[0].monday ? 0 : S.weeks.length-1; return i; }
 function daysToRace(){ return daysBetween(todayS(), S.profile.race); }
-function myPaces(){ return S.profile.tenK ? paces(S.profile.tenK) : null; }
+function myPaces(){ if (!S.profile.tenK) return null; const P = paces(S.profile.tenK); if (S.profile.goal){ P.HMtime = S.profile.goal; P.HM = S.profile.goal/21.0975; } return P; }
+function parseGoal(v){ v=String(v||'').trim().replace(',',':').replace('.',':').replace(/\s*h$/i,''); if (!v) return null; const p=v.split(':').map(Number); if (p.some(isNaN)) return null;
+  if (p.length===1) return p[0]>=60 && p[0]<=300 ? p[0]*60 : null; if (p.length===2) return p[0]<=5 ? p[0]*3600+p[1]*60 : p[0]*60+p[1]; return p[0]*3600+p[1]*60+p[2]; }
+function goalText(g){ return g ? fmtTime(g).replace(/:00$/,'')+' h' : 'Ankommen'; }
 function dayIndex(){ return Math.floor(parseD(todayS())/DAY); }
 function hfMax(){ const p=S.profile; if (p.noHR) return null; if (p.hfmax) return p.hfmax; if (p.age) return 220 - p.age; return null; }
 function intensity(code){ const t=TYPES[code]; if(!t) return ''; if (S.profile.noHR) return t.feel ? 'Gefühl: '+t.feel : '';
-  const hf=hfMax(); const m=(t.hf||'').match(/(\d+)–(\d+) %/); if (hf && m) return t.hf+' ≈ '+Math.round(hf*m[1]/100)+'–'+Math.round(hf*m[2]/100)+' Schläge/min'; return t.hf; }
+  const hf=hfMax(); const m=(t.hf||'').match(/(\d+)–(\d+) %/), m1=(t.hf||'').match(/ca\. (\d+) %/);
+  if (hf && m) return t.hf+' ≈ '+Math.round(hf*m[1]/100)+'–'+Math.round(hf*m[2]/100)+' Schläge/min'; if (hf && m1) return t.hf+' ≈ '+Math.round(hf*m1[1]/100)+' Schläge/min'; return t.hf; }
 function streak(){ let s=0; const cur=curWeekIdx(); for (let i=cur;i>=0;i--){ const any=S.weeks[i].sessions.some(x=>x.done); if (any) s++; else if (i===cur) continue; else break; } return s; }
-function levelUnlocked(i){ const gs=S.game; if (isCreator() || gs.unlocked[i] || todayS() >= UNLOCK_ALL_DATE) return true; return totalKm(S) >= gs.thresholds[i]; }
-function syncUnlocks(){ const k=totalKm(S); let newly=[]; S.game.thresholds.forEach((t,i)=>{ if(!S.game.unlocked[i] && (k>=t || todayS()>=UNLOCK_ALL_DATE)){ S.game.unlocked[i]=true; newly.push(i);} }); return newly; }
-function kmToNext(){ const k=totalKm(S); const th=S.game.thresholds; const i=th.findIndex((t,j)=>!levelUnlocked(j)); return i<0?null:{ lvl:i+1, need: Math.max(0.1, Math.round((th[i]-k)*10)/10) }; }
+function levelUnlocked(i){ const gs=S.game; if (isCreator() || gs.unlocked[i] || todayS() >= UNLOCK_ALL_DATE) return true; const t=gs.thresholds[i]; return t!=null && totalKm(S) >= t; }
+function syncUnlocks(){ S.game.thresholds = computeThresholds(S); const k=totalKm(S); let newly=[]; S.game.thresholds.forEach((t,i)=>{ if(!S.game.unlocked[i] && ((t!=null && k>=t) || todayS()>=UNLOCK_ALL_DATE)){ S.game.unlocked[i]=true; newly.push(i);} }); return newly; }
+function kmToNext(){ const k=totalKm(S); const th=S.game.thresholds; const i=th.findIndex((t,j)=>t!=null && !levelUnlocked(j)); return i<0?null:{ lvl:i+1, need: Math.max(0.1, Math.round((th[i]-k)*10)/10) }; }
 function bossOpen(){ return isCreator() || todayS() >= UNLOCK_ALL_DATE; }
 function fmtDur(sec){ if(!sec) return ''; return fmtTime(sec); }
 function logSummary(o){ const parts=[]; const km = o.kmDone!=null?o.kmDone:o.km; if (km) parts.push(String(km).replace('.',',')+' km');
@@ -1577,6 +1703,7 @@ function renderSetup(){
       <label>Was ist die längste Strecke, die du in den letzten Wochen gelaufen bist?<div class="unit"><input name="longest" type="number" step="0.5" min="5" max="42" inputmode="decimal" placeholder="z. B. 10" required><span>km</span></div></label>
       <label>Wie schnell bist du durchschnittlich bei deinen Läufen unterwegs?<div class="unit"><input name="avg" placeholder="z. B. 6:15" inputmode="numeric" required><span>min/km</span></div><small>Durchschnittstempo pro Kilometer, z. B. aus deiner Laufuhr oder App.</small></label>
       <label>Bei welchem Tempo fühlst du dich beim Laufen richtig wohl?<div class="unit"><input name="comfort" placeholder="z. B. 6:45" inputmode="numeric" required><span>min/km</span></div><small>Das Tempo, bei dem du locker laufen und dich noch gut unterhalten kannst.</small></label>
+      <label>Welches Zeitziel setzt du dir für den Halbmarathon?<div class="unit"><input name="goal" placeholder="z. B. 2:10" inputmode="numeric"><span>Stunden : Minuten</span></div><small>Leer lassen, wenn du einfach ankommen willst. Du kannst dein Ziel später jederzeit ändern.</small></label>
       <fieldset><legend>Herzfrequenz</legend>
         <label class="radio"><input type="radio" name="hr" value="max" checked> Ich kenne meine maximale Herzfrequenz</label>
         <div class="unit sub" data-for="max"><input name="hfmax" type="number" min="120" max="230" placeholder="z. B. 190"><span>Schläge/min</span></div>
@@ -1593,9 +1720,10 @@ function renderSetup(){
     if (!(longest>=5)) return $('#setErr').textContent='Die längste Strecke sollte mindestens 5 km sein.';
     if (!avg || avg<150 || avg>720) return $('#setErr').textContent='Bitte gib dein Durchschnittstempo als Minuten:Sekunden pro km ein (z. B. 6:15).';
     if (!comfort || comfort<150 || comfort>720) return $('#setErr').textContent='Bitte gib dein Wohlfühltempo als Minuten:Sekunden pro km ein (z. B. 6:45).';
+    const goalRaw=f.get('goal'); const goal=parseGoal(goalRaw); if (String(goalRaw||'').trim() && (!goal || goal<3600 || goal>4*3600)) return $('#setErr').textContent='Bitte gib dein Zeitziel als Stunden:Minuten ein (z. B. 2:10) – oder lass das Feld leer.';
     const hr=f.get('hr'); const est = estimateLevel(avg, comfort);
     const game = S && S.game ? S.game : blank().game; S = normalize(null); S.game = game;
-    S.profile = { name: Store.user.name, start: f.get('start'), race: RACE_DEFAULT, longest, avg, comfort, tenK: est.tenK, level: est.level,
+    S.profile = { name: Store.user.name, start: f.get('start'), race: RACE_DEFAULT, longest, avg, comfort, tenK: est.tenK, level: est.level, goal,
       hfmax: hr==='max' ? (+f.get('hfmax')||null) : null, age: hr==='age' ? (+f.get('age')||null) : null, noHR: hr==='none' };
     buildPlan(S); syncUnlocks(); save(); renderApp('today'); };
 }
@@ -1685,20 +1813,23 @@ function afterKm(before){
 }
 function typeInfo(code){ const t=TYPES[code]; if(!t) return;
   sheet(`<h3>${esc(t.name)}</h3><p>${esc(t.what)}</p><p><b>Wofür?</b> ${esc(t.why)}</p>${t.hf?`<p><b>Mit Pulsmessung:</b> ${esc(t.hf)}</p>`:''}${t.feel?`<p><b>Ohne Pulsmessung:</b> ${esc(t.feel)}</p>`:''}
-    ${isCreator()&&t.dev?`<p class="devnote">🛠 ${esc(t.dev)}</p>`:''}<p class="src">${esc(t.src)}</p><button class="btn" onclick="closeSheet()">OK</button>`); }
+    ${isCreator()&&t.dev?`<p class="devnote">🛠 ${esc(t.dev)}</p>`:''}<p class="src">${esc(t.src)}</p><p class="small muted">${esc(HF_NOTE)}</p><button class="btn" onclick="closeSheet()">OK</button>`); }
 
 /* ---------- Plan ---------- */
 function renderPlan(){
-  const cur = curWeekIdx(); let lastB = null; const p=S.profile; const hmPlan = PLANS[LEVELS[p.level].hm];
+  const cur = curWeekIdx(); let lastB = null; const p=S.profile; const hmKey = hmPlanForGoal(p.goal), hmPlan = PLANS[hmKey]; const ambitious = p.goal && p.tenK > HM_REQ[hmKey] + 90;
   const html = S.weeks.map((w,wi)=>{
     const head = w.b!==lastB ? `<div class="block-h"><h3>${esc(w.title)}</h3><span class="src">${esc(w.src)}</span></div>` : ''; lastB = w.b;
     const done = w.sessions.filter(s=>s.done).length, km = w.sessions.reduce((a,s)=>a+(s.km||0),0);
     return head + `<details class="week ${wi===cur?'cur':''} ${w.flag||''}" ${wi===cur?'open':''}><summary><span class="wn">W${wi+1}</span><span class="wd">${niceD(w.monday,{day:'2-digit',month:'2-digit'})}</span><span class="wt">Woche ${w.i+1}${w.flag==='reentry'?' · Wiedereinstieg':''}</span><span class="wk">${km?Math.round(km)+' km':''}</span><span class="wdn">${done}/${w.sessions.length}</span></summary>${weekSessions(wi)}</details>`;
   }).join('');
-  $('#view').innerHTML = `<div class="sec-h"><h2>Dein Plan</h2><button class="btn sm ghost" onclick="openLevel()">Ziel ändern</button></div>
+  $('#view').innerHTML = `<div class="sec-h"><h2>Dein Plan</h2><button class="btn sm ghost" onclick="openGoal()">Ziel ändern</button></div>
     <section class="card"><p><b>Dein Ausgangsniveau:</b> längster Lauf ${String(p.longest||'–').replace('.',',')} km · Wohlfühltempo ${p.comfort?fmtPace(p.comfort):'–'} min/km · Ø ${p.avg?fmtPace(p.avg):'–'} min/km</p>
-      <p>Daraus ergibt sich etwa eine 10-km-Leistung von <b>${fmtTime(p.tenK)}</b> min und das Halbmarathon-Ziel <b>${esc(hmPlan.target)}</b>.</p>
-      <p class="src">Tempoformeln: Aderhold, 2018, S. 89 · Pläne: Aderhold, 2018, S. 468–481</p></section>
+      <p>Daraus ergibt sich etwa eine 10-km-Leistung von <b>${fmtTime(p.tenK)}</b> min.</p>
+      <p>🎯 <b>Dein Ziel: ${goalText(p.goal)}</b> → Halbmarathon-Plan <b>${esc(hmPlan.target)}</b>${p.goal?'':' (der ruhigste Plan – ideal, um gut anzukommen)'}.</p>
+      ${ambitious?`<p class="warnbox">Dein Ziel ist ehrgeizig: Dieser Plan setzt etwa 10 km in ${fmtTime(HM_REQ[hmKey])} min voraus, nach deinen Angaben liegst du derzeit bei ca. ${fmtTime(p.tenK)} min. Die erreichbare Zeit realistisch einschätzen und lieber verhaltener angehen (Aderhold, 2018, S. 141).</p>`:''}
+      <details class="gl"><summary class="small"><b>So schätzt die App dein Niveau</b></summary><p class="small">Dein <b>Wohlfühltempo</b> wird als extensiver Dauerlauf gewertet: Aderhold beschreibt die Belastung, bei der man sich wohlfühlt und noch unterhalten kann, mit 60–75 % der maximalen Herzfrequenz – das entspricht etwa dem regenerativen bis extensiven Dauerlauf (Aderhold, 2018, S. 138 f.). Dass dein <b>Durchschnittstempo</b> zwischen extensivem und intensivem Dauerlauf liegt, ist eine <b>Annahme der App</b>, die so nicht in den Büchern steht. Aus beidem berechnet die App mit Aderholds Tempoformeln (S. 89) deine 10-km-Leistung und nimmt vorsichtshalber den langsameren Wert.</p></details>
+      <p class="src">Pläne: Aderhold, 2018, S. 468–481</p></section>
     <p class="muted small">Die Wochentage sind Vorschläge – verschiebe Einheiten, wie es in deinen Alltag passt, und lass zwischen fordernden Einheiten Ruhetage. Tippe auf eine Trainingsform (ⓘ) für die Erklärung.</p>
     ${S.notices.length?`<div class="card note">${S.notices.map(n=>`<p>ℹ️ ${esc(n)}</p>`).join('')}</div>`:''}
     ${S.pauses.length?`<div class="card"><b>Eingetragene Pausen</b>${S.pauses.map(x=>`<p class="small">${niceD(x.from)} – ${niceD(x.to)} (${({fieber:'Krankheit mit Fieber',erkaeltung:'Erkältung',verletzung:'Verletzung',sonst:'Sonstiges'})[x.reason]})</p>`).join('')}</div>`:''}
@@ -1730,11 +1861,16 @@ function openExtra(){
   $('#xf').onsubmit = e => { e.preventDefault(); const f=new FormData(e.target); const o={ date:f.get('d') }; readLog(f,o); o.km=o.kmDone||0; delete o.kmDone;
     if (!o.km) return alertBox('Bitte trag zumindest die Kilometer ein.'); const before=totalKm(S); S.extra.push(o); closeSheet(); afterKm(before); };
 }
-function openLevel(){
-  sheet(`<h3>Ziel ändern</h3><p class="muted small">Ab dieser Woche wird der Plan neu berechnet; Vergangenes bleibt erhalten.</p>
-    ${Object.entries(LEVELS).map(([k,v])=>`<label class="radio"><input type="radio" name="nl" value="${k}" ${S.profile.level===k?'checked':''}> ${esc(v.label)} <span class="muted small">→ Ziel ${esc(PLANS[v.hm].target)}</span></label>`).join('')}
-    <div class="row"><button class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn" id="nlb">Übernehmen</button></div>`);
-  $('#nlb').onclick = () => { const v = document.querySelector('input[name=nl]:checked').value; changeLevel(S, v); save(); closeSheet(); renderApp('plan'); };
+function openGoal(){
+  const p=S.profile;
+  sheet(`<h3>🎯 Zeitziel ändern</h3><p class="muted small">Ab dieser Woche wird dein Plan an das neue Ziel angepasst; Vergangenes bleibt erhalten.</p>
+    <label>Zeitziel (Stunden:Minuten)<input id="ng" placeholder="z. B. 2:05" value="${p.goal?fmtTime(p.goal).replace(/:00$/,''):''}" inputmode="numeric"></label>
+    <label class="radio"><input type="checkbox" id="na" ${p.goal?'':'checked'}> Ich will einfach ankommen</label>
+    <p class="small muted">Die App wählt den passenden Halbmarathon-Plan: 2:15–2:20 h, 2:00–2:05 h, 1:50–1:52 h oder 1:45–1:47 h (Aderhold, 2018, S. 480 f.).</p><p id="ge" class="err"></p>
+    <div class="row"><button class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn" id="ngb">Übernehmen</button></div>`);
+  $('#ng').oninput = () => { $('#na').checked = !$('#ng').value.trim(); };
+  $('#ngb').onclick = () => { let g = null; if (!$('#na').checked){ g = parseGoal($('#ng').value); if (!g || g<3600 || g>4*3600) return $('#ge').textContent='Bitte als Stunden:Minuten eingeben, z. B. 2:05.'; }
+    changeGoal(S, g); syncUnlocks(); save(); closeSheet(); renderApp('plan'); toastMsg('🎯 Neues Ziel: '+goalText(g)+' – Plan angepasst.'); };
 }
 function openSettings(){
   const p=S.profile, hrMode = p.noHR?'none':p.age&&!p.hfmax?'age':'max';
@@ -1766,7 +1902,7 @@ function renderGame(){
     <section class="card story"><div class="kicker">${esc(L.story)}</div><p>${esc(L.intro)}</p></section>
     <section class="card"><h3>${esc(L.gearTitle)}</h3><div class="gear">${GEAR.map(g=>`<div class="gi ${gs.gear[g.id]?'got':''}"><span>${g.icon}</span><small>${esc(g[gs.lang])}</small></div>`).join('')}</div></section>
     <div class="levels">${L.levels.map((lv,i)=>{ const u=levelUnlocked(i), d=gs.done[i];
-      return `<button class="lvl ${u?'':'locked'} ${d?'done':''}" ${u?`onclick="openGame('level',${i})"`:''}><span class="ln">${i+1}</span><span class="lt"><b>${esc(lv.name)}</b><small>${u ? (d?'✓ '+(gs.best[i]||0)+' '+esc(L.pretzels):esc(L.play)) : '🔒 '+esc(L.unlockAt)+' '+th[i]+' km'}</small></span><span class="lg">${gs.gear[GEAR[i].id]?GEAR[i].icon:'❔'}</span></button>`; }).join('')}
+      return `<button class="lvl ${u?'':'locked'} ${d?'done':''}" ${u?`onclick="openGame('level',${i})"`:''}><span class="ln">${i+1}</span><span class="lt"><b>${esc(lv.name)}</b><small>${u ? (d?'✓ '+(gs.best[i]||0)+' '+esc(L.pretzels):esc(L.play)) : '🔒 '+(th[i]==null ? esc(L.unlockAt)+' '+niceD(UNLOCK_ALL_DATE) : esc(L.unlockAt)+' '+th[i]+' km')}</small></span><span class="lg">${gs.gear[GEAR[i].id]?GEAR[i].icon:'❔'}</span></button>`; }).join('')}
       <button class="lvl boss ${bo?'':'locked'} ${gs.bossWon?'done':''}" onclick="openBoss()"><span class="ln">🐷</span><span class="lt"><b>${esc(L.boss)}</b><small>${bo ? (allGear? (gs.bossWon?'✓':esc(L.play)) : esc(L.missing)+': '+GEAR.filter(g=>!gs.gear[g.id]).map(g=>g.icon).join(' ')) : '🔒 '+esc(L.bossLocked)+' '+niceD(UNLOCK_ALL_DATE)}</small></span></button>
     </div>
     <h3 class="mt">Specials</h3><div class="levels">
@@ -1846,7 +1982,8 @@ function renderKnow(){
       ${used.map(k=>{ const t=TYPES[k]; return `<details class="gl"><summary><b>${esc(t.name)}</b> <span class="muted small">${esc(k==='-'?'P/AT':k)}</span></summary>
         <p>${esc(t.what)}</p><p><b>Wofür?</b> ${esc(t.why)}</p>${t.hf?`<p>❤️ <b>Mit Puls:</b> ${esc(t.hf)}</p>`:''}${t.feel?`<p>🗣️ <b>Nach Gefühl:</b> ${esc(t.feel)}</p>`:''}${P&&paceFor(k,'1x1',P)&&k!=='WHL'?`<p>⏱️ <b>Dein Tempo:</b> ${esc(paceFor(k,'',P))}</p>`:''}
         ${isCreator()&&t.dev?`<p class="devnote">🛠 ${esc(t.dev)}</p>`:''}<span class="src">${esc(t.src)}</span></details>`; }).join('')}
-      <div class="ffbox light"><b>Ohne Pulsuhr – die Sprech-Regel</b><p class="small">Kannst du während des Laufens noch gut sprechen, bist du im langsamen Dauerlauf (ca. 70 % HFmax). Kannst du gerade noch sprechen, im lockeren bis zügigen Dauerlauf (75–80 %). Schnelle Dauerläufe läufst du so, dass du das Tempo über die ganze Einheit gleichmäßig halten kannst.</p><span class="src">Beck, 2024, S. 162</span></div></section>
+      <div class="ffbox light"><b>Ohne Pulsuhr – die Sprech-Regel</b><p class="small">Kannst du während des Laufens noch gut sprechen, bist du im langsamen Dauerlauf (ca. 70 % HFmax). Kannst du gerade noch sprechen, im lockeren Dauerlauf (75–80 %). Den schnellen Dauerlauf läufst du so, dass du die ganze Einheit mit maximaler, aber konstanter Geschwindigkeit schaffst.</p><span class="src">Beck, 2024, S. 162</span></div>
+      <p class="small muted">${esc(HF_NOTE)}</p></section>
     <section class="card"><h3>✨ Magic Mile</h3>
       <p>Die Magic Mile ist ein kurzer Leistungstest aus den Halbmarathon-Programmen von Jeff und Barbara Galloway. Du läufst eine Meile – das sind 1,609 km, auf der Laufbahn etwa vier Runden – auf Zeit. In Galloways Plänen taucht der Test regelmäßig donnerstags auf, zum Beispiel als „1 Meile Magic Mile + 3 Meilen“.</p>
       <p><b>So rechnest du:</b> Magic-Mile-Zeit × 1,2 = das Tempo pro Meile, das du aktuell im Halbmarathon laufen könntest. Das gilt bei höchstens 14 °C und wenn du die langen Läufe und Tempoeinheiten deines Plans absolviert hast.</p>
@@ -1885,6 +2022,7 @@ function renderLit(){
 /* ---------- Start ---------- */
 document.addEventListener('DOMContentLoaded', async () => {
   Game.init(); document.documentElement.style.setProperty('--title', `url(${TITLE_IMG})`);
+  try { document.documentElement.style.setProperty('--skyline', `url(${Game.skylineURL('#8e2433')})`); } catch(e){}
   $('#gclose').onclick = closeGame;
   $('#sheet').addEventListener('click', e => { if (e.target.id==='sheet') closeSheet(); });
   $('#app').innerHTML = '<div class="loading">…</div>';
