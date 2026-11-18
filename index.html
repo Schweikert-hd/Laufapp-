@@ -1460,9 +1460,11 @@ const Game = (() => {
     G.parts.forEach(q=>{ q.x+=q.vx; q.y+=q.vy; q.vy+=0.12; q.life--; }); G.parts = G.parts.filter(q=>q.life>0);
     G.cam = Math.max(0, Math.min(lv.len*T-VW, p.x - VW*0.38)); if (G.shake>0) G.shake--;
     { const maxY = ((lv.rows||ROWS)-ROWS)*T; if (maxY>0){                                       // ruhige Kamera: folgt nur dem Boden, nicht jedem Sprung
-        if (p.on || G.anchorY==null) G.anchorY = p.y; const ay = Math.max(G.anchorY, p.y > G.anchorY + 2*T ? p.y : G.anchorY);
+        if (p.on || G.anchorY==null) G.anchorY = p.y; const ay = p.y > G.anchorY + 3*T ? p.y : G.anchorY;
         const want = Math.max(0, Math.min(maxY, ay - VH*0.62)); const d = want - G.camY;
-        if (Math.abs(d) > 2) G.camY += Math.sign(d) * Math.min(Math.abs(d)*0.045, 2.2); } else G.camY = 0; }
+        if (!G.camMove && Math.abs(d) > 1.5*T) G.camMove = true; if (G.camMove && Math.abs(d) < 3) G.camMove = false;   // Totzone: erst ab ca. 1,5 Feldern nachführen
+        if (G.camMove){ G.camVY = (G.camVY||0) + (Math.sign(d)*Math.min(1.4, Math.abs(d)*0.03) - (G.camVY||0))*0.08; G.camY += G.camVY; } else G.camVY = (G.camVY||0)*0.85, G.camY += G.camVY;
+        G.camY = Math.max(0, Math.min(maxY, G.camY)); } else G.camY = 0; }
   }
 
   function bossStep(){
@@ -1705,8 +1707,11 @@ const Game = (() => {
     if (kind==='castle'){ hills(cam*0.15, farHill, 120, 30, 1); layer(0.22, 620, (x)=>{ ctx.save(); ctx.translate(x+130, 128); ctx.scale(0.8,0.8); castle(0, 0); ctx.restore(); }); tourists(cam);      // Schlossgarten
       layer(0.55, 48, (x,i)=>{ ctx.fillStyle='#4f8a43'; rr(x+4,176,40,16,8); ctx.fill(); ctx.fillStyle='rgba(255,255,255,.15)'; rr(x+8,178,32,4,2); ctx.fill(); if (i%5===0){ ctx.fillStyle='#d9cbb5'; ctx.fillRect(x+20,166,8,24); ctx.beginPath(); ctx.arc(x+24,166,6,0,7); ctx.fill(); } }); }
     if (kind==='forest'){ hills(cam*0.15, farHill, 110, 30, 1); hills(cam*0.3, night?'#18234a':G.theme.snow?'#b3c7d8':'#6f9d5f', 145, 26, 2);                             // Himmelsleiter: Steinstufen durch den Wald
-      layer(0.4, 300, (x)=>{ ctx.fillStyle='#8f8372'; for(let k=0;k<14;k++){ ctx.fillRect(x+k*14, 196-k*6, 14, 4); } ctx.fillStyle='rgba(90,80,70,.35)'; for(let k=0;k<14;k++) ctx.fillRect(x+k*14, 199-k*6, 14, 1.2); });
+      layer(0.4, 300, (x)=>{ ctx.fillStyle=night?'#22305a':'#7fa86a'; ctx.beginPath(); ctx.moveTo(x-30,215); ctx.lineTo(x,200); ctx.lineTo(x+196,118); ctx.lineTo(x+230,124); ctx.lineTo(x+290,215); ctx.closePath(); ctx.fill();   // Hang unter den Stufen
+        ctx.fillStyle='#8f8372'; for(let k=0;k<14;k++){ ctx.fillRect(x+k*14, 196-k*6, 14, 4); } ctx.fillStyle='rgba(90,80,70,.35)'; for(let k=0;k<14;k++) ctx.fillRect(x+k*14, 199-k*6, 14, 1.2); });
       layer(0.33, 560, (x)=>{ const x0=x+250, y0=200, x1=x+470, y1=78;                                                // Heidelberger Bergbahn
+        ctx.fillStyle=night?'#1d2a50':'#6b9a5c'; ctx.beginPath(); ctx.moveTo(x0-40,215); ctx.lineTo(x0,y0+4); ctx.lineTo(x1-14,y1+2); ctx.lineTo(x1+34,y1+2); ctx.quadraticCurveTo(x1+70,y1+20,x1+160,215); ctx.closePath(); ctx.fill();   // Berghang mit Bergstation
+        for (let k=0;k<6;k++) tree(x1+44+k*16, y1+28+k*15, 0.8, '#3d7f3f');
         ctx.strokeStyle='#5a4a3a'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.moveTo(x0+5,y0+3); ctx.lineTo(x1+5,y1+3); ctx.stroke();
         ctx.lineWidth=1; for(let k=0;k<=20;k++){ const f=k/20; ctx.beginPath(); ctx.moveTo(x0+(x1-x0)*f-1,y0+(y1-y0)*f-1); ctx.lineTo(x0+(x1-x0)*f+6,y0+(y1-y0)*f+4); ctx.stroke(); }
         ctx.fillStyle='#8a7a68'; ctx.fillRect(x1-6,y1-16,30,16); ctx.fillStyle='#a3473a'; ctx.beginPath(); ctx.moveTo(x1-9,y1-16); ctx.lineTo(x1+9,y1-24); ctx.lineTo(x1+27,y1-16); ctx.fill();
