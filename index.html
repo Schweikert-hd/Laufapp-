@@ -1287,8 +1287,8 @@ const Game = (() => {
     { sky:['#9cc6ea','#fff0cf'], ground:'#6f9a45', dirt:'#6b4a2f', deco:'hills', hilly:true },
     { sky:['#8dbde6','#ffe1b0'], ground:'#b3a08c', dirt:'#6e5e50', deco:'oldtown', cobble:true },
     { sky:['#f2a76b','#ffe3b8'], ground:'#6aa152', dirt:'#7a5236', deco:'castle' },
-    { sky:['#90c2ea','#f6f1dc'], ground:'#bfa98f', dirt:'#7d6b5b', deco:'forest', stairs:true },
-    { sky:['#e88a5a','#ffd39a'], ground:'#5a8a3e', dirt:'#5b4330', deco:'forest2', hilly:true },
+    { sky:['#90c2ea','#f6f1dc'], ground:'#bfa98f', dirt:'#7d6b5b', deco:'forest', stairs:true, uphill:true },
+    { sky:['#e88a5a','#ffd39a'], ground:'#5a8a3e', dirt:'#5b4330', deco:'forest2', hilly:true, uphill:true },
     { sky:['#14183a','#3a3f7a'], ground:'#8a7f86', dirt:'#4a4250', deco:'night', night:true },
     { sky:['#a7c3dc','#eef1ec'], ground:'#5f8a4a', dirt:'#5b4330', deco:'koenig', hilly:true },
     { sky:['#8fc3ea','#fff1c9'], ground:'#9bbb5e', dirt:'#7a5236', deco:'zoo' },
@@ -1302,15 +1302,17 @@ const Game = (() => {
 
   /* ---------- Levelgenerator ---------- */
   function gen(theme, seed, diff, len, opt){
-    const r = rng(seed), tiles = new Uint8Array(len*ROWS), ents = [], wind = [];
-    let gy = 9, x = 0;
-    const col = (cx, top, kind) => { for (let y = top; y < ROWS; y++) tiles[y*len+cx] = (y===top ? (kind||1) : 2); };
+    const up = !!theme.uphill, R = up ? ROWS + 22 : ROWS;              // Bergauf-Level: höhere Welt mit senkrechtem Scrollen
+    const r = rng(seed), tiles = new Uint8Array(len*R), ents = [], wind = [];
+    let gy = up ? R-3 : 9, x = 0; const startGy = gy, minGy = 5, maxGy = up ? R-2 : 10;
+    const target = () => Math.round(startGy - (startGy - 6) * Math.min(1, x / (len*0.92)));   // gleichmäßig steigender Weg
+    const col = (cx, top, kind) => { for (let y = top; y < R; y++) tiles[y*len+cx] = (y===top ? (kind||1) : 2); };
     const flat = n => { for (let i=0;i<n && x<len;i++,x++) col(x, gy); };
     const coin = (cx, cy) => ents.push({ t:'coin', x:cx*T+4, y:cy*T+4, w:12, h:12 });
     const enemy = cx => ents.push({ t:'enemy', x:cx*T+3, y:gy*T-15, w:15, h:15, vx:-(0.45+diff*0.07), alive:true, txt:L().excuses[Math.floor(r()*8)] });
     flat(8); let nextCheck = 40, itemAt = (opt.item!=null || opt.apple) ? Math.floor(len*0.62) : -1;
     while (x < len-16){
-      if (x >= nextCheck){ ents.push({ t:'check', x:x*T, y:gy*T-26, w:10, h:26, on:false }); nextCheck += 40; }
+      if (x >= nextCheck){ const cx = x+1; flat(5); ents.push({ t:'check', x:cx*T, y:gy*T-26, w:10, h:26, on:false }); nextCheck += 40; continue; } // Fahne immer auf sicherem, flachem Boden
       if (itemAt>0 && x >= itemAt){
         flat(2); const px = x+1; flat(7);
         for (let i=0;i<3;i++) tiles[(gy-2)*len+px+1+i] = 3;
@@ -1323,17 +1325,17 @@ const Game = (() => {
         for (let i=0;i<g;i++) coin(x+i, gy-3 - (i===1?1:0));
         x += g; flat(3+Math.floor(r()*3));
       } else if (v < 0.22 + (theme.hilly?0.3:0.17)){ // Stufe
-        const up = r() < 0.55; const d = 1 + (r()<0.4?1:0);
-        gy = Math.max(5, Math.min(10, gy + (up?-d:d))); flat(3+Math.floor(r()*3)); coin(x-2, gy-2);
+        let goUp = r() < 0.55; const d = 1 + (r()<0.4?1:0); if (up) goUp = gy > target() || r() < 0.2;
+        gy = Math.max(minGy, Math.min(maxGy, gy + (goUp?-d:d))); flat(3+Math.floor(r()*3)); coin(x-2, gy-2);
       } else if (v < 0.56){ // Grube mit Plattform
         const pw = 5 + (r()<0.4?1:0); const py = gy-2;
         for (let i=1;i<pw-1;i++){ tiles[py*len+x+i] = 3; coin(x+i, py-1); }
         x += pw; flat(3);
       } else if (v < 0.56 + w){ // Treppe (Himmelsleiter)
         const n = 3 + Math.floor(r()*3);
-        for (let s=0;s<n && gy>4;s++){ gy--; flat(2); }
+        for (let s=0;s<n && gy>minGy;s++){ gy--; flat(2); }
         coin(x-1, gy-2); flat(3);
-        const down = Math.min(n, 10-gy); gy += Math.min(2,down); flat(2); gy += Math.max(0, down-2); flat(3);
+        if (!up){ const down = Math.min(n, 10-gy); gy += Math.min(2,down); flat(2); gy += Math.max(0, down-2); flat(3); }
       } else { // flach, evtl. mit Gegner
         const n = 5 + Math.floor(r()*4); const sx = x; flat(n);
         if (r() < 0.35 + diff*0.07) enemy(sx + Math.floor(n/2));
@@ -1341,18 +1343,19 @@ const Game = (() => {
         else for (let i=1;i<n-1;i+=2) coin(sx+i, gy-1);
       }
       if (theme.wind && r() < 0.35) wind.push({ x0:(x-6)*T, x1:(x+6)*T, f: r()<0.65 ? -0.07 : 0.05 });
+      if (up) while (gy > target()+1 && x < len-20){ gy--; flat(2); }                 // zurück auf den Bergpfad
     }
-    gy = Math.max(gy, 8); while (x < len) col(x++, gy);
+    if (!up) gy = Math.max(gy, 8); while (x < len) col(x++, gy);
     ents.push({ t:'goal', x:(len-7)*T, y:gy*T-60, w:40, h:60 });
-    return { tiles, len, ents, wind, groundEnd: gy };
+    return { tiles, len, ents, wind, groundEnd: gy, rows: R, startGy };
   }
 
   function arena(){
-    const len = 21, tiles = new Uint8Array(len*ROWS);
+    const len = 21, tiles = new Uint8Array(len*ROWS); // Arena
     for (let x=0;x<len;x++) for (let y=10;y<ROWS;y++) tiles[y*len+x] = y===10?1:2;
     for (let y=0;y<10;y++){ tiles[y*len] = 2; tiles[y*len+len-1] = 2; }
     [3,4,5].forEach(x=>tiles[6*len+x]=3); [15,16,17].forEach(x=>tiles[6*len+x]=3);
-    return { tiles, len, ents:[], wind:[] };
+    return { rows: ROWS, tiles, len, ents:[], wind:[] };
   }
 
   /* ---------- Spielstart ---------- */
@@ -1368,17 +1371,17 @@ const Game = (() => {
     const boss = mode==='boss';
     const maxH = boss ? 3 + (gearN.socks?1:0) + (gearN.shirt?1:0) : 3;
     G = { cfg, theme, lv, t:0, cam:0, coins:0, totalCoins: lv.ents.filter(e=>e.t==='coin').length, hearts:maxH, maxH,
-      p:{ x:2*T, y:(boss?10:9)*T-18, w:12, h:18, vx:0, vy:0, on:false, face:1, inv:0, coy:0, buf:0, anim:0 },
-      spawn:{ x:2*T, y:7*T }, parts:[], shots:[], pretz:[], cool:0, sparks:[], snow:[], shake:0, state:'play', gotItem:false,
+      p:{ x:2*T, y:(boss?10:(lv.startGy||9))*T-18, w:12, h:18, vx:0, vy:0, on:false, face:1, inv:0, coy:0, buf:0, anim:0 },
+      spawn:{ x:2*T, y:((lv.startGy||9)-2)*T }, camY: Math.max(0,((lv.rows||ROWS)-ROWS)*T), parts:[], shots:[], pretz:[], cool:0, sparks:[], snow:[], shake:0, state:'play', gotItem:false,
       ammo: mode==='level' ? 0 : Math.min(30, Object.values(S.game.best||{}).reduce((a,b)=>a+b,0) || (isCreator()?30:0)),
       shield: boss && gearN.cap ? 1 : 0, drink: boss && gearN.bottle ? 1 : 0, gelUse: boss && gearN.gel ? 1 : 0, turbo:0,
       boss: boss ? { x:15*T, y:10*T-44, w:52, h:44, vx:0, vy:0, hp:6, st:'intro', tm:70, face:-1, on:true, flash:0 } : null };
-    document.getElementById('gBossBtns').style.display = boss ? 'flex' : 'none';
+    document.getElementById('gBossBtns').style.display = boss ? 'flex' : 'none'; document.getElementById('gToast').classList.remove('show');
     updateBossBtns();
   }
 
   /* ---------- Update ---------- */
-  const tileAt = (lv,tx,ty) => { if (tx<0||tx>=lv.len) return 2; if (ty<0||ty>=ROWS) return 0; return lv.tiles[ty*lv.len+tx]; };
+  const tileAt = (lv,tx,ty) => { if (tx<0||tx>=lv.len) return 2; if (ty<0||ty>=(lv.rows||ROWS)) return 0; return lv.tiles[ty*lv.len+tx]; };
   const solid = (lv,tx,ty) => tileAt(lv,tx,ty)>0;
   function moveBody(b, lv){
     b.x += b.vx; let x0=Math.floor(b.x/T), x1=Math.floor((b.x+b.w-0.01)/T), y0=Math.floor(b.y/T), y1=Math.floor((b.y+b.h-0.01)/T);
@@ -1397,7 +1400,11 @@ const Game = (() => {
     G.hearts--; Music.sfx('hurt'); p.inv = (G.cfg.mode==='boss' && S.game.gear.jacket) ? 180 : 90; p.vy = -4; p.vx = -p.face*2.5; G.shake = 8; puff(p.x+6,p.y+9,'#ff6b6b',10);
     if (G.hearts<=0) endGame(false);
   }
-  function fall(){ G.hearts--; G.shake=8; Music.sfx('hurt'); if (G.hearts<=0) return endGame(false); Object.assign(G.p,{ x:G.spawn.x, y:G.spawn.y, vx:0, vy:0, inv:60 }); }
+  function safeSpawn(){ const lv=G.lv; let tx=Math.floor((G.spawn.x+6)/T);   // nächste Stelle mit festem Boden (nicht über einer Lücke)
+    for (let k=0;k<30;k++,tx--){ if (tx<1) break; let top=-1; for (let ty=0;ty<(lv.rows||ROWS);ty++){ const t=tileAt(lv,tx,ty); if (t===1||t===2){ top=ty; break; } }
+      const l=tileAt(lv,tx-1,top), r=tileAt(lv,tx+1,top); if (top>0 && (l===1||l===2) && (r===1||r===2)) return { x:tx*T+2, y:top*T-G.p.h-1 }; }
+    return { x:G.spawn.x, y:G.spawn.y }; }
+  function fall(){ G.hearts--; G.shake=8; Music.sfx('hurt'); if (G.hearts<=0) return endGame(false); const sp=safeSpawn(); Object.assign(G.p,{ x:sp.x, y:sp.y, vx:0, vy:0, inv:120 }); }
 
   function step(){
     const p = G.p, lv = G.lv, boss = G.boss; G.t++;
@@ -1412,7 +1419,7 @@ const Game = (() => {
     if (p.buf>0 && p.coy>0){ p.vy = -J; p.buf=0; p.coy=0; Music.sfx('jump'); }
     if (!keys.jump && p.vy < -3) p.vy = -3;
     moveBody(p, lv); p.anim += Math.abs(p.vx)*0.12; if (p.inv>0) p.inv--;
-    if (p.y > ROWS*T+30) fall();
+    if (p.y > (lv.rows||ROWS)*T+30) fall();
     if (keys.drink && G.drink>0 && G.hearts<G.maxH){ G.drink--; G.hearts++; puff(p.x+6,p.y,'#5bc0ff',14); updateBossBtns(); }
     if (keys.gel && G.gelUse>0){ G.gelUse--; G.turbo = 360; puff(p.x+6,p.y,'#ffd23f',14); updateBossBtns(); }
     keys.drink = keys.gel = false;
@@ -1431,7 +1438,7 @@ const Game = (() => {
 
     for (const e of lv.ents){
       if (e.t==='coin' && !e.got && hit(p,e)){ e.got=true; G.coins++; if (G.cfg.mode==='level' || G.cfg.collect==='🥨') G.ammo++; Music.sfx('coin'); puff(e.x+6,e.y+6,'#ffd23f',5); }
-      else if (e.t==='item' && !e.got && hit(p,e)){ e.got=true; G.gotItem=true; G.worn=Object.assign({},G.worn||{},{[GEAR[e.gear].id]:true}); Music.sfx('item'); puff(e.x+8,e.y+8,'#fff',20); toast(GEAR[e.gear].icon+' '+GEAR[e.gear][S.game.lang]+'!'); }
+      else if (e.t==='item' && !e.got && hit(p,e)){ e.got=true; G.gotItem=true; G.worn=Object.assign({},G.worn||{},{[GEAR[e.gear].id]:true}); S.game.gear[GEAR[e.gear].id]=true; save(); Music.sfx('item'); puff(e.x+8,e.y+8,'#fff',20); toast(GEAR[e.gear].icon+' '+GEAR[e.gear][S.game.lang]+'!'); }
       else if (e.t==='apple' && !e.got && hit(p,e)){ e.got=true; G.gotApple=true; G.coins+=5; G.totalCoins+=5; G.ammo+=5; Music.sfx('item'); puff(e.x+8,e.y+8,'#ff6b6b',20); toast('🍎 '+(S.game.lang==='de'?'Apfel! +5 Brezeln':'Apple! +5 pretzels')); }
       else if (e.t==='check' && !e.on && p.x > e.x){ e.on=true; G.spawn={ x:e.x, y:e.y-10 }; }
       else if (e.t==='goal' && p.x+p.w > e.x+16){ endGame(true); return; }
@@ -1452,6 +1459,7 @@ const Game = (() => {
     G.shots = G.shots.filter(s=>!s.dead);
     G.parts.forEach(q=>{ q.x+=q.vx; q.y+=q.vy; q.vy+=0.12; q.life--; }); G.parts = G.parts.filter(q=>q.life>0);
     G.cam = Math.max(0, Math.min(lv.len*T-VW, p.x - VW*0.38)); if (G.shake>0) G.shake--;
+    { const maxY = ((lv.rows||ROWS)-ROWS)*T; if (maxY>0){ const want = Math.max(0, Math.min(maxY, p.y - VH*0.55)); G.camY += (want - G.camY)*0.12; } else G.camY = 0; }
   }
 
   function bossStep(){
@@ -1479,11 +1487,12 @@ const Game = (() => {
     ctx.save(); ctx.setTransform(scale,0,0,scale,0,0);
     if (G.shake) ctx.translate((Math.random()-0.5)*G.shake*0.6, (Math.random()-0.5)*G.shake*0.6);
     const g = ctx.createLinearGradient(0,0,0,VH); g.addColorStop(0,th.sky[0]); g.addColorStop(1,th.sky[1]); ctx.fillStyle=g; ctx.fillRect(-10,-10,VW+20,VH+20);
-    deco(th.deco, G.cam);
+    const maxY = ((lv.rows||ROWS)-ROWS)*T, cy = Math.round(G.camY||0);
+    ctx.save(); if (maxY>0) ctx.translate(0, Math.round((maxY - cy)*0.12)); deco(th.deco, G.cam); ctx.restore();   // Hintergrund mit leichter Parallaxe
     if (th.river){ ctx.fillStyle = th.night ? '#1d3a6b' : '#4f8fbf'; ctx.fillRect(0, ROWS*T-16, VW, 16); ctx.fillStyle='rgba(255,255,255,.35)'; for(let i=0;i<14;i++){ const xx=((i*37 - G.cam*0.9 + G.t*0.4)%VW+VW)%VW; ctx.fillRect(xx, ROWS*T-10+(i%3)*3, 10, 1.5); } }
-    ctx.translate(-Math.round(G.cam), 0);
-    const x0 = Math.floor(G.cam/T), x1 = Math.min(lv.len-1, x0+Math.ceil(VW/T)+1);
-    for (let tx=x0;tx<=x1;tx++) for (let ty=0;ty<ROWS;ty++){ const v=lv.tiles[ty*lv.len+tx]; if(!v) continue; tile(v, tx*T, ty*T, th); }
+    ctx.translate(-Math.round(G.cam), -cy);
+    const x0 = Math.floor(G.cam/T), x1 = Math.min(lv.len-1, x0+Math.ceil(VW/T)+1), y0 = Math.floor(cy/T), y1 = Math.min((lv.rows||ROWS)-1, y0+ROWS+1);
+    for (let tx=x0;tx<=x1;tx++) for (let ty=y0;ty<=y1;ty++){ const v=lv.tiles[ty*lv.len+tx]; if(!v) continue; tile(v, tx*T, ty*T, th); }
     lv.wind.forEach(w=>{ if (w.x1<G.cam||w.x0>G.cam+VW) return; ctx.strokeStyle = w.f<0?'rgba(255,255,255,.7)':'rgba(255,240,150,.8)'; ctx.lineWidth=1.2; for(let i=0;i<6;i++){ const yy=60+((i*53)%120); const ph=(G.t*(w.f<0?-3:3)+i*40)%(w.x1-w.x0); const xx=w.x0+((ph+(w.x1-w.x0))%(w.x1-w.x0)); ctx.beginPath(); ctx.moveTo(xx,yy); ctx.lineTo(xx+(w.f<0?-14:14),yy); ctx.stroke(); } });
     for (const e of lv.ents){
       if (e.x < G.cam-40 || e.x > G.cam+VW+40) continue;
@@ -1501,7 +1510,7 @@ const Game = (() => {
     G.shots.forEach(s=>{ ctx.fillStyle='#8e2433'; rr(s.x,s.y,12,9,3); ctx.fill(); ctx.strokeStyle='#d9a640'; ctx.lineWidth=1; ctx.stroke(); ctx.fillStyle='#4a0f1a'; ctx.beginPath(); ctx.arc(s.x+6,s.y+4.5,1,0,7); ctx.fill(); });
     drawPlayer(G.p);
     G.parts.forEach(q=>{ ctx.globalAlpha=q.life/30; ctx.fillStyle=q.c; ctx.fillRect(q.x,q.y,3,3); }); ctx.globalAlpha=1;
-    ctx.translate(Math.round(G.cam),0);
+    ctx.translate(Math.round(G.cam), cy);
     if (G.theme.snow){ ctx.fillStyle='#fff'; G.snow.forEach(s=>{ ctx.fillRect(s.x-G.cam, s.y, 2, 2); }); }
     if (G.theme.night && G.cfg.mode!=='nye' && G.cfg.mode!=='xmas'){ ctx.fillStyle='rgba(5,10,30,.18)'; ctx.fillRect(0,0,VW,VH); }
     hud(); ctx.restore();
@@ -1565,10 +1574,7 @@ const Game = (() => {
     if (gear.shoes){ [a*0.8,-a*0.8].forEach(fx=>{ ctx.fillStyle='#ff6a3c'; ctx.fillRect(fx-2,16.2,5.6,2.2); ctx.fillStyle='#fff'; ctx.fillRect(fx-2,18.2,5.8,0.9); ctx.fillStyle='#2f5f9e'; ctx.fillRect(fx,16.6,2,0.6); }); }
     else { ctx.fillStyle='#7a4a24'; [a*0.8,-a*0.8].forEach(fx=>ctx.fillRect(fx-2,17.4,5,1.4)); ctx.strokeStyle='#7a4a24'; ctx.lineWidth=0.8; [a*0.8,-a*0.8].forEach(fx=>{ ctx.beginPath(); ctx.moveTo(fx-1,15); ctx.lineTo(fx+2,17.4); ctx.stroke(); }); }
     ctx.strokeStyle=O; ctx.lineWidth=0.8;
-    if (gear.pants){ // kurze Laufhose
-      ctx.fillStyle='#22313f'; ctx.beginPath(); ctx.moveTo(-4.6,10.4); ctx.lineTo(4.6,10.4); ctx.lineTo(5,13.6); ctx.lineTo(0.6,13.6); ctx.lineTo(0,12.4); ctx.lineTo(-0.6,13.6); ctx.lineTo(-5,13.6); ctx.closePath(); ctx.fill(); ctx.stroke();
-      ctx.fillStyle='#ffd23f'; ctx.fillRect(4,10.6,0.8,2.6); }
-    else if (gear.shirt){ ctx.fillStyle='#f1e6cf'; ctx.beginPath(); ctx.moveTo(-4.6,10); ctx.lineTo(4.6,10); ctx.lineTo(5.5,13); ctx.lineTo(-5.5,13); ctx.closePath(); ctx.fill(); ctx.stroke(); } // Tunika-Rock unter dem Shirt
+    if (gear.shirt && !gear.pants){ ctx.fillStyle='#f1e6cf'; ctx.beginPath(); ctx.moveTo(-4.6,10); ctx.lineTo(4.6,10); ctx.lineTo(5.5,13); ctx.lineTo(-5.5,13); ctx.closePath(); ctx.fill(); ctx.stroke(); } // Tunika-Rock unter dem Shirt
     if (gear.shirt){ // Funktionsshirt (Singlet)
       ctx.fillStyle='#22b3b8'; ctx.beginPath(); ctx.moveTo(-3.6,4.6); ctx.lineTo(-1.6,4.6); ctx.quadraticCurveTo(0.4,6.4,2.2,4.6); ctx.lineTo(3.8,4.6); ctx.lineTo(4.6,10.8); ctx.lineTo(-4.6,10.8); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.fillStyle='#ffd23f'; ctx.fillRect(-4.3,7.2,8.6,0.8);
@@ -1577,6 +1583,9 @@ const Game = (() => {
       ctx.fillStyle='#6b3a1e'; ctx.fillRect(-4.6,9,9.2,1.4); ctx.fillStyle='#d9a640'; ctx.fillRect(-0.6,8.8,1.6,1.8);
       ctx.fillStyle='#8e2433'; ctx.beginPath(); ctx.moveTo(-4,5); ctx.lineTo(3,5); ctx.lineTo(-1,8); ctx.fill(); ctx.fillStyle='#d9a640'; ctx.beginPath(); ctx.arc(1.5,5.6,1,0,7); ctx.fill();
     }
+    if (gear.pants){ // kurze Laufhose
+      ctx.fillStyle='#22313f'; ctx.beginPath(); ctx.moveTo(-4.6,10.4); ctx.lineTo(4.6,10.4); ctx.lineTo(5,13.6); ctx.lineTo(0.6,13.6); ctx.lineTo(0,12.4); ctx.lineTo(-0.6,13.6); ctx.lineTo(-5,13.6); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#ffd23f'; ctx.fillRect(4,10.6,0.8,2.6); }
     if (gear.jacket){ // offene Laufjacke mit Reflexstreifen
       ctx.fillStyle='#6a3d8f'; ctx.beginPath(); ctx.moveTo(-4.2,4.4); ctx.lineTo(-1.4,4.4); ctx.lineTo(-2.2,11); ctx.lineTo(-5,11); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(4.2,4.4); ctx.lineTo(2.6,4.4); ctx.lineTo(3.4,11); ctx.lineTo(5.2,11); ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -1726,7 +1735,8 @@ const Game = (() => {
     if (kind==='zoo'){ hills(cam*0.15, farHill, 120, 30, 1); hills(cam*0.3, '#79a85c', 150, 20, 2);                         // Heidelberger Zoo: Giraffe, Elefant, Flamingos hinter dem Zaun
       layer(0.4, 520, (x)=>{ const gx=x+90, nod=Math.sin(G.t/40)*2;                                                             // Giraffe
         ctx.fillStyle='#e2b25a'; ctx.fillRect(gx,150,30,16); [0,8,20,27].forEach(lx=>ctx.fillRect(gx+lx,164,3,22)); ctx.save(); ctx.translate(gx+27,154); ctx.rotate(0.33); ctx.fillRect(-3,-48,7,50); ctx.restore(); ctx.fillRect(gx+38,104+nod,12,7);
-        ctx.fillStyle='#9b6a2c'; [[4,153],[14,157],[22,152],[33,120],[30,132],[29,144]].forEach(([a,b])=>{ ctx.beginPath(); ctx.arc(gx+a,b,2.2,0,7); ctx.fill(); }); ctx.fillStyle='#6b4a2b'; ctx.fillRect(gx+39,100+nod,2,4); ctx.fillRect(gx+44,100+nod,2,4);
+        ctx.fillStyle='#9b6a2c'; [[5,155],[13,160],[21,154],[27,158]].forEach(([a,b])=>{ ctx.beginPath(); ctx.arc(gx+a,b,2.2,0,7); ctx.fill(); });   // Flecken auf dem Körper
+        ctx.save(); ctx.translate(gx+27,154); ctx.rotate(0.33); [[0.5,-10],[1,-22],[0.5,-34]].forEach(([a,b])=>{ ctx.beginPath(); ctx.arc(a,b,1.8,0,7); ctx.fill(); }); ctx.restore();   // Flecken am Hals ctx.fillStyle='#6b4a2b'; ctx.fillRect(gx+39,100+nod,2,4); ctx.fillRect(gx+44,100+nod,2,4);
         const ex=x+300; ctx.fillStyle='#8f8f95'; ctx.beginPath(); ctx.ellipse(ex,166,26,16,0,0,7); ctx.fill(); [-18,-8,8,16].forEach(lx=>ctx.fillRect(ex+lx,176,7,12));   // Elefant
         ctx.beginPath(); ctx.arc(ex+24,158,11,0,7); ctx.fill(); ctx.fillStyle='#7c7c83'; ctx.beginPath(); ctx.ellipse(ex+18,158,6,9,0,0,7); ctx.fill(); ctx.strokeStyle='#8f8f95'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(ex+33,162); ctx.quadraticCurveTo(ex+40,176+Math.sin(G.t/20)*3,ex+34,184); ctx.stroke(); ctx.lineWidth=1;
         ctx.fillStyle='#222'; ctx.fillRect(ex+27,155,2,2);
