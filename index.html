@@ -1459,7 +1459,10 @@ const Game = (() => {
     G.shots = G.shots.filter(s=>!s.dead);
     G.parts.forEach(q=>{ q.x+=q.vx; q.y+=q.vy; q.vy+=0.12; q.life--; }); G.parts = G.parts.filter(q=>q.life>0);
     G.cam = Math.max(0, Math.min(lv.len*T-VW, p.x - VW*0.38)); if (G.shake>0) G.shake--;
-    { const maxY = ((lv.rows||ROWS)-ROWS)*T; if (maxY>0){ const want = Math.max(0, Math.min(maxY, p.y - VH*0.55)); G.camY += (want - G.camY)*0.12; } else G.camY = 0; }
+    { const maxY = ((lv.rows||ROWS)-ROWS)*T; if (maxY>0){                                       // ruhige Kamera: folgt nur dem Boden, nicht jedem Sprung
+        if (p.on || G.anchorY==null) G.anchorY = p.y; const ay = Math.max(G.anchorY, p.y > G.anchorY + 2*T ? p.y : G.anchorY);
+        const want = Math.max(0, Math.min(maxY, ay - VH*0.62)); const d = want - G.camY;
+        if (Math.abs(d) > 2) G.camY += Math.sign(d) * Math.min(Math.abs(d)*0.045, 2.2); } else G.camY = 0; }
   }
 
   function bossStep(){
@@ -1488,7 +1491,7 @@ const Game = (() => {
     if (G.shake) ctx.translate((Math.random()-0.5)*G.shake*0.6, (Math.random()-0.5)*G.shake*0.6);
     const g = ctx.createLinearGradient(0,0,0,VH); g.addColorStop(0,th.sky[0]); g.addColorStop(1,th.sky[1]); ctx.fillStyle=g; ctx.fillRect(-10,-10,VW+20,VH+20);
     const maxY = ((lv.rows||ROWS)-ROWS)*T, cy = Math.round(G.camY||0);
-    ctx.save(); if (maxY>0) ctx.translate(0, Math.round((maxY - cy)*0.12)); deco(th.deco, G.cam); ctx.restore();   // Hintergrund mit leichter Parallaxe
+    ctx.save(); if (maxY>0) ctx.translate(0, Math.round((maxY - cy)*0.06)); deco(th.deco, G.cam); ctx.restore();   // Hintergrund mit leichter Parallaxe
     if (th.river){ ctx.fillStyle = th.night ? '#1d3a6b' : '#4f8fbf'; ctx.fillRect(0, ROWS*T-16, VW, 16); ctx.fillStyle='rgba(255,255,255,.35)'; for(let i=0;i<14;i++){ const xx=((i*37 - G.cam*0.9 + G.t*0.4)%VW+VW)%VW; ctx.fillRect(xx, ROWS*T-10+(i%3)*3, 10, 1.5); } }
     ctx.translate(-Math.round(G.cam), -cy);
     const x0 = Math.floor(G.cam/T), x1 = Math.min(lv.len-1, x0+Math.ceil(VW/T)+1), y0 = Math.floor(cy/T), y1 = Math.min((lv.rows||ROWS)-1, y0+ROWS+1);
@@ -1743,14 +1746,33 @@ const Game = (() => {
         [430,446,460].forEach((fx,k)=>{ const bx=x+fx; ctx.strokeStyle='#e46b8a'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(bx,190); ctx.lineTo(bx,174); ctx.stroke(); ctx.fillStyle='#f28aa5'; ctx.beginPath(); ctx.ellipse(bx,172,6,4,0,0,7); ctx.fill(); ctx.beginPath(); ctx.moveTo(bx+4,171); ctx.quadraticCurveTo(bx+10,158,bx+7,155+k); ctx.stroke(); ctx.fillStyle='#222'; ctx.fillRect(bx+6,154+k,3,1.6); }); });
       layer(0.55, 22, (x)=>{ ctx.fillStyle='#7a5a3a'; ctx.fillRect(x,178,2,16); ctx.fillRect(x-11,182,22,2); ctx.fillRect(x-11,189,22,2); });   // Holzzaun
       layer(0.5, 260, (x,i)=>{ if (hash(i)<0.6) tree(x+40, 182, 1.2, '#4c8a3f'); }); }
-    if (kind==='uni'){ hills(cam*0.12, farHill, 110, 26, 1);                                                                     // Universitätsplatz: Alte Universität, Löwenbrunnen
-      layer(0.3, 560, (x)=>{ const ux=x+60; ctx.fillStyle='#e7c98f'; ctx.fillRect(ux,104,220,92); ctx.fillStyle='#d2b073'; ctx.fillRect(ux,104,220,6); ctx.fillRect(ux+96,96,28,100);
-        ctx.fillStyle='#8a4b3a'; ctx.beginPath(); ctx.moveTo(ux-6,104); ctx.lineTo(ux+110,80); ctx.lineTo(ux+226,104); ctx.fill(); ctx.fillStyle='#e7c98f'; ctx.beginPath(); ctx.moveTo(ux+96,96); ctx.lineTo(ux+110,84); ctx.lineTo(ux+124,96); ctx.fill();
-        ctx.fillStyle='#5a6f86'; for (let r=0;r<3;r++) for (let c=0;c<9;c++){ if (c===4) continue; ctx.fillRect(ux+10+c*23, 116+r*26, 9, 14); }
-        ctx.fillStyle='#6b3a24'; ctx.fillRect(ux+102,172,16,24); ctx.beginPath(); ctx.arc(ux+110,172,8,Math.PI,0); ctx.fill(); ctx.fillStyle='#c9a35a'; ctx.beginPath(); ctx.arc(ux+110,108,6,0,7); ctx.fill();
-        const fx=x+380; ctx.fillStyle='#b3a796'; ctx.beginPath(); ctx.ellipse(fx,190,34,6,0,0,7); ctx.fill(); ctx.fillRect(fx-30,180,60,10); ctx.fillStyle='#7fb6dc'; ctx.fillRect(fx-27,181,54,4);   // Löwenbrunnen
+    if (kind==='uni'){ hills(cam*0.12, farHill, 110, 26, 1);                                                                     // Universitätsplatz
+      layer(0.3, 980, (x)=>{
+        // Neue Universität (1931): ockerfarbener Bau mit rotem Sandstein-Portal, Athene und Inschrift „Dem lebendigen Geist“
+        const nx=x+10; ctx.fillStyle='#8a3b2c'; ctx.beginPath(); ctx.moveTo(nx-4,92); ctx.lineTo(nx+20,70); ctx.lineTo(nx+250,70); ctx.lineTo(nx+274,92); ctx.fill();
+        ctx.fillStyle='#e2b766'; ctx.fillRect(nx,92,270,104); ctx.fillStyle='#b8574a'; ctx.fillRect(nx,182,270,14);
+        ctx.fillStyle='#4f5f73'; for (let r=0;r<3;r++) for (let c=0;c<12;c++){ if (c>=5 && c<=6) continue; ctx.fillRect(nx+8+c*22, 100+r*26, 8, 18); }
+        ctx.fillStyle='#b8574a'; ctx.fillRect(nx+108,80,54,116); ctx.fillStyle='#a34a3e'; ctx.fillRect(nx+108,80,54,5);                  // Portal-Risalit
+        ctx.fillStyle='#5a2a20'; ctx.fillRect(nx+120,150,12,46); ctx.fillRect(nx+138,150,12,46);
+        ctx.fillStyle='#f3d27a'; ctx.font='bold 4.6px system-ui'; ctx.textAlign='center'; ctx.fillText('DEM LEBENDIGEN GEIST', nx+135, 101);
+        ctx.fillStyle='#d9a640'; ctx.beginPath(); ctx.arc(nx+135,112,3,0,7); ctx.fill(); ctx.fillRect(nx+132,115,6,14); ctx.fillRect(nx+139,108,1.4,22);   // Athene
+        ctx.fillStyle='#2b2b2b'; ctx.font='bold 6px system-ui'; ctx.fillText('NEUE UNIVERSITÄT', nx+135, 89);
+        // Löwenbrunnen
+        const fx=x+330; ctx.fillStyle='#b3a796'; ctx.beginPath(); ctx.ellipse(fx,190,34,6,0,0,7); ctx.fill(); ctx.fillRect(fx-30,180,60,10); ctx.fillStyle='#7fb6dc'; ctx.fillRect(fx-27,181,54,4);
         ctx.fillStyle='#a49886'; ctx.fillRect(fx-4,150,8,32); ctx.fillStyle='#c3a35e'; ctx.beginPath(); ctx.ellipse(fx,146,9,6,0,0,7); ctx.fill(); ctx.beginPath(); ctx.arc(fx+8,142,4,0,7); ctx.fill(); ctx.fillStyle='#a9853f'; ctx.beginPath(); ctx.arc(fx+7,142,5.5,Math.PI*0.6,Math.PI*1.7); ctx.fill();
-        ctx.strokeStyle='rgba(160,210,240,.8)'; ctx.lineWidth=1.2; [-1,1].forEach(d=>{ ctx.beginPath(); ctx.moveTo(fx+d*3,158); ctx.quadraticCurveTo(fx+d*16,152,fx+d*22,182); ctx.stroke(); }); ctx.lineWidth=1; });
+        ctx.strokeStyle='rgba(160,210,240,.8)'; ctx.lineWidth=1.2; [-1,1].forEach(d=>{ ctx.beginPath(); ctx.moveTo(fx+d*3,158); ctx.quadraticCurveTo(fx+d*16,152,fx+d*22,182); ctx.stroke(); }); ctx.lineWidth=1;
+        // Alte Universität (Barock, hinten)
+        const ux=x+400; ctx.fillStyle='#ead2a0'; ctx.fillRect(ux,118,170,78); ctx.fillStyle='#8a4b3a'; ctx.beginPath(); ctx.moveTo(ux-5,118); ctx.lineTo(ux+85,98); ctx.lineTo(ux+175,118); ctx.fill();
+        ctx.fillStyle='#5a6f86'; for (let r=0;r<2;r++) for (let c=0;c<7;c++){ if (c===3) continue; ctx.fillRect(ux+10+c*23, 128+r*28, 9, 16); }
+        ctx.fillStyle='#6b3a24'; ctx.fillRect(ux+77,170,16,26); ctx.beginPath(); ctx.arc(ux+85,170,8,Math.PI,0); ctx.fill(); ctx.fillStyle='#2b2b2b'; ctx.font='bold 5px system-ui'; ctx.fillText('ALTE UNIVERSITÄT', ux+85, 114);
+        // Triplex-Mensa (1970er-Bau): flaches Dach, Fensterbänder, verglastes Erdgeschoss
+        const tx=x+620; ctx.fillStyle='#cfc6b6'; ctx.fillRect(tx,110,210,86); ctx.fillStyle='#b9b0a0'; ctx.fillRect(tx-4,106,218,6);
+        ctx.fillStyle='#55697e'; for (let r=0;r<2;r++) ctx.fillRect(tx+8, 120+r*22, 194, 10);
+        ctx.fillStyle='#d8d0c0'; for (let k=0;k<13;k++) ctx.fillRect(tx+8+k*15, 118, 2, 38);
+        ctx.fillStyle='rgba(150,200,230,.85)'; ctx.fillRect(tx+6,166,198,30); ctx.fillStyle='#8a8172'; for (let k=0;k<9;k++) ctx.fillRect(tx+6+k*24.5,166,2,30);
+        ctx.fillStyle='#8e2433'; rr(tx+70,158,70,11,3); ctx.fill(); ctx.fillStyle='#fff'; ctx.font='bold 7px system-ui'; ctx.fillText('TRIPLEX-MENSA', tx+105, 166);
+        ctx.fillStyle='#2b2b2b'; [tx+30,tx+60,tx+150,tx+180].forEach((px,k)=>{ ctx.beginPath(); ctx.arc(px,184,2,0,7); ctx.fill(); ctx.fillRect(px-1.5,186,3,8); });   // Leute in der Mensa
+        ctx.textAlign='left'; });
       tourists(cam); }
     if (kind==='xmas'){ hills(cam*0.15, farHill, 115, 30, 1); layer(0.3, 640, (x)=>churchTower(x+260, 192, 1.0)); layer(0.5, 52, (x,i)=>house(x, 190, i)); layer(0.7, 120, (x,i)=>stall(x, 196, i)); } // Weihnachtsmarkt am Marktplatz
     if (kind==='nye'){ hills(cam*0.15, farHill, 120, 30, 1); river(160, 80); layer(0.3, 500, (x)=>bridge(x+60, 172, true)); fireworks(); }
@@ -2536,7 +2558,7 @@ function confirmDelete(name){ if (!isCreator()) return;
 function renderKnow(){
   const P = myPaces(); const used = ['RDL','R-EDL','EDL','EDL+ST','EDL/WK','IDL','I-TDL','TDL','TDL/EDL','FS','WHL','WHL/WKT','KT','-'];
   $('#view').innerHTML = `<h2>Wissen & Rechner</h2>
-    <nav class="chips"><button data-t="k-kraft">💪 Krafttraining</button><button data-t="k-formen">🏃 Laufarten</button><button data-t="k-mm">✨ Magic Mile</button><button data-t="k-rech">⏱️ Rechner</button><button data-t="k-race">🏁 Renntag</button><button data-t="k-fakt">📚 Fakten</button></nav>
+    <nav class="chips"><button data-t="k-kraft">💪 Krafttraining</button><button data-t="k-formen">🏃 Laufarten</button><button data-t="k-mm">✨ Magic Mile</button><button data-t="k-rech">⏱️ Rechner</button><button data-t="k-race">🏁 Renntag</button>${FACT_CATS.map(c=>`<button data-t="k-cat-${c.id}">${c.icon} ${esc(c.name)}</button>`).join('')}</nav>
     <details class="card ksec" id="k-kraft"><summary><h3>💪 Krafttraining – Übungsvorschläge</h3></summary>${strengthHTML()}</details>
     <details class="card ksec" id="k-formen"><summary><h3>🏃 Die Laufarten</h3></summary><p class="muted small">In deinem Plan gibt es drei Laufarten – dazu Krafttraining und Ruhetage. Mit Pulsuhr orientierst du dich an der Herzfrequenz, ohne Pulsmessung an deinem Gefühl beim Sprechen.</p>
       ${['G','S','I'].map(k=>`<details class="gl"><summary><b>${CATS[k].icon} ${esc(CATS[k].name)}</b></summary>${catBody(k)}</details>`).join('')}
@@ -2553,9 +2575,8 @@ function renderKnow(){
     <details class="card ksec" id="k-rech"><summary><h3>⏱️ Tempo-Rechner</h3></summary><p class="small muted">Trainingstempi aus einer 10-km-Zeit (Aderhold, 2018, S. 89) und Halbmarathon-Prognose (Beck, 2024).</p>
       <label>10-km-Zeit<div class="unit">${tIn('tk',['m','s'],S.profile.tenK||null,['58','30'])}<span>Min : Sek</span></div></label><div id="tkr"></div></details>
     <details class="card ksec" id="k-race"><summary><h3>🏁 Renntag & Tapering</h3></summary>${RACE_TIPS.map(t=>`<p>• ${esc(t.t)} <span class="src">(${esc(t.src)})</span></p>`).join('')}</details>
-    <details class="card ksec" id="k-fakt"><summary><h3>📚 Fakten nach Rubriken</h3></summary>
-    ${FACT_CATS.map(c=>`<details class="factcat"><summary><span class="fci">${c.icon}</span><span><b>${esc(c.name)}</b><small>${esc(c.intro)}</small></span></summary>
-      ${FACTS.filter(f=>f.cat===c.id).map(f=>`<div class="factitem"><h4>${esc(f.title)}</h4><p>${esc(f.de)}</p><span class="src">${esc(f.src)}</span></div>`).join('')}</details>`).join('')}</details>
+    ${FACT_CATS.map(c=>`<details class="card ksec" id="k-cat-${c.id}"><summary><h3>${c.icon} ${esc(c.name)}</h3></summary><p class="small muted">${esc(c.intro)}</p>
+      ${FACTS.filter(f=>f.cat===c.id).map(f=>`<div class="factitem"><h4>${esc(f.title)}</h4><p>${esc(f.de)}</p><span class="src">${esc(f.src)}</span></div>`).join('')}</details>`).join('')}
     <p class="small muted">Tippe auf eine Überschrift, um sie auf- oder zuzuklappen.</p>`;
   bindStrength($('#view')); document.querySelectorAll('.chips button').forEach(b=>b.onclick=()=>{ const el=document.getElementById(b.dataset.t); el.open = true; el.scrollIntoView({behavior:'smooth', block:'start'}); });
   const V=$('#view'); bindTimeBoxes(V);
