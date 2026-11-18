@@ -210,6 +210,14 @@ button.lnk{ border:none; background:none; color:var(--wine); font:700 .85rem var
 .ib.big{ width:38px; height:38px; font-size:1.15rem; }
 .sbtns{ display:flex; flex-direction:column; gap:6px; align-items:center; }
 .sess .spc{ font-size:.95rem; margin-top:2px; color:var(--ink); }
+/* Wissen: aufklappbare Bereiche */
+details.ksec > summary{ list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; }
+details.ksec > summary::-webkit-details-marker{ display:none; }
+details.ksec > summary h3{ margin:0; }
+details.ksec > summary::after{ content:'▾'; color:var(--wine); font-size:1.1rem; transition:transform .2s; }
+details.ksec[open] > summary::after{ transform:rotate(180deg); }
+details.ksec[open] > summary{ margin-bottom:8px; }
+.rank .del{ border:none; background:none; font-size:1rem; cursor:pointer; padding:2px 4px; opacity:.7; } .rank .del:hover{ opacity:1; }
 </style>
 </head>
 <body>
@@ -250,7 +258,7 @@ const PLANS = {
       ['-','RW 3x10','-','RW 3x10','-','RW 3x10','-'],
       ['-','RW 2x15','-','RW 2x15','-','RW 2x15','-'],
       ['-','LAUF 30','-','LAUF 30','-','LAUF 30','-'] ] },
-  FG1: { title: 'Fortgeschrittene, 1. Zyklus', src: 'Aderhold, 2018, S. 468 (Tab. A.1)',
+  FG1: { title: 'Grundlagen, 1. Zyklus', src: 'Aderhold, 2018, S. 468 (Tab. A.1)',
     weeks: [
       ['EDL 5','-','FS 5','-','-','R-EDL 6','-'],
       ['EDL 5','-','FS 5','RDL 4','-','R-EDL 7','-'],
@@ -260,7 +268,7 @@ const PLANS = {
       ['EDL 6','-','FS 6','RDL 5','-','R-EDL 9','-'],
       ['EDL 7','-','FS 7','RDL 6','-','R-EDL 10','-'],
       ['EDL 6','-','EDL+ST 6','-','-','E-RDL 9','-'] ] },
-  FG2: { title: 'Fortgeschrittene, 2. Zyklus', src: 'Aderhold, 2018, S. 468 (Tab. A.2)',
+  FG2: { title: 'Grundlagen, 2. Zyklus', src: 'Aderhold, 2018, S. 468 (Tab. A.2)',
     weeks: [
       ['EDL 7','-','FS 7','RDL 6','-','R-EDL 10','-'],
       ['EDL 8','-','FS 8','RDL 6','-','R-EDL 10','-'],
@@ -697,7 +705,7 @@ function sessionLabel(s){
   if (s.code==='RW') { const [a,b]=s.arg.split('x'); return a+' × '+b+' min laufen, je 1 min gehen'; }
   if (s.code==='LAUF') return s.arg+' min am Stück laufen';
   if (s.code==='WHL' || s.code==='WHL/WKT') { const [a,b]=s.arg.split('x'); return 'Intervalllauf: '+a+' × '+b+' km '+(s.code==='WHL'?'schnell':'im Renntempo'); }
-  if (s.code==='FS') return km+' km Intervalllauf (Fahrtspiel)';
+  if (s.code==='FS') return km+' km Intervalllauf';
   if (s.code==='EDL/WK') return km+' km gemütlicher Dauerlauf oder 10-km-Wettkampf';
   if (s.code==='EDL+ST') return km+' km gemütlicher Dauerlauf + Steigerungen';
   if (s.code==='TDL/EDL') return km+' km schneller Dauerlauf (bei Müdigkeit gemütlich)';
@@ -813,7 +821,7 @@ function makeWeek(monday, c, flag, p, rw){
     else { const useB = c.i%2===0; sessions.push(mk(useB?row[2]:row[0], d.A, useB?'B':'A'), L); }
     sessions = sessions.filter(Boolean);
     const longs = P.weeks.map(r=>{ const x=parseSession(r[5]); return x&&x.km ? x.km : 0; });
-    const recovery = c.i%4===3;
+    const recovery = c.i%4===3; // 3:1-Zyklisierung (Aderhold, 2018, S. 95)
     const peak = !c.pre && longs[c.i] > 0 && longs[c.i] === Math.max(...longs) && rw >= Math.max(4, p.rampR||16);
     const limit = peak ? kmLimits(p).pk : weekCap(p, rw, recovery);
     const tot = () => sessions.reduce((a,x)=>a+(x.km||0),0);
@@ -821,6 +829,13 @@ function makeWeek(monday, c, flag, p, rw){
     cut(sessions.find(x=>x.role==='A' && !x.code.startsWith('WHL')), MIN_RUN);
     cut(sessions.find(x=>x.role==='B' && !x.code.startsWith('WHL')), MIN_RUN);
     { const Ls = sessions.find(x=>x.role==='L'); cut(Ls, Ls && Ls.code==='EDL/WK' ? Math.min(Ls.km,10) : longMin(p)); }
+    // Langer Lauf soll sich deutlich abheben: mind. 1,5-mal so lang wie die anderen Läufe und mind. 2 km länger (Vorgabe der Kursleitung)
+    { const Ls = sessions.find(x=>x.role==='L'), oth = sessions.filter(x=>x.role==='A'||x.role==='B');
+      if (Ls && Ls.km && Ls.code!=='EDL/WK' && oth.length){ const mx = Math.max(...oth.map(x=>x.km||0)), need = Math.max(Math.ceil(mx*1.5*2)/2, mx+2);
+        if (Ls.km < need){ let add = need - Ls.km; Ls.orig = Ls.orig||Ls.km; Ls.km = need; Ls.arg = String(need).replace('.',','); Ls.longer = true;
+          oth.filter(x=>!x.code.startsWith('WHL')).forEach(x=>{ const r=Math.min(add, x.km-MIN_RUN); if (r>0){ x.orig=x.orig||x.km; x.km=Math.round((x.km-r)*2)/2; const sfx=x.arg.includes('/')?x.arg.slice(x.arg.indexOf('/')):''; x.arg=String(x.km).replace('.',',')+sfx; add-=r; } }); } } }
+    // eigene Anpassungen „für alle folgenden Wochen“
+    if (p.adj) sessions.forEach(x=>{ const f = p.adj[x.role]; if (f && f!==1 && x.km && !x.code.startsWith('WHL') && x.code!=='EDL/WK'){ x.orig = x.orig||x.km; x.km = Math.max(3, Math.round(x.km*f*2)/2); const sfx=x.arg.includes('/')?x.arg.slice(x.arg.indexOf('/')):''; x.arg=String(x.km).replace('.',',')+sfx; x.user=true; } });
     if (d.K!=null) sessions.push({ code:'KT', arg:'', km:null, role:'K', day:d.K, date:addDays(monday,d.K), done:false, skipped:false, kmDone:null, wk: (row[5]||'').startsWith('EDL/WK') && (d.K+1)%7===d.L });
     sessions.sort((a,b)=>a.day-b.day);
   }
@@ -910,7 +925,7 @@ function changeGoal(state, goal){ state.profile.goal = goal || null; replanFromN
 function changeDays(state, days){ state.profile.days = days; replanFromNow(state); }
 
 /* 10-km-Niveau einer Woche: ohne Ziel das aktuelle; mit Ziel steigt es bis zum Halbmarathon-Block gleichmäßig auf das Zielniveau
-   (schrittweise Steigerung der Belastung: Beck, 2024, S. 99; die gleichmäßige Verteilung ist eine ANNAHME DER APP) */
+   (Aderhold, 2018, S. 96: Trainingstempi beginnen deutlich unter der Zielgeschwindigkeit und steigern sich allmählich; die gleichmäßige Verteilung ist eine ANNAHME DER APP) */
 function weekTenK(state, wi){ const p = state.profile, g = goalTenK(p); if (!g || !p.tenK) return p.tenK; const n = state.weeks.length, hm = Math.max(0, n-8);
   if (wi >= hm) return g; return Math.round(p.tenK + (g - p.tenK) * (wi+1) / (hm+1)); }
 /* Tempi nach Aderhold (2018, S. 89; nach Wenzel, 1991) */
@@ -983,7 +998,7 @@ const Store = (() => {
     if (!r.ok){ const m = (j && (j.message||j.hint)) || ('HTTP '+r.status); const e = new Error(m); e.server = true; throw e; }
     return j;
   }
-  const MSG = { name_taken:'Dieser Name ist schon vergeben.', login_failed:'Name oder Passwort stimmt nicht.', pw_short:'Das Passwort braucht mindestens 6 Zeichen.', name_invalid:'Der Name muss 2–30 Zeichen lang sein.' };
+  const MSG = { not_allowed:'Das darf nur das Ersteller-Konto.', not_found:'Dieses Konto gibt es nicht mehr.', name_taken:'Dieser Name ist schon vergeben.', login_failed:'Name oder Passwort stimmt nicht.', pw_short:'Das Passwort braucht mindestens 6 Zeichen.', name_invalid:'Der Name muss 2–30 Zeichen lang sein.' };
   const errText = e => MSG[e.message] || (e.server ? 'Fehler vom Server: '+e.message : 'Keine Verbindung zum Server. Bitte später nochmal versuchen.');
 
   async function init(){
@@ -1041,7 +1056,14 @@ const Store = (() => {
     if (online){ try { const d = await rpc('app_scores'); return (d||[]).filter(r=>!isCreatorName(r.name)); } catch(e){ return []; } }
     const all = LS.get('mwah-scores')||{}; return Object.values(all).filter(r=>!r.creator);
   }
-  return { init, register, login, logout, loadData, saveData, scores, get user(){ return user; }, get mode(){ return online ? 'cloud' : 'local'; } };
+  async function deleteUser(name){ // nur für das Ersteller-Konto
+    if (!user || !user.creator) return { err:'Das darf nur das Ersteller-Konto.' }; if (isCreatorName(name)) return { err:'Das Ersteller-Konto kann nicht gelöscht werden.' };
+    if (online){ try { await rpc('app_delete_user', { p_token:user.id, p_name:name }); return { ok:true }; }
+      catch(e){ if (/app_delete_user|function|schema cache/i.test(e.message)) return { err:'Auf dem Server fehlt noch die Lösch-Funktion. Bitte einmal die Datei „supabase-update-loeschen.sql“ in Supabase ausführen.' }; return { err: errText(e) }; } }
+    const key = nameKey(name), users = LS.get('mwah-users')||{}, all = LS.get('mwah-scores')||{};
+    delete users[key]; delete all[key]; LS.set('mwah-users', users); LS.set('mwah-scores', all); LS.del('mwah-data-'+key); return { ok:true };
+  }
+  return { init, register, login, logout, loadData, saveData, scores, deleteUser, get user(){ return user; }, get mode(){ return online ? 'cloud' : 'local'; } };
 })();
 
 /* ===================== SPIEL: Texte DE/EN ===================== */
@@ -1062,7 +1084,13 @@ const GEAR = [
   { id:'gel', icon:'⚡', de:'Energie-Gel', en:'Energy gel', bossDe:'Einmal Turbo: 6 Sekunden schneller.', bossEn:'One turbo boost: 6 seconds faster.',
     tipDe:'Nach ca. 90–100 Minuten Dauerlauf sind die Glykogenspeicher weitgehend leer – rechtzeitig Kohlenhydrate nachführen (Beck, 2024).', tipEn:'After about 90–100 minutes of running your glycogen stores are largely empty – refuel carbs in time (Beck, 2024).' },
   { id:'bib', icon:'🏷️', de:'Startnummer', en:'Race bib', bossDe:'Eintrittskarte zum Bosskampf am Start.', bossEn:'Your ticket to the showdown at the start.',
-    tipDe:'Zielzeit realistisch einschätzen und das Rennen lieber verhaltener angehen (Aderhold, 2018, S. 141).', tipEn:'Estimate your finish time realistically and start the race conservatively (Aderhold, 2018).' }
+    tipDe:'Zielzeit realistisch einschätzen und das Rennen lieber verhaltener angehen (Aderhold, 2018, S. 141).', tipEn:'Estimate your finish time realistically and start the race conservatively (Aderhold, 2018).' },
+  { id:'pants', icon:'🩳', de:'Laufhose', en:'Running shorts', bossDe:'Mehr Bewegungsfreiheit: 10 % schneller.', bossEn:'More freedom of movement: 10 % faster.',
+    tipDe:'Wenn es kühler wird, sind Hosen, Hemden und Jacken aus funktionellen Fasern ideal (Aderhold, 2018, S. 117).', tipEn:'When it gets cooler, trousers, shirts and jackets made of functional fibres are ideal (Aderhold, 2018).' },
+  { id:'jacket', icon:'🧥', de:'Laufjacke', en:'Running jacket', bossDe:'Schützt dich: Nach einem Treffer bist du doppelt so lange unverwundbar.', bossEn:'Protects you: after a hit you stay invulnerable twice as long.',
+    tipDe:'Im Herbst und Winter hilft eine Jacke aus Funktionsfasern – reflektierende Streifen machen dich im Dunkeln sichtbar (Aderhold, 2018, S. 117).', tipEn:'In autumn and winter a jacket made of functional fibres helps – reflective stripes make you visible in the dark (Aderhold, 2018).' },
+  { id:'lamp', icon:'🔦', de:'Stirnlampe', en:'Head torch', bossDe:'Blendet den Schweinehund: Er bleibt länger betäubt.', bossEn:'Dazzles the beast: it stays stunned longer.',
+    tipDe:'Wenn die Tage kürzer werden: Stirnlampe und reflektierende Kleidung sorgen bei Dunkelheit für Sicherheit (Aderhold, 2018, S. 117).', tipEn:'When the days get shorter, a head torch and reflective clothing keep you safe in the dark (Aderhold, 2018).' }
 ];
 
 const GT = {
@@ -1077,10 +1105,10 @@ const GT = {
    {name:'Schlossgarten', story:'Am Schloss erzählt man sich, der Hofnarr Perkeo bewache das Große Fass. Heute bewacht er deine Laufkappe – zum Glück ist er auf deiner Seite.'},
    {name:'Himmelsleiter', story:'Die Himmelsleiter: Stufe um Stufe hinauf Richtung Königstuhl. Oben wartet deine Trinkflasche – und eine fantastische Aussicht.'},
    {name:'Heiligenberg', story:'Auf dem Heiligenberg, zwischen Thingstätte und alten Klostermauern, liegt dein Energie-Gel. Im Wald wimmelt es von kleinen Schweinehunden …'},
-   {name:'Bismarckplatz bei Nacht', story:'Nachts am Bismarckplatz: Der Schweinehund hat deine Startnummer – schnapp sie dir! Dann ist deine Ausrüstung komplett.'},
-   {name:'Königstuhl', story:'Höhentraining auf dem Königstuhl: Vorbei an Fernsehturm und Sternwarte geht es auf Waldwegen durch den Nebel. Deine Ausrüstung ist komplett – jetzt zählt das Durchhalten. Sammle Brezeln für den Bosskampf!'},
-   {name:'Zoo Heidelberg', story:'Im Zoo machen dir Giraffe, Elefant und Flamingos vor, wie man in Bewegung bleibt. Zwischen den Gehegen haben sich kleine Schweinehunde versteckt …'},
-   {name:'Universitätsplatz', story:'Generalprobe am Universitätsplatz: Vor der Alten Universität und dem Löwenbrunnen sammelt der Schweinehund seine letzten Gehilfen. Wer hier durchkommt, ist bereit für den Bosskampf!'}
+   {name:'Bismarckplatz bei Nacht', story:'Nachts am Bismarckplatz: Der Schweinehund hat deine Startnummer – schnapp sie dir! Fast geschafft – drei Teile fehlen noch.'},
+   {name:'Königstuhl', story:'Höhentraining auf dem Königstuhl: Vorbei an Fernsehturm und Sternwarte geht es auf Waldwegen durch den Nebel. Zwischen den Bäumen hängt deine Laufhose – schnapp sie dir!'},
+   {name:'Zoo Heidelberg', story:'Im Zoo machen dir Giraffe, Elefant und Flamingos vor, wie man in Bewegung bleibt. Zwischen den Gehegen haben sich kleine Schweinehunde versteckt – und einer trägt deine Laufjacke …'},
+   {name:'Universitätsplatz', story:'Generalprobe am Universitätsplatz: Vor der Alten Universität und dem Löwenbrunnen sammelt der Schweinehund seine letzten Gehilfen. Hier liegt deine Stirnlampe – dann bist du bereit für den Bosskampf!'}
   ],
   boss:'Bosskampf: Der innere Schweinehund', bossStory:'Renntag! Am Start in der Altstadt wartet der innere Schweinehund persönlich – in voller Rüstung, sein Sofa im Schlepptau. Er wirft mit Sofakissen und springt dich an. Spring ihm auf den Helm, wenn er nach einem Sprung benommen ist! Deine Brezeln aus allen Leveln sind dein Wurfvorrat – an der Rüstung prallen sie ab, nur wenn er benommen ist, treffen sie.',
   bossWin:'Geschafft! Der innere Schweinehund ist besiegt. Jetzt nichts wie hin zum Start – gleichmäßig loslaufen und die zweite Hälfte genießen!',
@@ -1109,10 +1137,10 @@ const GT = {
    {name:'Castle Garden', story:'At the castle, people say the court jester Perkeo guards the Great Barrel. Today he guards your running cap – luckily he\'s on your side.'},
    {name:'Heaven\'s Ladder', story:'The Himmelsleiter: step by step up towards the Königstuhl. Your water bottle waits at the top – along with a fantastic view.'},
    {name:'Heiligenberg', story:'On the Heiligenberg, between the Thingstätte and old monastery walls, lies your energy gel. The forest is swarming with little couch beasts …'},
-   {name:'Bismarckplatz by Night', story:'Bismarckplatz at night: the beast has your race bib – grab it! Then your gear is complete.'},
-   {name:'Königstuhl', story:'Altitude training on the Königstuhl: past the TV tower and the observatory, forest trails lead through the mist. Your gear is complete – now it\'s about endurance. Collect pretzels for the boss fight!'},
-   {name:'Heidelberg Zoo', story:'At the zoo, the giraffe, the elephant and the flamingos show you how to keep moving. Little couch beasts are hiding between the enclosures …'},
-   {name:'University Square', story:'Dress rehearsal at University Square: in front of the Old University and the Lion Fountain, the beast gathers its last helpers. Make it through here and you\'re ready for the boss fight!'}
+   {name:'Bismarckplatz by Night', story:'Bismarckplatz at night: the beast has your race bib – grab it! Almost there – three items are still missing.'},
+   {name:'Königstuhl', story:'Altitude training on the Königstuhl: past the TV tower and the observatory, forest trails lead through the mist. Your running shorts are hanging between the trees – grab them!'},
+   {name:'Heidelberg Zoo', story:'At the zoo, the giraffe, the elephant and the flamingos show you how to keep moving. Little couch beasts are hiding between the enclosures – and one of them is wearing your running jacket …'},
+   {name:'University Square', story:'Dress rehearsal at University Square: in front of the Old University and the Lion Fountain, the beast gathers its last helpers. Your head torch is here – then you\'re ready for the boss fight!'}
   ],
   boss:'Boss fight: The Inner Couch Beast', bossStory:'Race day! At the start in the old town the inner couch beast awaits – in full armour, its sofa in tow. It throws sofa cushions and leaps at you. Jump on its helmet while it is dazed after a leap! The pretzels from all levels are your ammo – they bounce off its armour and only hit while it is dazed.',
   bossWin:'You did it! The inner couch beast is defeated. Off to the start – begin evenly and enjoy the second half!',
@@ -1280,13 +1308,13 @@ const Game = (() => {
     const flat = n => { for (let i=0;i<n && x<len;i++,x++) col(x, gy); };
     const coin = (cx, cy) => ents.push({ t:'coin', x:cx*T+4, y:cy*T+4, w:12, h:12 });
     const enemy = cx => ents.push({ t:'enemy', x:cx*T+3, y:gy*T-15, w:15, h:15, vx:-(0.45+diff*0.07), alive:true, txt:L().excuses[Math.floor(r()*8)] });
-    flat(8); let nextCheck = 40, itemAt = opt.item!=null ? Math.floor(len*0.62) : -1;
+    flat(8); let nextCheck = 40, itemAt = (opt.item!=null || opt.apple) ? Math.floor(len*0.62) : -1;
     while (x < len-16){
       if (x >= nextCheck){ ents.push({ t:'check', x:x*T, y:gy*T-26, w:10, h:26, on:false }); nextCheck += 40; }
       if (itemAt>0 && x >= itemAt){
         flat(2); const px = x+1; flat(7);
         for (let i=0;i<3;i++) tiles[(gy-2)*len+px+1+i] = 3;
-        ents.push({ t:'item', x:(px+2)*T+2, y:(gy-4)*T+2, w:16, h:16, gear:opt.item });
+        ents.push(opt.item!=null ? { t:'item', x:(px+2)*T+2, y:(gy-4)*T+2, w:16, h:16, gear:opt.item } : { t:'apple', x:(px+2)*T+2, y:(gy-4)*T+2, w:16, h:16 });
         itemAt = -1; continue;
       }
       const v = r(); const w = theme.stairs ? 0.24 : 0.05;
@@ -1331,7 +1359,7 @@ const Game = (() => {
   function start(mode, idx){
     const gearN = S.game.gear;
     let theme, lv, cfg = { mode, idx };
-    if (mode==='level'){ theme = THEMES[idx]; lv = gen(theme, 1000+idx*77, idx, 120+idx*14, { item: (!GEAR[idx] || gearN[GEAR[idx].id]) ? null : idx }); cfg.collect='🥨'; }
+    if (mode==='level'){ theme = THEMES[idx]; lv = gen(theme, 1000+idx*77, idx, 120+idx*14, { item: (!GEAR[idx] || gearN[GEAR[idx].id]) ? null : idx, apple: !!(GEAR[idx] && gearN[GEAR[idx].id]) }); cfg.collect='🥨'; }
     else if (mode==='xmas'){ theme = SPECIAL.xmas; lv = gen(theme, 2412, 3, 150, {}); cfg.collect='🎁'; }
     else if (mode==='nye'){ theme = SPECIAL.nye; lv = gen(theme, 3112, 4, 150, {}); cfg.collect='🎇'; cfg.timer = 80*60; }
     else if (mode==='mini'){ theme = SPECIAL.mini; lv = gen(theme, 1700+(idx||0), 1, 80, {}); cfg.collect='❄️'; }
@@ -1366,7 +1394,7 @@ const Game = (() => {
   function hurt(){
     const p = G.p; if (p.inv>0 || G.state!=='play') return;
     if (G.shield>0){ G.shield--; p.inv=60; puff(p.x+6,p.y+9,'#7fd3ff',12); return; }
-    G.hearts--; Music.sfx('hurt'); p.inv = 90; p.vy = -4; p.vx = -p.face*2.5; G.shake = 8; puff(p.x+6,p.y+9,'#ff6b6b',10);
+    G.hearts--; Music.sfx('hurt'); p.inv = (G.cfg.mode==='boss' && S.game.gear.jacket) ? 180 : 90; p.vy = -4; p.vx = -p.face*2.5; G.shake = 8; puff(p.x+6,p.y+9,'#ff6b6b',10);
     if (G.hearts<=0) endGame(false);
   }
   function fall(){ G.hearts--; G.shake=8; Music.sfx('hurt'); if (G.hearts<=0) return endGame(false); Object.assign(G.p,{ x:G.spawn.x, y:G.spawn.y, vx:0, vy:0, inv:60 }); }
@@ -1374,7 +1402,7 @@ const Game = (() => {
   function step(){
     const p = G.p, lv = G.lv, boss = G.boss; G.t++;
     if (G.state!=='play'){ G.parts.forEach(q=>{q.x+=q.vx;q.y+=q.vy;q.vy+=0.12;q.life--;}); G.parts=G.parts.filter(q=>q.life>0); if(G.state==='win') confetti(); return; }
-    const sp = G.turbo>0 ? 3.3 : 2.3; if (G.turbo>0) G.turbo--;
+    const sp = (G.turbo>0 ? 3.3 : 2.3) * (G.cfg.mode==='boss' && S.game.gear.pants ? 1.1 : 1); if (G.turbo>0) G.turbo--;
     if (keys.left){ p.vx = Math.max(-sp, p.vx-0.35); p.face=-1; } else if (keys.right){ p.vx = Math.min(sp, p.vx+0.35); p.face=1; } else p.vx *= p.on ? 0.75 : 0.95;
     G.lv.wind.forEach(w=>{ if (p.x>w.x0 && p.x<w.x1) p.vx += w.f*(keys.right||keys.left?1:0.4); });
     p.vy = Math.min(9, p.vy + 0.45);
@@ -1404,6 +1432,7 @@ const Game = (() => {
     for (const e of lv.ents){
       if (e.t==='coin' && !e.got && hit(p,e)){ e.got=true; G.coins++; if (G.cfg.mode==='level' || G.cfg.collect==='🥨') G.ammo++; Music.sfx('coin'); puff(e.x+6,e.y+6,'#ffd23f',5); }
       else if (e.t==='item' && !e.got && hit(p,e)){ e.got=true; G.gotItem=true; G.worn=Object.assign({},G.worn||{},{[GEAR[e.gear].id]:true}); Music.sfx('item'); puff(e.x+8,e.y+8,'#fff',20); toast(GEAR[e.gear].icon+' '+GEAR[e.gear][S.game.lang]+'!'); }
+      else if (e.t==='apple' && !e.got && hit(p,e)){ e.got=true; G.gotApple=true; G.coins+=5; G.totalCoins+=5; G.ammo+=5; Music.sfx('item'); puff(e.x+8,e.y+8,'#ff6b6b',20); toast('🍎 '+(S.game.lang==='de'?'Apfel! +5 Brezeln':'Apple! +5 pretzels')); }
       else if (e.t==='check' && !e.on && p.x > e.x){ e.on=true; G.spawn={ x:e.x, y:e.y-10 }; }
       else if (e.t==='goal' && p.x+p.w > e.x+16){ endGame(true); return; }
       else if (e.t==='enemy' && e.alive){
@@ -1431,7 +1460,7 @@ const Game = (() => {
     if (b.st==='intro'){ if (--b.tm<=0){ b.st='walk'; b.tm=110; } }
     else if (b.st==='walk'){ b.face = Math.sign(dx)||1; b.vx = b.face*(0.8+ph*0.18); if (--b.tm<=0){ b.vx=0; if (Math.random()<0.6){ b.st='leap'; b.vy=-8.4; b.vx=Math.max(-3.2,Math.min(3.2,dx/45)); b.air=true; } else { b.st='throw'; b.tm=70; b.n=0; } } }
     else if (b.st==='leap'){ if (b.on && b.air){ b.air=false; b.vx=0; G.shake=14; puff(b.x+b.w/2,b.y+b.h,'#c9b79c',18);
-        if (p.on && Math.abs(dx)<80) hurt(); b.st='stun'; b.tm = b.stunMax = 110 - ph*8; } }
+        if (p.on && Math.abs(dx)<80) hurt(); b.st='stun'; b.tm = b.stunMax = Math.round((110 - ph*8) * (S.game.gear.lamp ? 1.4 : 1)); } }
     else if (b.st==='stun'){ b.vx=0; if (--b.tm<=0){ b.st='walk'; b.tm=100; } }
     else if (b.st==='throw'){ b.vx=0; b.tm--; if (b.tm%22===0 && b.n<3){ b.n++; G.shots.push({ x:b.x+b.w/2, y:b.y+6, vx:dx/55 + (Math.random()-0.5), vy:-5.2, w:12, h:9 }); } if (b.tm<=0){ b.st='walk'; b.tm=100; } }
     else if (b.st==='hurt'){ b.vx=0; if (--b.tm<=0){ b.st='walk'; b.tm=90; } }
@@ -1459,6 +1488,7 @@ const Game = (() => {
     for (const e of lv.ents){
       if (e.x < G.cam-40 || e.x > G.cam+VW+40) continue;
       if (e.t==='coin' && !e.got) emoji(e.icon, e.x+6, e.y+7+Math.sin((G.t+e.x)/12)*1.5, 12);
+      if (e.t==='apple' && !e.got){ ctx.fillStyle='rgba(255,220,200,'+(0.35+0.25*Math.sin(G.t/8))+')'; ctx.beginPath(); ctx.arc(e.x+8,e.y+8,13,0,7); ctx.fill(); emoji('🍎', e.x+8, e.y+9+Math.sin(G.t/10)*2, 15); }
       if (e.t==='item' && !e.got){ ctx.fillStyle='rgba(255,255,200,'+(0.35+0.25*Math.sin(G.t/8))+')'; ctx.beginPath(); ctx.arc(e.x+8,e.y+8,13,0,7); ctx.fill(); emoji(GEAR[e.gear].icon, e.x+8, e.y+9+Math.sin(G.t/10)*2, 15); }
       if (e.t==='check'){ ctx.fillStyle='#555'; ctx.fillRect(e.x, e.y, 2, 26); ctx.fillStyle = e.on ? '#3ccf6e' : '#e04848'; ctx.beginPath(); ctx.moveTo(e.x+2,e.y); ctx.lineTo(e.x+14,e.y+5); ctx.lineTo(e.x+2,e.y+10); ctx.fill(); }
       if (e.t==='goal') goal(e);
@@ -1535,8 +1565,11 @@ const Game = (() => {
     if (gear.shoes){ [a*0.8,-a*0.8].forEach(fx=>{ ctx.fillStyle='#ff6a3c'; ctx.fillRect(fx-2,16.2,5.6,2.2); ctx.fillStyle='#fff'; ctx.fillRect(fx-2,18.2,5.8,0.9); ctx.fillStyle='#2f5f9e'; ctx.fillRect(fx,16.6,2,0.6); }); }
     else { ctx.fillStyle='#7a4a24'; [a*0.8,-a*0.8].forEach(fx=>ctx.fillRect(fx-2,17.4,5,1.4)); ctx.strokeStyle='#7a4a24'; ctx.lineWidth=0.8; [a*0.8,-a*0.8].forEach(fx=>{ ctx.beginPath(); ctx.moveTo(fx-1,15); ctx.lineTo(fx+2,17.4); ctx.stroke(); }); }
     ctx.strokeStyle=O; ctx.lineWidth=0.8;
-    if (gear.shirt){ // Funktionsshirt (Singlet) + kurze Laufhose
-      ctx.fillStyle='#22313f'; ctx.beginPath(); ctx.moveTo(-4.6,10.4); ctx.lineTo(4.6,10.4); ctx.lineTo(5,13.4); ctx.lineTo(0.6,13.4); ctx.lineTo(0,12.4); ctx.lineTo(-0.6,13.4); ctx.lineTo(-5,13.4); ctx.closePath(); ctx.fill(); ctx.stroke();
+    if (gear.pants){ // kurze Laufhose
+      ctx.fillStyle='#22313f'; ctx.beginPath(); ctx.moveTo(-4.6,10.4); ctx.lineTo(4.6,10.4); ctx.lineTo(5,13.6); ctx.lineTo(0.6,13.6); ctx.lineTo(0,12.4); ctx.lineTo(-0.6,13.6); ctx.lineTo(-5,13.6); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#ffd23f'; ctx.fillRect(4,10.6,0.8,2.6); }
+    else if (gear.shirt){ ctx.fillStyle='#f1e6cf'; ctx.beginPath(); ctx.moveTo(-4.6,10); ctx.lineTo(4.6,10); ctx.lineTo(5.5,13); ctx.lineTo(-5.5,13); ctx.closePath(); ctx.fill(); ctx.stroke(); } // Tunika-Rock unter dem Shirt
+    if (gear.shirt){ // Funktionsshirt (Singlet)
       ctx.fillStyle='#22b3b8'; ctx.beginPath(); ctx.moveTo(-3.6,4.6); ctx.lineTo(-1.6,4.6); ctx.quadraticCurveTo(0.4,6.4,2.2,4.6); ctx.lineTo(3.8,4.6); ctx.lineTo(4.6,10.8); ctx.lineTo(-4.6,10.8); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.fillStyle='#ffd23f'; ctx.fillRect(-4.3,7.2,8.6,0.8);
     } else { // Tunika (creme) mit Gürtel und Fibel
@@ -1544,6 +1577,10 @@ const Game = (() => {
       ctx.fillStyle='#6b3a1e'; ctx.fillRect(-4.6,9,9.2,1.4); ctx.fillStyle='#d9a640'; ctx.fillRect(-0.6,8.8,1.6,1.8);
       ctx.fillStyle='#8e2433'; ctx.beginPath(); ctx.moveTo(-4,5); ctx.lineTo(3,5); ctx.lineTo(-1,8); ctx.fill(); ctx.fillStyle='#d9a640'; ctx.beginPath(); ctx.arc(1.5,5.6,1,0,7); ctx.fill();
     }
+    if (gear.jacket){ // offene Laufjacke mit Reflexstreifen
+      ctx.fillStyle='#6a3d8f'; ctx.beginPath(); ctx.moveTo(-4.2,4.4); ctx.lineTo(-1.4,4.4); ctx.lineTo(-2.2,11); ctx.lineTo(-5,11); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(4.2,4.4); ctx.lineTo(2.6,4.4); ctx.lineTo(3.4,11); ctx.lineTo(5.2,11); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#e8f6ff'; ctx.fillRect(-4.6,9,2.2,0.7); ctx.fillRect(3.2,9,1.8,0.7); }
     // Energie-Gels am Hüftgurt
     if (gear.gel){ ctx.fillStyle='#2a2a2a'; ctx.fillRect(-4.8,10.2,9.6,1.2); ctx.fillStyle='#ffcf33'; ctx.fillRect(-4.2,9.2,1.6,2.2); ctx.fillRect(2.6,9.2,1.6,2.2); ctx.fillStyle='#e05a2a'; ctx.fillRect(-4.2,9.2,1.6,0.6); ctx.fillRect(2.6,9.2,1.6,0.6); }
     // Startnummer
@@ -1557,6 +1594,7 @@ const Game = (() => {
     ctx.beginPath(); ctx.arc(-3.4,1.2,1.6,0,7); ctx.fill();
     ctx.beginPath(); ctx.moveTo(-1,3.6); ctx.quadraticCurveTo(1.6,7,3.9,3.3); ctx.lineTo(2.6,3.1); ctx.quadraticCurveTo(1,4.6,-0.4,3.3); ctx.fill();
     if (gear.cap){ ctx.fillStyle='#ffcc4d'; ctx.strokeStyle='#a5791a'; ctx.lineWidth=0.5; ctx.beginPath(); ctx.moveTo(-3.6,-0.6); ctx.quadraticCurveTo(0.4,-5.4,4,-0.8); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillRect(2.4,-1.4,4.4,1.3); ctx.fillStyle='#8e2433'; ctx.fillRect(-3.4,-1.2,7,0.8); }
+    if (gear.lamp){ ctx.fillStyle='#2b2b2b'; ctx.fillRect(-3.6,-0.2,7.6,1.1); ctx.fillStyle='#fff6a8'; ctx.fillRect(3.2,-0.8,1.8,2); ctx.fillStyle='rgba(255,246,168,'+(G.theme.night?0.35:0.18)+')'; ctx.beginPath(); ctx.moveTo(5,0.2); ctx.lineTo(16,-4); ctx.lineTo(16,5); ctx.closePath(); ctx.fill(); }
     ctx.fillStyle='#222'; ctx.fillRect(2.1,1.1,1,1); ctx.fillStyle='#fff'; ctx.fillRect(1.6,3.6,2,0.7);
     ctx.restore();
   }
@@ -1600,14 +1638,14 @@ const Game = (() => {
     const l = L(); ctx.textBaseline='middle'; ctx.textAlign='left';
     ctx.fillStyle='rgba(30,18,12,.55)'; ctx.fillRect(0,0,VW,24);
     let hx=8; for (let i=0;i<G.maxH;i++){ emoji(i<G.hearts?'❤️':'🖤', hx+6, 12, 11); hx+=15; }
-    if (G.shield){ emoji('🛡️', hx+6, 12, 11); hx+=15; }
+    for (let k=0;k<G.shield;k++){ emoji('🛡️', hx+6, 12, 11); hx+=15; }
     emoji('🥨', hx+10, 12, 11); ctx.fillStyle='#fff1e8'; ctx.font='bold 10px system-ui'; ctx.textAlign='left'; ctx.fillText('×'+G.ammo, hx+17, 12.5);
     ctx.fillStyle='#fff1e8'; ctx.font='bold 11px system-ui';
     if (G.cfg.mode!=='boss'){ emoji(G.cfg.collect, VW-70, 12, 12); ctx.fillStyle='#fff1e8'; ctx.font='bold 11px system-ui'; ctx.textAlign='left'; ctx.fillText(G.coins+'/'+G.totalCoins, VW-60, 12); }
     if (G.cfg.timer!=null){ const s=Math.ceil(G.cfg.timer/60); ctx.textAlign='center'; ctx.fillStyle = s<=10?'#ff8a7a':'#fff'; ctx.font='bold 14px system-ui'; ctx.fillText('⏱ '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0'), VW/2, 13); }
     if (G.boss){ const b=G.boss; ctx.textAlign='center'; ctx.font='bold 9px system-ui'; ctx.fillStyle='#ffd7cc'; ctx.fillText(l.hp, VW/2, 8);
       ctx.fillStyle='rgba(0,0,0,.4)'; ctx.fillRect(VW/2-50,14,100,6); ctx.fillStyle='#9d5cb1'; ctx.fillRect(VW/2-50,14,100*Math.max(0,b.hp)/6,6); }
-    if (G.cfg.mode==='level' && G.lv.ents.some(e=>e.t==='item')){ const it=G.lv.ents.find(e=>e.t==='item'); ctx.globalAlpha = it.got?1:0.35; emoji(GEAR[it.gear].icon, VW-90, 12, 12); ctx.globalAlpha=1; }
+    if (G.cfg.mode==='level' && G.lv.ents.some(e=>e.t==='item'||e.t==='apple')){ const it=G.lv.ents.find(e=>e.t==='item'||e.t==='apple'); ctx.globalAlpha = it.got?1:0.35; emoji(it.t==='apple'?'🍎':GEAR[it.gear].icon, VW-90, 12, 12); ctx.globalAlpha=1; }
   }
   /* Hintergründe */
   function deco(kind, cam){
@@ -1787,7 +1825,7 @@ const Game = (() => {
   /* ---------- Ende ---------- */
   function endGame(win, why){
     if (G.state!=='play') return; G.state = win ? 'win' : 'lose'; Music.stop(true); Music.sfx(win ? (G.cfg.mode==='boss' ? 'fanfare' : 'clear') : 'lose');
-    const cfg = G.cfg, res = { win, why, coins:G.coins, total:G.totalCoins, item:G.gotItem }; setTimeout(()=>{ if (G && G.cfg===cfg && Game.onEnd) Game.onEnd(cfg.mode, cfg.idx, res); }, win ? (cfg.mode==='boss' ? 3200 : 1100) : 900);
+    const cfg = G.cfg, res = { win, why, coins:G.coins, total:G.totalCoins, item:G.gotItem, apple:G.gotApple }; setTimeout(()=>{ if (G && G.cfg===cfg && Game.onEnd) Game.onEnd(cfg.mode, cfg.idx, res); }, win ? (cfg.mode==='boss' ? 3200 : 1100) : 900);
   }
 
   /* ---------- Loop, Größe, Eingaben ---------- */
@@ -2034,7 +2072,7 @@ function daysFields(d){
     <label class="dl3">🔴 Intervalllauf am${daySel('dB', d.B)}</label>
     <label>🟢 Langer gemütlicher Lauf am${daySel('dL', d.L)}</label>
     <label>💪 Krafttraining am${daySel('dK', d.K, true)}</label>
-    <p class="small muted">Höchstens 3 Läufe pro Woche (Vorgabe der Kursleitung). Tipp: Nach einer intensiven Einheit einen lockeren Tag oder Ruhetag einplanen (Aderhold, 2018, S. 105).</p>
+    <p class="small muted">Tipp: Nach einer intensiven Einheit einen lockeren Tag oder Ruhetag einplanen (Aderhold, 2018, S. 105).</p>
     <div class="dwarn"></div></fieldset>`;
 }
 function readDays(f){
@@ -2153,7 +2191,7 @@ function renderToday(){
     <section class="countdown card dark">
       <div class="ring" style="--p:${Math.max(0,Math.min(100,Math.round((wi+1)/S.weeks.length*100)))}"><div><b>${d>0?d:d===0?'🏁':'✓'}</b><span>${d>0?'Tage':d===0?'Heute!':'geschafft'}</span></div></div>
       <div class="cd-txt"><div class="kicker light">Renntag ${niceD(S.profile.race,{weekday:'short',day:'numeric',month:'long',year:'numeric'})}</div>
-        <h2>Woche ${wi+1} von ${S.weeks.length}</h2><p>${esc(w.title)}${w.flag==='reentry'?' · <b>Wiedereinstieg</b>':''}</p>
+        <h2>Woche ${wi+1} von ${S.weeks.length}</h2><p>${esc(PLANS[w.b].title)}${w.flag==='reentry'?' · <b>Wiedereinstieg</b>':''}</p>
         <div class="stats"><div><b>${String(k).replace('.',',')}</b><span>km gelaufen</span></div><div><b>${totalHm(S)}</b><span>Höhenmeter</span></div><div><b>${streak()}</b><span>Wochen in Folge</span></div><div><b>${pct}%</b><span>vom Plan</span></div></div></div>
     </section>
     ${bossOpen() && d>=0 && !isCreator() ? `<section class="card boss-banner" onclick="renderApp('game')"><b>🐷 Der Bosskampf ist freigeschaltet!</b><p>Stell dich dem inneren Schweinehund – und dann ab an den Start.</p></section>`:''}
@@ -2181,15 +2219,40 @@ function sessionHTML(wi, si){
     </div>
     <div class="sbtns"><button class="ib" data-act="info" aria-label="Infos">ⓘ</button><button class="skip" data-act="skip" title="ausgefallen">${s.skipped?'↺':'✕'}</button></div></div>`;
 }
+function editSession(wi, si){
+  const w=S.weeks[wi], s=w.sessions[si], p=S.profile, d=daysOf(p), run = s.code!=='KT', curDay = (parseD(s.date).getDay()+6)%7;
+  const canKm = run && s.km && !s.code.startsWith('WHL') && s.code!=='EDL/WK';
+  sheet(`<h3>✏️ ${sessIcon(s)} ${esc(sessionLabel(s))}</h3><form id="ef">
+    <label>Tag<select name="day">${WD_LONG.map((x,i)=>`<option value="${i}" ${i===curDay?'selected':''}>${x}, ${niceD(addDays(w.monday,i),{day:'2-digit',month:'2-digit'})}</option>`).join('')}</select></label>
+    ${canKm?`<label>Kilometer<div class="unit"><input name="km" type="number" step="0.5" min="3" max="30" inputmode="decimal" value="${s.km}"><span>km</span></div></label>`:''}
+    ${s.role?`<label class="radio"><input type="checkbox" name="all"> Für alle folgenden Wochen übernehmen</label><p class="small muted">Ohne Haken gilt die Änderung nur für diese Woche. Mit Haken wird dein ganzer restlicher Plan angepasst: ${run?'Diese Laufart liegt dann immer an diesem Tag, und Kilometer-Änderungen gelten anteilig für alle folgenden Wochen.':'Krafttraining liegt dann immer an diesem Tag.'}</p>`:''}
+    <p id="efe" class="err"></p><div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn">Übernehmen</button></div></form>`);
+  $('#ef').onsubmit = e => { e.preventDefault(); const f=new FormData(e.target); const nd=+f.get('day'), all=!!f.get('all');
+    const nk = canKm ? +String(f.get('km')||'').replace(',','.') : null; if (canKm && !(nk>=3 && nk<=30)) return $('#efe').textContent='Bitte zwischen 3 und 30 km.';
+    const before = planSnap();
+    if (all && s.role){
+      const nd2 = Object.assign({}, d); const key = s.role==='B' && d.n===2 ? 'A' : s.role; nd2[key] = nd;
+      const c = checkDays(nd2); if (c.err) return $('#efe').textContent = c.err;
+      if (canKm && nk!==s.km){ p.adj = p.adj||{}; const base = s.km / ((p.adj[s.role])||1); p.adj[s.role] = Math.round(nk/base*100)/100; }
+      changeDays(S, nd2); syncUnlocks(); save(); closeSheet(); renderApp(TAB); showChanges(before, '✏️ Plan ab dieser Woche angepasst'); return; }
+    if (nd!==curDay){ s.date = addDays(w.monday, nd); s.day = nd; s.moved = true; }
+    if (canKm && nk!==s.km){ s.orig = s.orig||s.km; s.km = nk; s.arg = String(nk).replace('.',','); s.user = true; }
+    w.sessions.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0); w.rest = [0,1,2,3,4,5,6].map(x=> w.sessions.some(q=>(parseD(q.date).getDay()+6)%7===x) ? 'x' : '-');
+    S.game.thresholds = computeThresholds(S); syncUnlocks(); save(); closeSheet(); renderApp(TAB); toastMsg('✏️ Nur diese Woche geändert.'); };
+}
 function sessionInfo(wi, si){
   const s = S.weeks[wi].sessions[si], w = S.weeks[wi], k = CAT_OF[s.code], t = TYPES[s.code]||{};
   const notes = [];
   if (intensity(s.code)) notes.push((S.profile.noHR?'🗣️ ':'❤️ ')+intensity(s.code));
   if (s.code==='EDL+ST' && s.arg.includes('/')) notes.push('Steht am nächsten Tag ein Wettkampf an, nur '+s.arg.split('/')[1]+' km.');
-  if (s.orig) notes.push('Im Buch '+String(s.orig).replace('.',',')+' km – angepasst, damit dein Wochenumfang langsam steigt.');
+  if (s.user) notes.push('Von dir angepasst (im Buch '+String(s.orig).replace('.',',')+' km).');
+  else if (s.orig && s.orig < s.km) notes.push('Im Buch '+String(s.orig).replace('.',',')+' km – verlängert, damit sich der lange Lauf deutlich von den anderen Läufen abhebt.');
+  else if (s.orig) notes.push('Im Buch '+String(s.orig).replace('.',',')+' km – angepasst, damit dein Wochenumfang langsam steigt.');
+  if (s.moved) notes.push('Von dir auf diesen Tag verschoben.');
   if (s.wk) notes.push('Läufst du am Tag danach einen 10-km-Wettkampf, lass das Krafttraining diese Woche weg.');
   if (w.flag==='reentry') notes.push('Wiedereinstieg nach einer Pause: Tempo bewusst ruhiger, auf dein Körpergefühl achten.');
-  const head = `<h3>${sessIcon(s)} ${esc(sessionLabel(s))}</h3>${notes.length?`<div class="ffbox light">${notes.map(n=>`<p class="small">${esc(n)}</p>`).join('')}</div>`:''}`;
+  const edit = (s.code!=='HM' && !s.done) ? `<button class="btn sm ghost" onclick="editSession(${wi},${si})">✏️ Einheit ändern</button>` : '';
+  const head = `<h3>${sessIcon(s)} ${esc(sessionLabel(s))}</h3>${notes.length?`<div class="ffbox light">${notes.map(n=>`<p class="small">${esc(n)}</p>`).join('')}</div>`:''}${edit}`;
   if (s.code==='KT') return sheet(head+`<p>${esc(t.what)}</p><button class="btn" onclick="openStrength()">💪 Übungen ansehen</button><p class="src">${esc(t.src)}</p><button class="btn ghost mt" onclick="closeSheet()">OK</button>`);
   if (!k) return sheet(head+`<p>${esc(t.what||'')}</p>${t.feel?`<p>🗣️ ${esc(t.feel)}</p>`:''}<p class="src">${esc(t.src||'')}</p><button class="btn" onclick="closeSheet()">OK</button>`);
   const c = CATS[k];
@@ -2277,15 +2340,22 @@ function renderPlan(){
   const cur = curWeekIdx(); let lastB = null; const p=S.profile; const hmKey = hmPlanForGoal(p.goal); const ambitious = p.goal && p.tenK > HM_REQ[hmKey] + 90;
   const d = daysOf(p), lim = kmLimits(p);
   const html = S.weeks.map((w,wi)=>{
-    const head = w.b!==lastB ? `<div class="block-h"><h3>${esc(w.title)}</h3></div>` : ''; lastB = w.b;
+    const head = w.b!==lastB ? `<div class="block-h"><h3>${esc(PLANS[w.b].title)}</h3></div>` : ''; lastB = w.b;
     const done = w.sessions.filter(s=>s.done).length, km = w.sessions.reduce((a,s)=>a+(s.km||0),0);
     return head + `<details class="week ${wi===cur?'cur':''} ${w.flag||''}" ${wi===cur?'open':''}><summary><span class="wn">W${wi+1}</span><span class="wd">${niceD(w.monday,{day:'2-digit',month:'2-digit'})}</span><span class="wt">${w.flag==='reentry'?'Wiedereinstieg':''}</span><span class="wk">${km?Math.round(km)+' km':''}</span><span class="wdn">${done}/${w.sessions.length}</span></summary>${weekSessions(wi)}</details>`;
   }).join('');
   $('#view').innerHTML = `<div class="sec-h"><h2>Dein Plan</h2><button class="ib big" onclick="planInfo()" aria-label="Infos zum Plan">ⓘ</button></div>
     <section class="card plansum">
-      <div class="psum"><div><span>🎯 Ziel</span><b>${esc(goalText(p.goal))}</b></div><div><span>🏃 Läufe</span><b>${d.n}× / Woche</b></div><div><span>📈 Umfang</span><b>${p.startKm?String(p.startKm).replace('.',',')+' → ':''}${lim.wk} km</b></div></div>
+      <div class="psum"><div><span>🎯 Ziel</span><b>${esc(goalText(p.goal))}</b></div><div><span>🏃 Läufe</span><b>${d.n}× / Woche</b></div><div><span>📈 Umfang</span><b>${S.weeks.length?Math.round(S.weeks[0].sessions.reduce((a,x)=>a+(x.km||0),0))+' → ':''}${lim.wk} km</b></div></div>
       ${ambitious?`<p class="warnbox small">⚠️ Ehrgeiziges Ziel – tippe auf ⓘ für Details.</p>`:''}
-      <div class="row wrap"><button class="btn sm ghost" onclick="openDays()">📅 Tage & Umfang</button><button class="btn sm ghost" onclick="openGoal()">🎯 Ziel ändern</button></div></section>
+      <div class="row wrap"><button class="btn sm ghost" onclick="openDays()">📅 Tage & Umfang</button><button class="btn sm ghost" onclick="openGoal()">🎯 Ziel ändern</button></div>
+      <details class="gl"><summary class="small"><b>Warum ist mein Plan in Abschnitte aufgeteilt?</b></summary>
+        <p class="small">Niemand kann ständig auf höchstem Niveau trainieren. Deshalb teilt Aderhold die Vorbereitung in Abschnitte (Perioden) und Zyklen ein:</p>
+        <p class="small">🌱 <b>Grundlagen & Aufbau:</b> Zuerst wird die Ausdauer aufgebaut – vor allem mit gemütlichen Dauerläufen, dazu Fahrtspiel, Krafttraining und Lauftechnik.</p>
+        <p class="small">🏁 <b>Halbmarathon-Plan (letzte 8 Wochen):</b> Die gezielte Vorbereitung auf das Rennen – jetzt kommen schnelle Dauerläufe und Intervalle im Renntempo dazu. Das Tempo wird allmählich gesteigert.</p>
+        <p class="small">🔁 <b>Zyklen von 8 Wochen:</b> Nach drei Wochen Training folgt eine leichtere Woche (Rhythmus 3:1). In der Erholung passt sich dein Körper an und wird stärker.</p>
+        <p class="small">Welche Abschnitte du bekommst, hängt von deinem längsten Lauf und deinem Ziel ab.</p>
+        <span class="src">Aderhold, 2018, S. 95 f., 468 ff.</span></details></section>
     ${html}
     ${S.extra.length?`<h3 class="mt">Zusätzliche Läufe</h3>${S.extra.map(e=>`<div class="sess done"><div class="sx"><div class="sd">${niceD(e.date)}</div><div class="sl">${esc(logSummary(e))}</div></div></div>`).join('')}`:''}`;
   bindSessions();
@@ -2299,12 +2369,12 @@ function planInfo(){
     ${ambitious?`<p class="warnbox small">Dein Ziel ist ehrgeizig: Der Plan setzt etwa 10 km in ${fmtTime(HM_REQ[hmKey])} min voraus, du liegst derzeit bei ca. ${fmtTime(p.tenK)} min. Lieber realistisch und verhaltener angehen (Aderhold, 2018, S. 141).</p>`:''}
     <p><b>Deine Woche:</b> ${daysSummary(daysOf(p))}</p>
     <p><b>Umfang:</b> Start bei ca. ${String(p.startKm||'–').replace('.',',')} km pro Woche, langsame Steigerung bis ${lim.wk} km${lim.pk>lim.wk?` (Wochen mit dem längsten Lauf bis ${lim.pk} km)`:''}; jede 4. Woche ist leichter. ${p.maxKm?'Die Obergrenze hast du selbst festgelegt.':'Die Obergrenze (25/30 km, max. 3 Läufe) ist eine Vorgabe der Kursleitung.'}</p>
-    <p class="small">Aderhold rät, langsam aufzubauen, den Umfang bedächtig zu steigern und die langen Läufe nach und nach zu verlängern (2018, S. 102), mit leichteren Wochen im Rhythmus 3:1 (S. 101). Die genaue Umsetzung (Startwert, gleichmäßige Steigerung, ca. 20 % weniger in leichten Wochen, schrittweise Annäherung ans Zieltempo) ist eine <b>Annahme der App</b>.</p>
+    <p class="small">Aderhold rät, langsam aufzubauen, den Umfang bedächtig zu steigern und die langen Läufe nach und nach zu verlängern (2018, S. 102), mit leichteren Wochen im Rhythmus 3:1 (S. 95). Die genaue Umsetzung (Startwert, gleichmäßige Steigerung, ca. 20 % weniger in leichten Wochen, schrittweise Annäherung ans Zieltempo) ist eine <b>Annahme der App</b>.</p>
     <details class="gl"><summary class="small"><b>So schätzt die App dein Niveau</b></summary><p class="small">Dein <b>Wohlfühltempo</b> wird als gemütlicher Dauerlauf gewertet (im Buch: extensiver Dauerlauf; Aderhold, 2018, S. 138 f.: wohlfühlen und unterhalten = 60–75 % HFmax). Dass dein <b>Durchschnittstempo</b> zwischen gemütlichem und zügigem Dauerlauf liegt, ist eine <b>Annahme der App</b>. Daraus berechnet die App mit Aderholds Tempoformeln (S. 89) deine 10-km-Leistung und nimmt vorsichtshalber den langsameren Wert. Die Tempi im Plan sind auf 10 Sekunden gerundet.</p></details>
     ${S.notices.length?S.notices.map(n=>`<p class="small">ℹ️ ${esc(n)}</p>`).join(''):''}
     ${S.pauses.length?`<p><b>Eingetragene Pausen</b></p>${S.pauses.map(x=>`<p class="small">${niceD(x.from)} – ${niceD(x.to)} (${({fieber:'Krankheit mit Fieber',erkaeltung:'Erkältung',verletzung:'Verletzung',sonst:'Sonstiges'})[x.reason]})</p>`).join('')}`:''}
     <p class="small muted">Passt ein Tag mal nicht, verschiebe die Einheit – und lass zwischen fordernden Einheiten Ruhetage.</p>
-    <p class="src">Pläne: Aderhold, 2018, S. 468–481 · ${[...new Set(S.weeks.map(w=>w.title))].map(esc).join(' · ')}</p>
+    <p class="src">Pläne: Aderhold, 2018, S. 468–481 · ${[...new Set(S.weeks.map(w=>PLANS[w.b].title))].map(esc).join(' · ')}</p>
     <button class="btn" onclick="closeSheet()">OK</button>`);
 }
 
@@ -2420,7 +2490,8 @@ Game.onEnd = (mode, idx, r) => {
   if (!r.win){ html = `<h3>${r.why==='time'?'🎆 '+esc(L.nyeLose):'💔 '+esc(L.gameOver)}</h3>${factBox}${row}`; }
   else if (mode==='level'){
     gs.done[idx]=true; gs.best[idx]=Math.max(gs.best[idx]||0, r.coins); let itemTxt=''; const g = GEAR[idx];
-    if (!g) itemTxt = '';
+    if (r.apple) itemTxt = `<div class="itembox"><span>🍎</span><div><b>${esc(lang==='de'?'Apfel gefunden: +5 Brezeln':'Apple found: +5 pretzels')}</b><p class="small">${esc(lang==='de'?'Täglich dreimal frisches Obst gehört zu einer vollwertigen Ernährung (Beck, 2024, S. 303).':'Fresh fruit three times a day is part of a wholesome diet (Beck, 2024).')}</p></div></div>`;
+    else if (!g) itemTxt = '';
     else if (r.item){ gs.gear[g.id]=true; itemTxt = `<div class="itembox"><span>${g.icon}</span><div><b>${esc(L.found)}: ${esc(g[lang])}</b><p class="small">${esc(lang==='de'?g.tipDe:g.tipEn)}</p></div></div>`; }
     else if (!gs.gear[g.id]) itemTxt = `<p>❔ ${esc(L.missing)}: ${g.icon} ${esc(g[lang])}</p>`;
     save(); html = `<h3>🏁 ${esc(L.complete)}</h3><p>${r.coins}/${r.total} ${esc(L.pretzels)}</p>${itemTxt}${factBox}${row}`;
@@ -2439,37 +2510,44 @@ async function renderRank(){
   rows = rows.map(r=>({ name:r.name, km:+r.km||0, items:+r.items||0, coins:+r.coins||0 }));
   rows.sort((a,b)=> RANK_BY==='km' ? (b.km-a.km || b.items-a.items) : (b.items-a.items || b.coins-a.coins || b.km-a.km));
   const me = nameKey(Store.user.name);
-  $('#rk').innerHTML = rows.length ? `<ol class="rank">${rows.map((r,i)=>`<li class="${nameKey(r.name)===me?'me':''}"><span class="pos">${['🥇','🥈','🥉'][i]||(i+1)+'.'}</span><span class="nm">${esc(r.name)}</span><span class="val">${RANK_BY==='km' ? String(Math.round(r.km*10)/10).replace('.',',')+' km' : r.items+'/8 '+GEAR.filter((g,j)=>j<r.items).map(g=>g.icon).join('')}</span></li>`).join('')}</ol>`
+  $('#rk').innerHTML = rows.length ? `<ol class="rank">${rows.map((r,i)=>`<li class="${nameKey(r.name)===me?'me':''}"><span class="pos">${['🥇','🥈','🥉'][i]||(i+1)+'.'}</span><span class="nm">${esc(r.name)}</span><span class="val">${RANK_BY==='km' ? String(Math.round(r.km*10)/10).replace('.',',')+' km' : r.items+'/'+GEAR.length+' '+GEAR.filter((g,j)=>j<r.items).map(g=>g.icon).join('')}</span>${isCreator()?`<button class="del" data-n="${esc(r.name)}" title="Konto löschen">🗑</button>`:''}</li>`).join('')}</ol>`
     : `<p class="muted">Noch keine Einträge.</p>`;
   if (RANK_BY==='items') $('#rk').insertAdjacentHTML('beforeend','<p class="small muted">Gezählt wird die Laufausrüstung, die im Spiel gesammelt wurde. Bei Gleichstand entscheiden die Brezeln.</p>');
-  if (isCreator()) $('#rk').insertAdjacentHTML('beforeend',`<p class="devnote">🛠 Ersteller-Konten erscheinen nicht in der Rangliste.${Store.mode==='local'?' Lokaler Modus: Es werden nur Konten dieses Geräts angezeigt, bis der Server eingerichtet ist.':''}</p>`);
+  document.querySelectorAll('.rank .del').forEach(b=>b.onclick=()=>confirmDelete(b.dataset.n));
+  if (isCreator()) $('#rk').insertAdjacentHTML('beforeend',`<p class="devnote">🛠 Mit 🗑 kannst du Konten löschen (nur in deinem Konto sichtbar). Ersteller-Konten erscheinen nicht in der Rangliste.${Store.mode==='local'?' Lokaler Modus: Es werden nur Konten dieses Geräts angezeigt, bis der Server eingerichtet ist.':''}</p>`);
 }
+
+function confirmDelete(name){ if (!isCreator()) return;
+  sheet(`<h3>🗑 Konto löschen?</h3><p>Das Konto <b>${esc(name)}</b> wird mit allen Trainingsdaten und dem Spielstand endgültig gelöscht. Das lässt sich nicht rückgängig machen.</p><p id="dle" class="err"></p>
+    <div class="row"><button class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn danger" id="dlb">Endgültig löschen</button></div>`);
+  $('#dlb').onclick = async () => { $('#dlb').disabled=true; const r = await Store.deleteUser(name); if (r.err){ $('#dle').textContent=r.err; $('#dlb').disabled=false; return; } closeSheet(); toastMsg('🗑 '+name+' gelöscht.'); renderRank(); }; }
 
 /* ---------- Wissen ---------- */
 function renderKnow(){
   const P = myPaces(); const used = ['RDL','R-EDL','EDL','EDL+ST','EDL/WK','IDL','I-TDL','TDL','TDL/EDL','FS','WHL','WHL/WKT','KT','-'];
   $('#view').innerHTML = `<h2>Wissen & Rechner</h2>
-    <nav class="chips"><button data-t="k-kraft">💪 Krafttraining</button><button data-t="k-formen">🏃 Trainingsformen</button><button data-t="k-mm">✨ Magic Mile</button><button data-t="k-rech">⏱️ Rechner</button><button data-t="k-race">🏁 Renntag</button><button data-t="k-fakt">📚 Fakten</button></nav>
-    <section class="card" id="k-kraft"><h3>💪 Krafttraining – Übungsvorschläge</h3>${strengthHTML()}</section>
-    <section class="card" id="k-formen"><h3>🏃 Die Laufarten</h3><p class="muted small">In deinem Plan gibt es drei Laufarten – dazu Krafttraining und Ruhetage. Mit Pulsuhr orientierst du dich an der Herzfrequenz, ohne Pulsmessung an deinem Gefühl beim Sprechen.</p>
+    <nav class="chips"><button data-t="k-kraft">💪 Krafttraining</button><button data-t="k-formen">🏃 Laufarten</button><button data-t="k-mm">✨ Magic Mile</button><button data-t="k-rech">⏱️ Rechner</button><button data-t="k-race">🏁 Renntag</button><button data-t="k-fakt">📚 Fakten</button></nav>
+    <details class="card ksec" id="k-kraft"><summary><h3>💪 Krafttraining – Übungsvorschläge</h3></summary>${strengthHTML()}</details>
+    <details class="card ksec" id="k-formen"><summary><h3>🏃 Die Laufarten</h3></summary><p class="muted small">In deinem Plan gibt es drei Laufarten – dazu Krafttraining und Ruhetage. Mit Pulsuhr orientierst du dich an der Herzfrequenz, ohne Pulsmessung an deinem Gefühl beim Sprechen.</p>
       ${['G','S','I'].map(k=>`<details class="gl"><summary><b>${CATS[k].icon} ${esc(CATS[k].name)}</b></summary>${catBody(k)}</details>`).join('')}
       ${['KT','-'].map(k=>{ const t=TYPES[k]; return `<details class="gl"><summary><b>${k==='KT'?'💪':'😴'} ${esc(t.name)}</b></summary><p>${esc(t.what)}</p><p><b>Wofür?</b> ${esc(t.why)}</p>${k==='KT'?'<p class="small">Übungen: siehe „Krafttraining“ oben.</p>':''}<span class="src">${esc(t.src)}</span></details>`; }).join('')}
       <div class="ffbox light"><b>Ohne Pulsuhr – die Sprech-Regel</b><p class="small">🟢 Gemütlich: Du kannst noch gut sprechen. 🟠 Schnell: Bei zügigen Einheiten kannst du gerade noch sprechen, bei schnellen läufst du die ganze Strecke mit maximaler, aber konstanter Geschwindigkeit. 🔴 Intervalle: schnelle Abschnitte wie der schnelle Dauerlauf, in den Pausen wieder gut sprechen können.</p><span class="src">Beck, 2024, S. 162</span></div>
-      <p class="small muted">${esc(HF_NOTE)}</p></section>
-    <section class="card" id="k-mm"><h3>✨ Magic Mile</h3>
+      <p class="small muted">${esc(HF_NOTE)}</p></details>
+    <details class="card ksec" id="k-mm"><summary><h3>✨ Magic Mile</h3></summary>
       <p>Die Magic Mile ist ein kurzer Leistungstest aus den Halbmarathon-Programmen von Jeff und Barbara Galloway. Du läufst eine Meile – das sind 1,609 km, auf der Laufbahn etwa vier Runden – auf Zeit. In Galloways Plänen taucht der Test regelmäßig donnerstags auf, zum Beispiel als „1 Meile Magic Mile + 3 Meilen“.</p>
       <p><b>So rechnest du:</b> Magic-Mile-Zeit × 1,2 = das Tempo pro Meile, das du aktuell im Halbmarathon laufen könntest. Das gilt bei höchstens 14 °C und wenn du die langen Läufe und Tempoeinheiten deines Plans absolviert hast.</p>
       <p><b>Zielwahl:</b> Nach dem ersten Test darfst du dir ein Ziel setzen, das bis zu 15 s/km (20 s pro Meile) schneller ist als die Prognose – oder jedes langsamere.</p>
       <p><b>Lange Läufe:</b> Prognose-Tempo + 3 Minuten pro Meile – so bleiben sie wirklich locker.</p>
       <span class="src">Galloway & Galloway, 2019, S. 49 ff.</span>
-      <label>Deine Zeit für 1 Meile<div class="unit">${tIn('mm',['m','s'],null,['9','30'])}<span>Min : Sek</span></div></label><div id="mmr"></div></section>
-    <section class="card" id="k-rech"><h3>⏱️ Tempo-Rechner</h3><p class="small muted">Trainingstempi aus einer 10-km-Zeit (Aderhold, 2018, S. 89) und Halbmarathon-Prognose (Beck, 2024).</p>
-      <label>10-km-Zeit<div class="unit">${tIn('tk',['m','s'],S.profile.tenK||null,['58','30'])}<span>Min : Sek</span></div></label><div id="tkr"></div></section>
-    <section class="card" id="k-race"><h3>🏁 Renntag & Tapering</h3>${RACE_TIPS.map(t=>`<p>• ${esc(t.t)} <span class="src">(${esc(t.src)})</span></p>`).join('')}</section>
-    <h2 class="mt" id="k-fakt">Fakten nach Rubriken</h2>
+      <label>Deine Zeit für 1 Meile<div class="unit">${tIn('mm',['m','s'],null,['9','30'])}<span>Min : Sek</span></div></label><div id="mmr"></div></details>
+    <details class="card ksec" id="k-rech"><summary><h3>⏱️ Tempo-Rechner</h3></summary><p class="small muted">Trainingstempi aus einer 10-km-Zeit (Aderhold, 2018, S. 89) und Halbmarathon-Prognose (Beck, 2024).</p>
+      <label>10-km-Zeit<div class="unit">${tIn('tk',['m','s'],S.profile.tenK||null,['58','30'])}<span>Min : Sek</span></div></label><div id="tkr"></div></details>
+    <details class="card ksec" id="k-race"><summary><h3>🏁 Renntag & Tapering</h3></summary>${RACE_TIPS.map(t=>`<p>• ${esc(t.t)} <span class="src">(${esc(t.src)})</span></p>`).join('')}</details>
+    <details class="card ksec" id="k-fakt"><summary><h3>📚 Fakten nach Rubriken</h3></summary>
     ${FACT_CATS.map(c=>`<details class="factcat"><summary><span class="fci">${c.icon}</span><span><b>${esc(c.name)}</b><small>${esc(c.intro)}</small></span></summary>
-      ${FACTS.filter(f=>f.cat===c.id).map(f=>`<div class="factitem"><h4>${esc(f.title)}</h4><p>${esc(f.de)}</p><span class="src">${esc(f.src)}</span></div>`).join('')}</details>`).join('')}`;
-  bindStrength($('#view')); document.querySelectorAll('.chips button').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.t).scrollIntoView({behavior:'smooth', block:'start'}));
+      ${FACTS.filter(f=>f.cat===c.id).map(f=>`<div class="factitem"><h4>${esc(f.title)}</h4><p>${esc(f.de)}</p><span class="src">${esc(f.src)}</span></div>`).join('')}</details>`).join('')}</details>
+    <p class="small muted">Tippe auf eine Überschrift, um sie auf- oder zuzuklappen.</p>`;
+  bindStrength($('#view')); document.querySelectorAll('.chips button').forEach(b=>b.onclick=()=>{ const el=document.getElementById(b.dataset.t); el.open = true; el.scrollIntoView({behavior:'smooth', block:'start'}); });
   const V=$('#view'); bindTimeBoxes(V);
   const calc = () => { const t = readT(V,'tk'); if (!t){ $('#tkr').innerHTML=''; return; } const p=paces(t);
     $('#tkr').innerHTML = `<table class="tbl">${[['🟠 Schneller Dauerlauf – schnell',p.TDL],['🟠 Schneller Dauerlauf – zügig',p.IDL],['🟢 Gemütlicher Dauerlauf',p.EDL],['🟢 Gemütlich – sehr ruhig',p.RDL],['🔴 Intervalle à 1 km',p.WHL1],['🔴 Intervalle à 2 km',p.WHL2],['🔴 Intervalle à 3 km',p.WHL3]].map(r=>`<tr><td>${r[0]}</td><td><b>${fmtPace(r[1])}</b> min/km</td></tr>`).join('')}
