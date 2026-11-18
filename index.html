@@ -195,6 +195,21 @@ body::before{ content:''; position:fixed; left:0; right:0; bottom:0; height:200p
 .kabci{ display:flex; gap:10px; align-items:flex-start; justify-content:space-between; border-bottom:1px dashed var(--line); padding:6px 0; } .kabci p{ margin:2px 0 0; }
 .kdose{ flex:none; background:#efe2cf; color:var(--wine); font:700 .78rem var(--font); padding:4px 8px; border-radius:8px; white-space:nowrap; }
 button.lnk{ border:none; background:none; color:var(--wine); font:700 .85rem var(--font); padding:0; cursor:pointer; text-decoration:underline; }
+/* Zeitkästchen */
+.tbox{ display:flex; align-items:center; gap:6px; flex:0 1 auto; }
+.tbox input{ width:58px; text-align:center; padding:11px 6px; margin-top:6px; font-variant-numeric:tabular-nums; }
+.tbox input[data-p=h]{ width:46px; }
+.tbox .colon{ font-weight:800; font-size:1.2rem; color:var(--wine); margin-top:6px; }
+.unit .tbox + span{ white-space:nowrap; }
+.opt{ font-weight:500; font-size:.75rem; color:var(--muted); background:#efe2cf; border-radius:6px; padding:1px 6px; margin-left:4px; }
+/* vereinfachter Plan */
+.plansum .psum{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
+.plansum .psum div{ background:#fff9f0; border:1.5px solid var(--line); border-radius:12px; padding:8px; display:flex; flex-direction:column; gap:2px; text-align:center; }
+.plansum .psum span{ font-size:.78rem; color:var(--muted); } .plansum .psum b{ font-size:.95rem; color:var(--wine); }
+.ib{ border:1.5px solid var(--line); background:var(--card); color:var(--wine); font:700 1rem var(--font); width:34px; height:34px; border-radius:50%; cursor:pointer; flex:none; display:grid; place-items:center; padding:0; }
+.ib.big{ width:38px; height:38px; font-size:1.15rem; }
+.sbtns{ display:flex; flex-direction:column; gap:6px; align-items:center; }
+.sess .spc{ font-size:.95rem; margin-top:2px; color:var(--ink); }
 </style>
 </head>
 <body>
@@ -218,7 +233,7 @@ const RACE_DEFAULT = '2027-04-25';
 const APP_NAME = 'Mein Weg zum Atos-Halbmarathon';
 const CREATOR_NAME = 'Laura';        // Ersteller-Konto: voller Zugriff zum Testen
 const UNLOCK_ALL_DATE = '2027-04-24'; // Level 8 + alle noch gesperrten Level + Bosskampf für alle
-const LEVEL_PCT = [null, null, 0.35, 0.50, 0.65, 0.80, 0.95, null]; // Level 1/2: 5/10 km, Level 8: Datum
+const LEVEL_PCT = [null,null,0.06,0.13,0.21,0.30,0.40,0.50,0.61,0.73,0.86]; // Level 1: 5 km, Level 2: 10 km, Level 3–11: Anteil der Plankilometer; Level 12 = Bosskampf // Level 1/2: 5/10 km, Level 8: Datum
 const RACE_NAME = 'ATOS Halbmarathon Heidelberg 2027';
 
 /* Abkürzungen im Plan: '-' = P/AT (Pause oder alternatives Training), 'P' = Pause */
@@ -384,7 +399,7 @@ const TYPES = {
     feel:'Gemütlich: Du kannst während des Laufens noch gut sprechen.', src:'Aderhold, 2018, S. 468; Beck, 2024, S. 110, 162',
     dev:'Lesart der App für „E-RDL“ – Abkürzung im Buch nicht erklärt.' },
   'EDL':  { name:'Extensiver Dauerlauf', hf:'ca. 70 % HFmax',
-    what:'Der klassische lockere Grundlagenlauf. Als langer Lauf der Woche ist er es, der dich Schritt für Schritt an die 21,1 km heranführt.',
+    what:'Der klassische lockere Grundlagenlauf. Auch der lange Lauf der Woche wird so gelaufen – er führt dich Schritt für Schritt an die 21,1 km heran.',
     why:'Verbessert die aerobe Ausdauer – die Basis für den Halbmarathon.',
     feel:'Gemütlich: Du kannst während des Laufens noch gut sprechen.', src:'Aderhold, 2018, S. 89; Beck, 2024, S. 110, 162' },
   'EDL+ST':{ name:'Lockerer Lauf mit Steigerungen', hf:'ca. 70 % HFmax (Steigerungen schneller)',
@@ -693,8 +708,12 @@ function sessionLabel(s){
 }
 
 /* Kanonische Blockfolge für ein Niveau + längsten Lauf */
+/* Aufbauplan: ohne Ziel nach aktuellem Niveau; mit Ziel nach dem 10-km-Niveau, das zum Ziel passt
+   (Halbmarathon-Prognose = 10-km-Zeit × 2,2234, Beck, 2024; Aderholds Pläne setzen jeweils ein 10-km-Niveau voraus, 2018, S. 469 ff., 480 f.) */
+function goalTenK(p){ return p && p.goal ? Math.round(p.goal/2.2234) : null; }
+function planLevel(p){ const g = goalTenK(p); return g ? levelFrom10k(g) : p.level; }
 function canonFor(p){
-  const seq=[]; preBlocks(p.longest||11, p.level).forEach(b => PLANS[b].weeks.forEach((w,i)=>seq.push({b, i, pre:true})));
+  const seq=[]; preBlocks(p.longest||11, planLevel(p)).forEach(b => PLANS[b].weeks.forEach((w,i)=>seq.push({b, i, pre:true})));
   const hm = hmPlanForGoal(p.goal); PLANS[hm].weeks.forEach((w,i)=>seq.push({b:hm, i, pre:false}));
   return seq;
 }
@@ -750,7 +769,9 @@ function fitWeeks(canon, from, n){
      Entlastungswochen im Rhythmus 3:1, in denen der Umfang sinkt (Aderhold, 2018, S. 101).
      Die Umsetzung (Start beim aktuellen Wochenumfang, gleichmäßige Steigerung bis zum Halbmarathon-Block, Entlastungswoche ca. 20 % weniger) ist eine ANNAHME DER APP.
    – Krafttraining einmal pro Woche am gewählten Tag (Aderhold, 2018, S. 154 f.). */
-const WEEK_KM = 25, PEAK_KM = 30, MIN_RUN = 5, START_MAX = 20;
+const WEEK_KM = 25, PEAK_KM = 30, MIN_RUN = 5, START_MAX = 20, COURSE_MAX = 30;
+/* Obergrenzen: ohne Angabe 25 km (Spitzenwochen 30 km); mit eigener Höchstgrenze diese (höchstens 30 km, Vorgabe der Kursleitung) */
+function kmLimits(p){ if (p && p.maxKm){ const m = Math.min(COURSE_MAX, p.maxKm); return { wk:m, pk:m }; } return { wk:WEEK_KM, pk:PEAK_KM }; }
 const DEFAULT_DAYS = { n:3, A:0, B:2, L:5, K:4 };
 function daysOf(p){ return Object.assign({}, DEFAULT_DAYS, (p&&p.days)||{}); }
 function runDays(d){ return (d.n===2 ? [d.A, d.L] : [d.A, d.B, d.L]).slice().sort((x,y)=>x-y); }
@@ -770,8 +791,9 @@ function runFloor(p, firstLong){ const d=daysOf(p); return (d.n===2?MIN_RUN:2*MI
 function weekCap(p, rw, recovery){
   const R = Math.max(4, p.rampR||16);
   const s0 = p.startKm || 15;
-  if (rw >= R) return recovery ? Math.round(WEEK_KM*0.8) : WEEK_KM;
-  let cap = s0 + (WEEK_KM - s0) * (recovery ? Math.max(0,rw-1) : rw) / R;
+  const WK = kmLimits(p).wk;
+  if (rw >= R) return recovery ? Math.round(WK*0.8) : WK;
+  let cap = s0 + (WK - s0) * (recovery ? Math.max(0,rw-1) : rw) / R;
   if (recovery) cap *= 0.8;
   return Math.round(cap*2)/2;
 }
@@ -793,7 +815,7 @@ function makeWeek(monday, c, flag, p, rw){
     const longs = P.weeks.map(r=>{ const x=parseSession(r[5]); return x&&x.km ? x.km : 0; });
     const recovery = c.i%4===3;
     const peak = !c.pre && longs[c.i] > 0 && longs[c.i] === Math.max(...longs) && rw >= Math.max(4, p.rampR||16);
-    const limit = peak ? PEAK_KM : weekCap(p, rw, recovery);
+    const limit = peak ? kmLimits(p).pk : weekCap(p, rw, recovery);
     const tot = () => sessions.reduce((a,x)=>a+(x.km||0),0);
     const cut = (x, min) => { if (!x || !x.km || tot()<=limit) return; const r = Math.min(x.km-min, tot()-limit); if (r<=0) return; x.orig = x.orig||x.km; x.km = Math.round((x.km-r)*2)/2; const sfx = x.arg.includes('/') ? x.arg.slice(x.arg.indexOf('/')) : ''; x.arg = String(x.km).replace('.',',')+sfx; };
     cut(sessions.find(x=>x.role==='A' && !x.code.startsWith('WHL')), MIN_RUN);
@@ -808,7 +830,8 @@ function makeWeek(monday, c, flag, p, rw){
 /* Startumfang und Steigerungsdauer festlegen (bei Planerstellung) */
 function setupRamp(p, weeksTotal, firstLong){
   const est = p.weekKm || Math.round((p.longest||8)*1.5);
-  p.startKm = Math.min(Math.max(est, runFloor(p, firstLong)), Math.max(START_MAX, runFloor(p, firstLong)), WEEK_KM);
+  p.startKm = Math.min(Math.max(est, runFloor(p, firstLong)), Math.max(START_MAX, runFloor(p, firstLong)), Math.max(kmLimits(p).wk, runFloor(p, firstLong)));
+  if (p.maxKm) p.startKm = Math.min(p.startKm, Math.max(kmLimits(p).wk, runFloor(p, firstLong)));
   p.rampR = Math.max(4, weeksTotal - 8);
 }
 function rwSince(p, monday){ return Math.max(0, daysBetween(mondayOf(p.start), monday)/7); }
@@ -886,6 +909,10 @@ function replanFromNow(state){
 function changeGoal(state, goal){ state.profile.goal = goal || null; replanFromNow(state); }
 function changeDays(state, days){ state.profile.days = days; replanFromNow(state); }
 
+/* 10-km-Niveau einer Woche: ohne Ziel das aktuelle; mit Ziel steigt es bis zum Halbmarathon-Block gleichmäßig auf das Zielniveau
+   (schrittweise Steigerung der Belastung: Beck, 2024, S. 99; die gleichmäßige Verteilung ist eine ANNAHME DER APP) */
+function weekTenK(state, wi){ const p = state.profile, g = goalTenK(p); if (!g || !p.tenK) return p.tenK; const n = state.weeks.length, hm = Math.max(0, n-8);
+  if (wi >= hm) return g; return Math.round(p.tenK + (g - p.tenK) * (wi+1) / (hm+1)); }
 /* Tempi nach Aderhold (2018, S. 89; nach Wenzel, 1991) */
 function paces(tenKsec){
   const v10 = tenKsec/10; const TDL = v10+15;
@@ -893,25 +920,27 @@ function paces(tenKsec){
     HM: tenKsec*2.2234/21.0975, HMtime: tenKsec*2.2234 };
 }
 function fmtPace(s){ s=Math.round(s); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function fmtPace10(s){ return fmtPace(Math.round(s/10)*10); } // im Plan auf 10 s gerundet
 function fmtTime(s){ s=Math.round(s); const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60; return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0'); }
 function paceFor(code, arg, P){
   if (!P) return '';
-  const map = { 'TDL':P.TDL,'IDL':P.IDL,'EDL':P.EDL,'EDL+ST':P.EDL,'RDL':P.RDL };
-  if (map[code]) return fmtPace(map[code])+' min/km';
-  if (code==='EDL/WK') return 'EDL '+fmtPace(P.EDL)+' min/km';
-  if (code==='R-EDL'||code==='E-RDL') return fmtPace(P.EDL)+'–'+fmtPace(P.RDL)+' min/km';
-  if (code==='I-TDL') return fmtPace(P.TDL)+'–'+fmtPace(P.IDL)+' min/km';
-  if (code==='TDL/EDL') return 'TDL '+fmtPace(P.TDL)+' / EDL '+fmtPace(P.EDL);
-  if (code==='WHL') { const d=arg.split('x')[1]; const v=d==='1'?P.WHL1:d==='2'?P.WHL2:P.WHL3; return fmtPace(v)+' min/km'; }
-  if (code==='WHL/WKT'||code==='HM') return fmtPace(P.HM)+' min/km (HM-Tempo)';
+  const f = fmtPace10, u = ' min/km', rng = (a,b) => { const x=f(Math.min(a,b)), y=f(Math.max(a,b)); return x===y ? x+u : x+'–'+y+u; };
+  const map = { 'TDL':P.TDL,'IDL':P.IDL,'EDL':P.EDL,'EDL+ST':P.EDL,'EDL/WK':P.EDL,'RDL':P.RDL };
+  if (map[code]) return f(map[code])+u;
+  if (code==='R-EDL'||code==='E-RDL') return rng(P.EDL, P.RDL);
+  if (code==='I-TDL') return rng(P.TDL, P.IDL);
+  if (code==='TDL/EDL') return f(P.TDL)+u+' (müde: '+f(P.EDL)+')';
+  if (code==='WHL') { const d=(arg||'').split('x')[1]; const v=d==='1'?P.WHL1:d==='2'?P.WHL2:P.WHL3; return f(v)+u; }
+  if (code==='WHL/WKT'||code==='HM') return f(P.HM)+u;
+  if (code==='FS') return 'wechselnd: '+f(P.TDL)+' / '+f(P.EDL)+u;
   return '';
 }
 
-/* Level-Schwellen: Level 1 bei 5 km, Level 2 bei 10 km, Level 3–7 bei 35/50/65/80/95 % der geplanten Gesamtkilometer.
-   Level 8 (und alles noch Gesperrte) wird am UNLOCK_ALL_DATE freigeschaltet. */
+/* Level-Schwellen: Level 1 bei 5 km, Level 2 bei 10 km, Level 3–11 bei 6–86 % der geplanten Gesamtkilometer (kleinere Sprünge).
+   Alles noch Gesperrte und der Bosskampf (Level 12) werden am UNLOCK_ALL_DATE freigeschaltet. */
 function computeThresholds(state){
   const tot = plannedKm(state);
-  return LEVEL_PCT.map((f,i)=> i===0 ? 5 : i===1 ? 10 : f==null ? null : Math.max(15, Math.round(tot*f)));
+  return LEVEL_PCT.map((f,i)=> i===0 ? 5 : i===1 ? 10 : f==null ? null : Math.max(10+i*3, Math.round(tot*f)));
 }
 function totalKm(state){
   let k=0; state.weeks.forEach(w=>w.sessions.forEach(s=>{ if(s.done) k += (s.kmDone!=null? s.kmDone : (s.km||0)); }));
@@ -1048,7 +1077,10 @@ const GT = {
    {name:'Schlossgarten', story:'Am Schloss erzählt man sich, der Hofnarr Perkeo bewache das Große Fass. Heute bewacht er deine Laufkappe – zum Glück ist er auf deiner Seite.'},
    {name:'Himmelsleiter', story:'Die Himmelsleiter: Stufe um Stufe hinauf Richtung Königstuhl. Oben wartet deine Trinkflasche – und eine fantastische Aussicht.'},
    {name:'Heiligenberg', story:'Auf dem Heiligenberg, zwischen Thingstätte und alten Klostermauern, liegt dein Energie-Gel. Im Wald wimmelt es von kleinen Schweinehunden …'},
-   {name:'Bismarckplatz bei Nacht', story:'Letzte Station: Nachts am Bismarckplatz. Der Schweinehund hat deine Startnummer – schnapp sie dir, dann steht dem Renntag nichts mehr im Weg!'}
+   {name:'Bismarckplatz bei Nacht', story:'Nachts am Bismarckplatz: Der Schweinehund hat deine Startnummer – schnapp sie dir! Dann ist deine Ausrüstung komplett.'},
+   {name:'Königstuhl', story:'Höhentraining auf dem Königstuhl: Vorbei an Fernsehturm und Sternwarte geht es auf Waldwegen durch den Nebel. Deine Ausrüstung ist komplett – jetzt zählt das Durchhalten. Sammle Brezeln für den Bosskampf!'},
+   {name:'Zoo Heidelberg', story:'Im Zoo machen dir Giraffe, Elefant und Flamingos vor, wie man in Bewegung bleibt. Zwischen den Gehegen haben sich kleine Schweinehunde versteckt …'},
+   {name:'Universitätsplatz', story:'Generalprobe am Universitätsplatz: Vor der Alten Universität und dem Löwenbrunnen sammelt der Schweinehund seine letzten Gehilfen. Wer hier durchkommt, ist bereit für den Bosskampf!'}
   ],
   boss:'Bosskampf: Der innere Schweinehund', bossStory:'Renntag! Am Start in der Altstadt wartet der innere Schweinehund persönlich – in voller Rüstung, sein Sofa im Schlepptau. Er wirft mit Sofakissen und springt dich an. Spring ihm auf den Helm, wenn er nach einem Sprung benommen ist! Deine Brezeln aus allen Leveln sind dein Wurfvorrat – an der Rüstung prallen sie ab, nur wenn er benommen ist, treffen sie.',
   bossWin:'Geschafft! Der innere Schweinehund ist besiegt. Jetzt nichts wie hin zum Start – gleichmäßig loslaufen und die zweite Hälfte genießen!',
@@ -1062,7 +1094,7 @@ const GT = {
   bossLocked:'Der Bosskampf öffnet sich in den letzten Tagen vor dem Halbmarathon – ab', specialLocked:'Freigeschaltet ab',
   pretzels:'Brezeln', gifts:'Geschenke', sparklers:'Wunderkerzen', time:'Zeit', funfact:'Fun Fact', drink:'Trinken', gel:'Gel',
   excuses:['Zu kalt!','Morgen!','Keine Zeit!','Regen!','Zu müde!','Sofa!','Später!','Ach, nö!'],
-  gearTitle:'Deine Ausrüstung', story:'Geschichte', lang:'Sprache', controls:'Steuerung: ◀ ▶ laufen, ⤒ springen, 🥨 Brezel werfen (Tastatur: ← → laufen, ↑ springen, Leertaste oder X werfen)',
+  gearTitle:'Deine Ausrüstung', story:'Geschichte', lang:'Sprache', controls:'Steuerung: ◀ ▶ laufen, ⤒ springen, 🥨 Brezel werfen (Tastatur: ← → laufen, ↑ springen, Leertaste oder X werfen; im Bosskampf: 1 trinken, 2 Gel)',
   bossGear:'So hilft dir deine Ausrüstung im Bosskampf:', start:'Start', level:'Level', hp:'Schweinehund',
   advent:'Adventskalender', door:'Türchen', openFrom:'öffnet am', funFact:'Fun Fact', realFact:'Echter Fakt', bonus:'Bonus-Minispiel', source:'Quelle'
  },
@@ -1077,7 +1109,10 @@ const GT = {
    {name:'Castle Garden', story:'At the castle, people say the court jester Perkeo guards the Great Barrel. Today he guards your running cap – luckily he\'s on your side.'},
    {name:'Heaven\'s Ladder', story:'The Himmelsleiter: step by step up towards the Königstuhl. Your water bottle waits at the top – along with a fantastic view.'},
    {name:'Heiligenberg', story:'On the Heiligenberg, between the Thingstätte and old monastery walls, lies your energy gel. The forest is swarming with little couch beasts …'},
-   {name:'Bismarckplatz by Night', story:'Final stop: Bismarckplatz at night. The beast has your race bib – grab it and nothing can stop you on race day!'}
+   {name:'Bismarckplatz by Night', story:'Bismarckplatz at night: the beast has your race bib – grab it! Then your gear is complete.'},
+   {name:'Königstuhl', story:'Altitude training on the Königstuhl: past the TV tower and the observatory, forest trails lead through the mist. Your gear is complete – now it\'s about endurance. Collect pretzels for the boss fight!'},
+   {name:'Heidelberg Zoo', story:'At the zoo, the giraffe, the elephant and the flamingos show you how to keep moving. Little couch beasts are hiding between the enclosures …'},
+   {name:'University Square', story:'Dress rehearsal at University Square: in front of the Old University and the Lion Fountain, the beast gathers its last helpers. Make it through here and you\'re ready for the boss fight!'}
   ],
   boss:'Boss fight: The Inner Couch Beast', bossStory:'Race day! At the start in the old town the inner couch beast awaits – in full armour, its sofa in tow. It throws sofa cushions and leaps at you. Jump on its helmet while it is dazed after a leap! The pretzels from all levels are your ammo – they bounce off its armour and only hit while it is dazed.',
   bossWin:'You did it! The inner couch beast is defeated. Off to the start – begin evenly and enjoy the second half!',
@@ -1091,7 +1126,7 @@ const GT = {
   bossLocked:'The boss fight opens in the last days before the half marathon – from', specialLocked:'Unlocks on',
   pretzels:'Pretzels', gifts:'Presents', sparklers:'Sparklers', time:'Time', funfact:'Fun fact', drink:'Drink', gel:'Gel',
   excuses:['Too cold!','Tomorrow!','No time!','Rain!','Too tired!','Couch!','Later!','Nah!'],
-  gearTitle:'Your gear', story:'Story', lang:'Language', controls:'Controls: ◀ ▶ run, ⤒ jump, 🥨 throw a pretzel (keyboard: ← → run, ↑ jump, space or X to throw)',
+  gearTitle:'Your gear', story:'Story', lang:'Language', controls:'Controls: ◀ ▶ run, ⤒ jump, 🥨 throw a pretzel (keyboard: ← → run, ↑ jump, space or X to throw; boss fight: 1 drink, 2 gel)',
   bossGear:'How your gear helps in the boss fight:', start:'Start', level:'Level', hp:'Couch beast',
   advent:'Advent calendar', door:'Door', openFrom:'opens on', funFact:'Fun fact', realFact:'Real fact', bonus:'Bonus mini-game', source:'Source'
  }
@@ -1099,7 +1134,7 @@ const GT = {
 
 /* ===================== MUSIK & SOUNDS =====================
    Eigene Kompositionen, live per Web Audio erzeugt – keine fremden Aufnahmen, daher lizenzfrei.
-   „retro“: fröhliches 8-Bit-Jump-'n'-Run-Thema (Level & Specials) · „boss“: tiefes, episches Kampfthema mit Chor und Pauken.
+   „retro“: fröhliches 8-Bit-Jump-'n'-Run-Thema (Level & Specials) · „boss“: düstere Mittelalter-Schlacht in d-Moll (harmonisch), schwerer 4/4-Kriegsmarsch mit Männerchor, tiefem Bordun, Horn und Kriegstrommeln.
    Sounds: Brezel, Ausrüstung, Sprung, Wurf, K.O., Treffer, Level geschafft, Sieges-Fanfare. */
 const Music = (() => {
   let ac = null, master = null, sfxOut = null, timer = 0, cur = null, step = 0, nextT = 0, noiseBuf = null, pulse12 = null, pulse25 = null;
@@ -1133,12 +1168,17 @@ const Music = (() => {
     bass:['C2','A1','F1','G1','C2','A1','D2','C2'], fifth:['G2','E2','C2','D2','G2','E2','A2','G2'],
     lead:[[['E5',1],['G5',1],['C6',2],['G5',1],['E5',1],['G5',2]],[['A5',2],['E5',1],['A5',1],['C6',2],['B5',1],['A5',1]],[['F5',1],['A5',1],['C6',1],['A5',1],['F5',2],['A5',2]],[['G5',2],['B5',1],['D6',1],['G6',3],[null,1]],
           [['E6',1],['D6',1],['C6',1],['G5',1],['E5',2],['C5',2]],[['A5',1],['B5',1],['C6',1],['E6',1],['D6',2],['C6',2]],[['D6',2],['C6',1],['B5',1],['G5',2],['B5',2]],[['C6',4],['G5',2],['C6',2]]] };
-  /* ---- Episches Boss-Thema (c-Moll, tief, 128 bpm) ---- */
-  const BOSS = { bpm:128, chords:[['C3','Eb3','G3'],['C3','Eb3','G3'],['Ab2','C3','Eb3'],['Bb2','D3','F3'],['C3','Eb3','G3'],['F2','Ab2','C3'],['Db3','F3','Ab3'],['G2','B2','D3']],
-    root:['C1','C1','Ab0','Bb0','C1','F1','Db1','G1'],
-    lead:[[['C4',3],['G3',1],['C4',1],['D4',1],['Eb4',2]],[['D4',2],['C4',1],['Bb3',1],['G3',4]],[['Ab3',2],['C4',2],['Eb4',3],['D4',1]],[['D4',2],['F4',2],['Bb4',4]],
-          [['C5',3],['Bb4',1],['G4',2],['Eb4',2]],[['F4',2],['Eb4',1],['D4',1],['C4',4]],[['Db4',2],['F4',2],['Ab4',2],['Db5',2]],[['B4',4],['D5',2],['G4',2]]] };
-
+  /* ---- Düstere Mittelalter-Schlacht (d-Moll harmonisch, 4/4, langsam & schwer, eigene Komposition) ---- */
+  const BOSS = { bpm:140, spb:8, bars:16,
+    root:['D2','A1','Bb1','A1','D2','A1','G1','A1','D2','G1','D2','A1','D2','Bb1','G1','D2'],
+    lead:[[['D4',4],['Eb4',2],['D4',2]],[['C#4',2],['D4',2],['A3',4]],[['Bb3',4],['A3',2],['G3',2]],[['A3',8]],
+          [['D4',4],['F4',2],['Eb4',2]],[['D4',2],['C#4',2],['D4',4]],[['Bb3',2],['A3',2],['G3',2],['F3',2]],[['A3',4],[null,4]],
+          [['A4',4],['Bb4',2],['A4',2]],[['G4',2],['F4',2],['E4',4]],[['F4',4],['E4',2],['D4',2]],[['C#4',8]],
+          [['D4',2],['F4',2],['A4',2],['D5',2]],[['C#5',4],['Bb4',2],['A4',2]],[['G4',2],['F4',2],['Eb4',2],['C#4',2]],[['D4',4],[null,4]]] };
+  const BOSS_CH = { D2:['D3','F3','A3'], A1:['C#3','E3','A3'], Bb1:['Bb2','D3','F3'], G1:['G2','Bb2','D3'] };
+  function bigDrum(t, vol){ const o=ac.createOscillator(), g=ac.createGain(); o.frequency.setValueAtTime(95,t); o.frequency.exponentialRampToValueAtTime(38,t+0.22); o.connect(g); g.connect(master);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.008); g.gain.exponentialRampToValueAtTime(0.0001,t+0.55); o.start(t); o.stop(t+0.6); noise(master,t,0.09,vol*0.3,0,350); }
+  function tabor(t, vol){ noise(master, t, 0.07, vol, 1500); note(master,'triangle',160,t,0.08,vol*0.7,{slide:110}); }
   function scheduleRetro(t, s8, bar){ const tr=RETRO, e8=60/tr.bpm/2;
     if (s8===0){ let pos=0; tr.lead[bar].forEach(([n,d])=>{ if (n) note(master,'p25',N(n)/2,t+pos*e8,d*e8*0.9,0.13,{hold:0.6}); pos+=d; }); }
     note(master,'triangle', N(s8%2 ? tr.fifth[bar] : tr.bass[bar]), t, e8*0.8, 0.28, {hold:0.7});
@@ -1147,23 +1187,28 @@ const Music = (() => {
     if (s8===0 || s8===4) note(master,'triangle', 140, t, 0.09, 0.4, {slide:45});
     if (s8===2 || s8===6) noise(master, t, 0.09, 0.12, 1800);
   }
-  function scheduleBoss(t, s8, bar){ const tr=BOSS, e8=60/tr.bpm/2;
-    if (s8===0){ const ch=tr.chords[bar];
-      ch.forEach(n=>[-9,9].forEach(dt=>{ note(master,'sawtooth', N(n)*(1+dt/1200), t, e8*8, 0.03, {cut:520, band:true, q:2.5, att:0.35, hold:0.85}); }));   // Chor (tief)
-      ch.forEach(n=>note(master,'sawtooth', N(n)/2, t, e8*8, 0.022, {cut:380, att:0.2, hold:0.9}));                                                            // tiefe Streicher
-      let pos=0; tr.lead[bar].forEach(([n,d])=>{ if (n){ note(master,'sawtooth', N(n), t+pos*e8, d*e8*0.95, 0.07, {cut:1100, att:0.04, hold:0.8, vib:true}); note(master,'square', N(n)/2, t+pos*e8, d*e8*0.95, 0.05, {cut:600, att:0.05, hold:0.8}); } pos+=d; }); // Blechbläser
-      if (bar===0) noise(master, t, 2.2, 0.06, 3000);
+  function scheduleBoss(t, st, bar){ const tr=BOSS, e8=60/tr.bpm/2, barLen=e8*tr.spb, rn=tr.root[bar], r=N(rn);
+    if (st===0){
+      // tiefer Bordun (D) – düster und bedrohlich
+      [['D1',0.09],['A1',0.05]].forEach(([n,v])=>note(master,'sawtooth', N(n), t, barLen+0.06, v, {cut:220, att:0.05, hold:0.95}));
+      // Männerchor „Ahh“ in Moll
+      BOSS_CH[rn].forEach(n=>[-8,8].forEach(dt=>note(master,'sawtooth', N(n)*(1+dt/1200), t, barLen+0.05, 0.045, {cut:480, band:true, q:2.6, att:0.4, hold:0.9})));
+      // Horn/Schalmei-Melodie, tief, ohne Verzierungen
+      let pos=0; tr.lead[bar].forEach(([n,d])=>{ if (n){ const tt=t+pos*e8, len=d*e8*0.97;
+        note(master,'sawtooth', N(n), tt, len, 0.12, {cut:950, att:0.06, hold:0.85, vib:d>=4});
+        note(master,'square', N(n)/2, tt, len, 0.06, {cut:500, att:0.06, hold:0.85}); } pos+=d; });
+      if (bar%4===0) noise(master, t, 2.6, 0.035, 2500);                                         // dunkles Becken-Rauschen
     }
-    const r = N(tr.root[bar]); note(master,'sawtooth', r*2, t, e8*0.45, 0.14, {cut:300}); note(master,'sawtooth', r*2, t+e8/2, e8*0.4, 0.1, {cut:280});   // Ostinato
-    if (s8===0 || s8===4) timpani(master, t, r*2, 0.5, 0.7);
-    if (s8===3 || s8===7) timpani(master, t, r*3, 0.25, 0.4);
-    if (s8===2 || s8===6) noise(master, t, 0.18, 0.1, 1200);
-    if (bar===7 && s8>=4){ timpani(master, t+e8/2, r*3, 0.25, 0.25); }
+    if (st===0 || st===4) note(master,'sawtooth', r, t, e8*1.8, 0.14, {cut:200, hold:0.6});           // schwerer Bass
+    // Kriegstrommeln: BUMM – – BUMM BUMM – BUMM –
+    if (st===0) bigDrum(t, 0.7); if (st===3) bigDrum(t, 0.45); if (st===4) bigDrum(t, 0.6); if (st===6) bigDrum(t, 0.4);
+    if (st===2 || st===6) tabor(t, 0.05);
+    if (bar%8===7 && st>=4){ bigDrum(t, 0.5); bigDrum(t+e8/2, 0.55); }                                  // Trommelwirbel
   }
   function schedule(){
-    const bpm = cur==='boss' ? BOSS.bpm : RETRO.bpm, e8 = 60/bpm/2;
-    while (nextT < ac.currentTime + 0.15){ const bar = Math.floor(step/8) % 8, s8 = step % 8;
-      if (cur==='boss') scheduleBoss(nextT, s8, bar); else scheduleRetro(nextT, s8, bar);
+    const boss = cur==='boss', bpm = boss ? BOSS.bpm : RETRO.bpm, e8 = 60/bpm/2, spb = boss ? BOSS.spb : 8, bars = boss ? BOSS.bars : 8;
+    while (nextT < ac.currentTime + 0.15){ const bar = Math.floor(step/spb) % bars, s8 = step % spb;
+      if (boss) scheduleBoss(nextT, s8, bar); else scheduleRetro(nextT, s8, bar);
       nextT += e8; step++; }
   }
   const api = {
@@ -1216,7 +1261,10 @@ const Game = (() => {
     { sky:['#f2a76b','#ffe3b8'], ground:'#6aa152', dirt:'#7a5236', deco:'castle' },
     { sky:['#90c2ea','#f6f1dc'], ground:'#bfa98f', dirt:'#7d6b5b', deco:'forest', stairs:true },
     { sky:['#e88a5a','#ffd39a'], ground:'#5a8a3e', dirt:'#5b4330', deco:'forest2', hilly:true },
-    { sky:['#14183a','#3a3f7a'], ground:'#8a7f86', dirt:'#4a4250', deco:'night', night:true }
+    { sky:['#14183a','#3a3f7a'], ground:'#8a7f86', dirt:'#4a4250', deco:'night', night:true },
+    { sky:['#a7c3dc','#eef1ec'], ground:'#5f8a4a', dirt:'#5b4330', deco:'koenig', hilly:true },
+    { sky:['#8fc3ea','#fff1c9'], ground:'#9bbb5e', dirt:'#7a5236', deco:'zoo' },
+    { sky:['#f0a070','#ffe0b0'], ground:'#b8a490', dirt:'#6e5e50', deco:'uni', cobble:true }
   ];
   const SPECIAL = {
     xmas: { sky:['#14254a','#405c86'], ground:'#f4f8ff', dirt:'#7d6a5a', deco:'xmas', snow:true, night:true },
@@ -1283,7 +1331,7 @@ const Game = (() => {
   function start(mode, idx){
     const gearN = S.game.gear;
     let theme, lv, cfg = { mode, idx };
-    if (mode==='level'){ theme = THEMES[idx]; lv = gen(theme, 1000+idx*77, idx, 120+idx*14, { item: gearN[GEAR[idx].id] ? null : idx }); cfg.collect='🥨'; }
+    if (mode==='level'){ theme = THEMES[idx]; lv = gen(theme, 1000+idx*77, idx, 120+idx*14, { item: (!GEAR[idx] || gearN[GEAR[idx].id]) ? null : idx }); cfg.collect='🥨'; }
     else if (mode==='xmas'){ theme = SPECIAL.xmas; lv = gen(theme, 2412, 3, 150, {}); cfg.collect='🎁'; }
     else if (mode==='nye'){ theme = SPECIAL.nye; lv = gen(theme, 3112, 4, 150, {}); cfg.collect='🎇'; cfg.timer = 80*60; }
     else if (mode==='mini'){ theme = SPECIAL.mini; lv = gen(theme, 1700+(idx||0), 1, 80, {}); cfg.collect='❄️'; }
@@ -1630,6 +1678,32 @@ const Game = (() => {
         ctx.fillStyle='rgba(255,240,170,.95)'; ctx.beginPath(); ctx.arc(bx-1,by-8,1.8,0,7); ctx.fill(); ctx.fillStyle='rgba(255,240,170,.25)'; ctx.beginPath(); ctx.moveTo(bx-1,by-8); ctx.lineTo(bx-30,by-14); ctx.lineTo(bx-30,by-1); ctx.fill();
         ctx.fillStyle='#e53935'; ctx.fillRect(bx+19,by-9,2,2); }
       layer(0.8, 90, (x)=>{ ctx.fillStyle='#333'; ctx.fillRect(x,150,2,60); ctx.fillStyle='rgba(255,230,140,.9)'; ctx.beginPath(); ctx.arc(x+1,150,4,0,7); ctx.fill(); }); }
+    if (kind==='koenig'){ hills(cam*0.12, farHill, 105, 26, 1);                                                                  // Königstuhl: Fernsehturm, Sternwarte, Wald, Nebel
+      layer(0.2, 460, (x)=>{ const tx=x+300; ctx.fillStyle='#d9d4c8'; ctx.fillRect(tx-3,40,6,120); ctx.fillStyle='#c9c2b4'; ctx.fillRect(tx-9,70,18,10); ctx.fillStyle='#b7473a'; ctx.fillRect(tx-2,26,4,14); ctx.fillStyle='#e8e2d6'; ctx.fillRect(tx-6,62,12,8);
+        ctx.fillStyle='rgba(255,60,40,'+(0.5+0.5*Math.sin(G.t/12))+')'; ctx.beginPath(); ctx.arc(tx,25,1.6,0,7); ctx.fill();
+        ctx.fillStyle='#cfc8bb'; ctx.fillRect(x+110,118,46,24); ctx.fillStyle='#e9e5dc'; ctx.beginPath(); ctx.arc(x+133,118,17,Math.PI,0); ctx.fill(); ctx.fillStyle='#8d877c'; ctx.fillRect(x+131,102,4,14); ctx.fillStyle='#b9b2a5'; ctx.fillRect(x+110,140,46,3); });
+      hills(cam*0.3, '#5d8a55', 150, 22, 2);
+      layer(0.45, 26, (x,i)=>{ if (hash(i)<0.8) tree(x, 190, 0.8+hash(i+3)*0.6, i%3?'#2d5f35':'#3c7440'); });
+      ctx.fillStyle='rgba(255,255,255,.1)'; for (let k=0;k<3;k++){ const fx=((k*260 - cam*0.25 - G.t*0.15) % (VW+300) + VW+300) % (VW+300) - 150; ctx.beginPath(); ctx.ellipse(fx, 150+k*12, 120, 10, 0, 0, 7); ctx.fill(); } }
+    if (kind==='zoo'){ hills(cam*0.15, farHill, 120, 30, 1); hills(cam*0.3, '#79a85c', 150, 20, 2);                         // Heidelberger Zoo: Giraffe, Elefant, Flamingos hinter dem Zaun
+      layer(0.4, 520, (x)=>{ const gx=x+90, nod=Math.sin(G.t/40)*2;                                                             // Giraffe
+        ctx.fillStyle='#e2b25a'; ctx.fillRect(gx,150,30,16); [0,8,20,27].forEach(lx=>ctx.fillRect(gx+lx,164,3,22)); ctx.save(); ctx.translate(gx+27,154); ctx.rotate(0.33); ctx.fillRect(-3,-48,7,50); ctx.restore(); ctx.fillRect(gx+38,104+nod,12,7);
+        ctx.fillStyle='#9b6a2c'; [[4,153],[14,157],[22,152],[33,120],[30,132],[29,144]].forEach(([a,b])=>{ ctx.beginPath(); ctx.arc(gx+a,b,2.2,0,7); ctx.fill(); }); ctx.fillStyle='#6b4a2b'; ctx.fillRect(gx+39,100+nod,2,4); ctx.fillRect(gx+44,100+nod,2,4);
+        const ex=x+300; ctx.fillStyle='#8f8f95'; ctx.beginPath(); ctx.ellipse(ex,166,26,16,0,0,7); ctx.fill(); [-18,-8,8,16].forEach(lx=>ctx.fillRect(ex+lx,176,7,12));   // Elefant
+        ctx.beginPath(); ctx.arc(ex+24,158,11,0,7); ctx.fill(); ctx.fillStyle='#7c7c83'; ctx.beginPath(); ctx.ellipse(ex+18,158,6,9,0,0,7); ctx.fill(); ctx.strokeStyle='#8f8f95'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(ex+33,162); ctx.quadraticCurveTo(ex+40,176+Math.sin(G.t/20)*3,ex+34,184); ctx.stroke(); ctx.lineWidth=1;
+        ctx.fillStyle='#222'; ctx.fillRect(ex+27,155,2,2);
+        [430,446,460].forEach((fx,k)=>{ const bx=x+fx; ctx.strokeStyle='#e46b8a'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(bx,190); ctx.lineTo(bx,174); ctx.stroke(); ctx.fillStyle='#f28aa5'; ctx.beginPath(); ctx.ellipse(bx,172,6,4,0,0,7); ctx.fill(); ctx.beginPath(); ctx.moveTo(bx+4,171); ctx.quadraticCurveTo(bx+10,158,bx+7,155+k); ctx.stroke(); ctx.fillStyle='#222'; ctx.fillRect(bx+6,154+k,3,1.6); }); });
+      layer(0.55, 22, (x)=>{ ctx.fillStyle='#7a5a3a'; ctx.fillRect(x,178,2,16); ctx.fillRect(x-11,182,22,2); ctx.fillRect(x-11,189,22,2); });   // Holzzaun
+      layer(0.5, 260, (x,i)=>{ if (hash(i)<0.6) tree(x+40, 182, 1.2, '#4c8a3f'); }); }
+    if (kind==='uni'){ hills(cam*0.12, farHill, 110, 26, 1);                                                                     // Universitätsplatz: Alte Universität, Löwenbrunnen
+      layer(0.3, 560, (x)=>{ const ux=x+60; ctx.fillStyle='#e7c98f'; ctx.fillRect(ux,104,220,92); ctx.fillStyle='#d2b073'; ctx.fillRect(ux,104,220,6); ctx.fillRect(ux+96,96,28,100);
+        ctx.fillStyle='#8a4b3a'; ctx.beginPath(); ctx.moveTo(ux-6,104); ctx.lineTo(ux+110,80); ctx.lineTo(ux+226,104); ctx.fill(); ctx.fillStyle='#e7c98f'; ctx.beginPath(); ctx.moveTo(ux+96,96); ctx.lineTo(ux+110,84); ctx.lineTo(ux+124,96); ctx.fill();
+        ctx.fillStyle='#5a6f86'; for (let r=0;r<3;r++) for (let c=0;c<9;c++){ if (c===4) continue; ctx.fillRect(ux+10+c*23, 116+r*26, 9, 14); }
+        ctx.fillStyle='#6b3a24'; ctx.fillRect(ux+102,172,16,24); ctx.beginPath(); ctx.arc(ux+110,172,8,Math.PI,0); ctx.fill(); ctx.fillStyle='#c9a35a'; ctx.beginPath(); ctx.arc(ux+110,108,6,0,7); ctx.fill();
+        const fx=x+380; ctx.fillStyle='#b3a796'; ctx.beginPath(); ctx.ellipse(fx,190,34,6,0,0,7); ctx.fill(); ctx.fillRect(fx-30,180,60,10); ctx.fillStyle='#7fb6dc'; ctx.fillRect(fx-27,181,54,4);   // Löwenbrunnen
+        ctx.fillStyle='#a49886'; ctx.fillRect(fx-4,150,8,32); ctx.fillStyle='#c3a35e'; ctx.beginPath(); ctx.ellipse(fx,146,9,6,0,0,7); ctx.fill(); ctx.beginPath(); ctx.arc(fx+8,142,4,0,7); ctx.fill(); ctx.fillStyle='#a9853f'; ctx.beginPath(); ctx.arc(fx+7,142,5.5,Math.PI*0.6,Math.PI*1.7); ctx.fill();
+        ctx.strokeStyle='rgba(160,210,240,.8)'; ctx.lineWidth=1.2; [-1,1].forEach(d=>{ ctx.beginPath(); ctx.moveTo(fx+d*3,158); ctx.quadraticCurveTo(fx+d*16,152,fx+d*22,182); ctx.stroke(); }); ctx.lineWidth=1; });
+      tourists(cam); }
     if (kind==='xmas'){ hills(cam*0.15, farHill, 115, 30, 1); layer(0.3, 640, (x)=>churchTower(x+260, 192, 1.0)); layer(0.5, 52, (x,i)=>house(x, 190, i)); layer(0.7, 120, (x,i)=>stall(x, 196, i)); } // Weihnachtsmarkt am Marktplatz
     if (kind==='nye'){ hills(cam*0.15, farHill, 120, 30, 1); river(160, 80); layer(0.3, 500, (x)=>bridge(x+60, 172, true)); fireworks(); }
     if (kind==='finish'){ layer(0.0, 60, (x,i)=>house(x, 200, i)); sofa(250,182); ctx.fillStyle='rgba(0,0,0,.35)'; for(let i=0;i<40;i++){ const hx=i*11; ctx.beginPath(); ctx.arc(hx, 192+Math.sin(G.t/8+i)*2, 5,0,7); ctx.fill(); }
@@ -1723,14 +1797,17 @@ const Game = (() => {
     cv.style.width = w+'px'; cv.style.height = (w*VH/VW)+'px'; const dpr = window.devicePixelRatio||1; scale = w/VW*dpr; cv.width = Math.round(VW*scale); cv.height = Math.round(VH*scale); }
   function bindTouch(id, k){ const el=document.getElementById(id); const on=e=>{ e.preventDefault(); keys[k]=true; el.classList.add('on'); }; const off=e=>{ e.preventDefault(); if(k!=='drink'&&k!=='gel') keys[k]=false; el.classList.remove('on'); };
     el.addEventListener('pointerdown',on); ['pointerup','pointerleave','pointercancel'].forEach(t=>el.addEventListener(t,off)); }
-  function updateBossBtns(){ if(!G) return; const d=document.getElementById('gDrink'), g=document.getElementById('gGel'); d.textContent='🥤 '+L().drink+' ('+G.drink+')'; g.textContent='⚡ '+L().gel+' ('+G.gelUse+')'; d.disabled=!G.drink; g.disabled=!G.gelUse; }
+  const touchOnly = () => window.matchMedia && window.matchMedia('(hover: none)').matches;
+  function powerUp(k){ if (!G || G.state!=='play') return; if (k==='drink'){ if (!G.drink) return toast('🥤 0'); if (G.hearts>=G.maxH) return toast('❤️ '+(S.game.lang==='de'?'Herzen sind voll':'Hearts are full')); } if (k==='gel' && !G.gelUse) return toast('⚡ 0'); keys[k]=true; }
+  function updateBossBtns(){ if(!G) return; const d=document.getElementById('gDrink'), g=document.getElementById('gGel'), kt = touchOnly() ? ['',''] : [' · 1',' · 2']; d.textContent='🥤 '+L().drink+' ('+G.drink+')'+kt[0]; g.textContent='⚡ '+L().gel+' ('+G.gelUse+')'+kt[1]; d.disabled=!G.drink; g.disabled=!G.gelUse; }
   let toastT=0; function toast(t){ const el=document.getElementById('gToast'); el.textContent=t; el.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),1800); }
 
   function init(){
     cv = document.getElementById('gc'); ctx = cv.getContext('2d');
     bindTouch('gL','left'); bindTouch('gR','right'); bindTouch('gJ','jump'); bindTouch('gS','shoot'); bindTouch('gDrink','drink'); bindTouch('gGel','gel');
     const km = { ArrowLeft:'left', ArrowRight:'right', ArrowUp:'jump', a:'left', d:'right', w:'jump', ' ':'shoot', x:'shoot', X:'shoot', f:'shoot', Enter:'shoot' };
-    addEventListener('keydown', e=>{ if (!G) return; if (km[e.key]){ keys[km[e.key]]=true; e.preventDefault(); } if (e.key==='1') keys.drink=true; if (e.key==='2') keys.gel=true; });
+    addEventListener('keydown', e=>{ if (!G) return; if (km[e.key]){ keys[km[e.key]]=true; e.preventDefault(); }
+      if (G.cfg && G.cfg.mode==='boss'){ const c=e.code||''; if (e.key==='1'||c==='Digit1'||c==='Numpad1'||e.key==='q'||e.key==='Q'){ powerUp('drink'); e.preventDefault(); } if (e.key==='2'||c==='Digit2'||c==='Numpad2'||e.key==='e'||e.key==='E'){ powerUp('gel'); e.preventDefault(); } } });
     addEventListener('keyup', e=>{ if (km[e.key]) keys[km[e.key]]=false; });
     addEventListener('resize', resize);
   }
@@ -1902,13 +1979,13 @@ function applyTestDate(){ TEST_DATE = (isCreator() && S && S.dev.testDate) ? S.d
 /* ---------- Hilfen ---------- */
 function curWeekIdx(){ const m = mondayOf(todayS()); let i = S.weeks.findIndex(w=>w.monday===m); if (i<0) i = todayS() < S.weeks[0].monday ? 0 : S.weeks.length-1; return i; }
 function daysToRace(){ return daysBetween(todayS(), S.profile.race); }
-function myPaces(){ if (!S.profile.tenK) return null; const P = paces(S.profile.tenK); if (S.profile.goal){ P.HMtime = S.profile.goal; P.HM = S.profile.goal/21.0975; } return P; }
+function myPaces(wi){ if (!S.profile.tenK) return null; if (wi==null) wi = S.weeks.length ? curWeekIdx() : 0; const P = paces(weekTenK(S, wi) || S.profile.tenK); if (S.profile.goal){ P.HMtime = S.profile.goal; P.HM = S.profile.goal/21.0975; } return P; }
 function parseGoal(v){ v=String(v||'').trim().replace(',',':').replace('.',':').replace(/\s*h$/i,''); if (!v) return null; const p=v.split(':').map(Number); if (p.some(isNaN)) return null;
   if (p.length===1) return p[0]>=60 && p[0]<=300 ? p[0]*60 : null; if (p.length===2) return p[0]<=5 ? p[0]*3600+p[1]*60 : p[0]*60+p[1]; return p[0]*3600+p[1]*60+p[2]; }
 function goalText(g){ return g ? fmtTime(g).replace(/:00$/,'')+' h' : 'Ankommen'; }
 function dayIndex(){ return Math.floor(parseD(todayS())/DAY); }
 function hfMax(){ const p=S.profile; if (p.noHR) return null; if (p.hfmax) return p.hfmax; if (p.age) return 220 - p.age; return null; }
-function intensity(code){ const t=TYPES[code]; if(!t) return ''; if (S.profile.noHR) return t.feel ? 'Gefühl: '+t.feel : '';
+function intensity(code){ const t=TYPES[code]; if(!t) return ''; if (S.profile.noHR) return t.feel || '';
   const hf=hfMax(); const m=(t.hf||'').match(/(\d+)–(\d+) %/), m1=(t.hf||'').match(/ca\. (\d+) %/);
   if (hf && m) return t.hf+' ≈ '+Math.round(hf*m[1]/100)+'–'+Math.round(hf*m[2]/100)+' Schläge/min'; if (hf && m1) return t.hf+' ≈ '+Math.round(hf*m1[1]/100)+' Schläge/min'; return t.hf; }
 function streak(){ let s=0; const cur=curWeekIdx(); for (let i=cur;i>=0;i--){ const any=S.weeks[i].sessions.some(x=>x.done); if (any) s++; else if (i===cur) continue; else break; } return s; }
@@ -1929,9 +2006,9 @@ function renderLogin(mode){
   mode = mode || 'login';
   $('#app').innerHTML = `<div class="auth">${heroHTML()}<h1 class="apptitle">${APP_NAME}</h1>
     <div class="seg"><button class="${mode==='login'?'on':''}" onclick="renderLogin('login')">Anmelden</button><button class="${mode==='reg'?'on':''}" onclick="renderLogin('reg')">Konto erstellen</button></div>
-    <form id="authForm" class="card" autocomplete="off">
-      <label>Name<input name="n" autocapitalize="words" spellcheck="false" required></label>
-      <label>Passwort<div class="pw"><input name="p" type="text" autocapitalize="none" autocorrect="off" spellcheck="false" required><button type="button" class="pwt" onclick="togglePw(this)">verbergen</button></div>
+    <form id="authForm" class="card" method="post" action="#">
+      <label>Name<input name="n" id="un" autocomplete="username" autocapitalize="words" spellcheck="false" required></label>
+      <label>Passwort<div class="pw"><input name="p" id="pw" type="password" autocomplete="${mode==='login'?'current-password':'new-password'}" autocapitalize="none" autocorrect="off" spellcheck="false" required><button type="button" class="pwt" onclick="togglePw(this)">anzeigen</button></div>
         ${mode==='reg'?'<small>Mindestens 6 Zeichen. Merk es dir gut – es gibt keine E-Mail zum Zurücksetzen.</small>':''}</label>
       <p id="authErr" class="err"></p>
       <button class="btn big">${mode==='login'?'Anmelden':'Konto erstellen'}</button>
@@ -1972,24 +2049,43 @@ function bindDays(form){
 function daysSummary(d){ const it = d.n===2 ? [[d.A,'2. Lauf (abwechselnd)'],[d.L,'langer Lauf']] : [[d.A,'schneller Dauerlauf'],[d.B,'Intervalllauf'],[d.L,'langer Lauf']]; if (d.K!=null) it.push([d.K,'Krafttraining']);
   return it.sort((a,b)=>a[0]-b[0]).map(([x,t])=>`<b>${WD[x]}</b> ${t}`).join(' · '); }
 function openDays(){
-  sheet(`<h3>📅 Trainingstage ändern</h3><p class="muted small">Ab dieser Woche wird dein Plan auf die neuen Tage verteilt; Erledigtes bleibt erhalten.</p>
-    <form id="df">${daysFields(daysOf(S.profile))}<div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn">Übernehmen</button></div></form>`);
+  const p=S.profile;
+  sheet(`<h3>📅 Trainingstage & Umfang</h3><p class="muted small">Ab dieser Woche wird dein Plan angepasst; Erledigtes bleibt erhalten.</p>
+    <form id="df">${daysFields(daysOf(p))}
+      <label>Höchstens so viele Kilometer pro Woche <span class="opt">freiwillig</span><div class="unit"><input name="maxKm" type="number" step="1" min="10" max="${COURSE_MAX}" inputmode="numeric" placeholder="25" value="${p.maxKm||''}"><span>km</span></div><small>Leer lassen: bis 25 km, in einzelnen Wochen 30 km.</small></label>
+      <p id="dfe" class="err"></p><div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn">Übernehmen</button></div></form>`);
   bindDays($('#df'));
-  $('#df').onsubmit = e => { e.preventDefault(); const d = readDays(new FormData(e.target)); const c = checkDays(d); if (c.err) return;
-    changeDays(S, d); syncUnlocks(); save(); closeSheet(); renderApp('plan'); toastMsg('📅 Trainingstage übernommen – Plan angepasst.'); };
+  $('#df').onsubmit = e => { e.preventDefault(); const f=new FormData(e.target); const d = readDays(f); const c = checkDays(d); if (c.err) return;
+    const mk = +String(f.get('maxKm')||'').replace(',','.') || null;
+    if (mk!=null && (mk<10 || mk>COURSE_MAX)) return $('#dfe').textContent='Bitte zwischen 10 und '+COURSE_MAX+' km – oder leer lassen.';
+    const flo = (d.n===2?MIN_RUN:2*MIN_RUN) + longMin(p); if (mk!=null && mk<flo) return $('#dfe').textContent='Mit '+d.n+' Lauftagen braucht der Plan mindestens ca. '+flo+' km pro Woche.';
+    const before = planSnap(); const kmChanged = (mk||null)!==(p.maxKm||null); p.maxKm = mk; if (kmChanged){ p.startKm = null; p.rampR = null; }
+    changeDays(S, d); syncUnlocks(); save(); closeSheet(); renderApp('plan'); showChanges(before, '📅 Tage & Umfang übernommen'); };
 }
+/* Vorher/Nachher-Vergleich der nächsten Wochen, damit Änderungen sichtbar werden */
+function planSnap(){ if (!S || !S.weeks || !S.weeks.length) return null; const cur = curWeekIdx(); const out = {};
+  for (let wi=cur; wi<Math.min(S.weeks.length, cur+4); wi++){ const w=S.weeks[wi], P=myPaces(wi);
+    out[w.monday] = { km: Math.round(w.sessions.reduce((a,x)=>a+(x.km||0),0)), list: w.sessions.map(x=>WD[x.day!=null?x.day:(parseD(x.date).getDay()+6)%7]+' '+sessIcon(x)+' '+sessionLabel(x)+(paceFor(x.code,x.arg,P)?' · '+paceFor(x.code,x.arg,P):'')) }; }
+  return { weeks: out, hm: PLANS[hmPlanForGoal(S.profile.goal)].target }; }
+function showChanges(before, title){ const after = planSnap(); if (!before || !after) return toastMsg(title);
+  const rows = []; Object.keys(after.weeks).forEach((m,k)=>{ const a=after.weeks[m], b=before.weeks[m]; if (!b) return;
+    const lines = a.list.filter(x=>!b.list.includes(x)); if (lines.length || a.km!==b.km) rows.push(`<p><b>${k===0?'Diese Woche':'Woche ab '+niceD(m,{day:'2-digit',month:'2-digit'})}</b>${a.km!==b.km?` · ${b.km} → <b>${a.km} km</b>`:''}</p>${lines.map(x=>`<p class="small">• ${esc(x)}</p>`).join('')}`); });
+  if (before.hm!==after.hm) rows.unshift(`<p><b>Halbmarathon-Plan:</b> ${esc(before.hm)} → <b>${esc(after.hm)}</b></p>`);
+  sheet(`<h3>${esc(title)}</h3>${rows.length ? '<p class="muted small">Das hat sich geändert:</p>'+rows.join('') : '<p>In den nächsten vier Wochen bleibt alles gleich – die Änderung wirkt sich erst später im Plan aus.</p>'}<button class="btn" onclick="closeSheet()">OK</button>`); }
 
 /* ---------- Plan-Fragen ---------- */
+let REDO_SNAP = null;
 function renderSetup(){
   $('#app').innerHTML = `<div class="setup"><div class="setup-h"><div class="kicker">${APP_NAME}</div><h2>Hallo ${esc(Store.user.name)}! Lass uns deinen Plan erstellen.</h2></div>
     <form id="setupForm" class="card">
       <label>Wann startest du mit dem Training?<input type="date" name="start" value="${todayS()}" required></label>
       <label>Was ist die längste Strecke, die du in den letzten Wochen gelaufen bist?<div class="unit"><input name="longest" type="number" step="0.5" min="5" max="42" inputmode="decimal" placeholder="z. B. 10" required><span>km</span></div></label>
-      <label>Wie schnell bist du durchschnittlich bei deinen Läufen unterwegs?<div class="unit"><input name="avg" placeholder="z. B. 6:15" inputmode="numeric" required><span>min/km</span></div><small>Durchschnittstempo pro Kilometer, z. B. aus deiner Laufuhr oder App.</small></label>
-      <label>Bei welchem Tempo fühlst du dich beim Laufen richtig wohl?<div class="unit"><input name="comfort" placeholder="z. B. 6:45" inputmode="numeric" required><span>min/km</span></div><small>Das Tempo, bei dem du locker laufen und dich noch gut unterhalten kannst.</small></label>
-      <label>Wie viele Kilometer läufst du zurzeit ungefähr pro Woche?<div class="unit"><input name="weekKm" type="number" step="1" min="0" max="80" inputmode="numeric" placeholder="z. B. 15"><span>km</span></div><small>Dein Plan startet bei diesem Umfang (höchstens ${START_MAX} km) und steigert sich dann langsam. Leer lassen, wenn du es nicht weißt.</small></label>
+      <label>Wie schnell bist du durchschnittlich bei deinen Läufen unterwegs?<div class="unit">${tIn('avg',['m','s'],null,['6','15'])}<span>min/km</span></div><small>Durchschnittstempo pro Kilometer, z. B. aus deiner Laufuhr oder App.</small></label>
+      <label>Bei welchem Tempo fühlst du dich beim Laufen richtig wohl?<div class="unit">${tIn('comfort',['m','s'],null,['6','45'])}<span>min/km</span></div><small>Das Tempo, bei dem du locker laufen und dich noch gut unterhalten kannst.</small></label>
+      <label>Wie viele Kilometer läufst du zurzeit ungefähr pro Woche? <span class="opt">freiwillig</span><div class="unit"><input name="weekKm" type="number" step="1" min="0" max="80" inputmode="numeric" placeholder="z. B. 15"><span>km</span></div><small>Dein Plan startet bei diesem Umfang (höchstens ${START_MAX} km) und steigert sich dann langsam.</small></label>
+      <label>Wie viele Kilometer möchtest du höchstens pro Woche laufen? <span class="opt">freiwillig</span><div class="unit"><input name="maxKm" type="number" step="1" min="10" max="${COURSE_MAX}" inputmode="numeric" placeholder="z. B. 20"><span>km</span></div><small>Leer lassen: bis 25 km, in einzelnen Wochen 30 km. Höchstens ${COURSE_MAX} km.</small></label>
       ${daysFields(DEFAULT_DAYS)}
-      <label>Welches Zeitziel setzt du dir für den Halbmarathon?<div class="unit"><input name="goal" placeholder="z. B. 2:10" inputmode="numeric"><span>Stunden : Minuten</span></div><small>Leer lassen, wenn du einfach ankommen willst. Du kannst dein Ziel später jederzeit ändern.</small></label>
+      <label>Welches Zeitziel setzt du dir für den Halbmarathon? <span class="opt">freiwillig</span><div class="unit">${tIn('goal',['h','m'],null,['2','10'])}<span>Std : Min</span></div><small>Leer lassen, wenn du einfach ankommen willst. Du kannst dein Ziel später jederzeit ändern.</small></label>
       <fieldset><legend>Herzfrequenz</legend>
         <label class="radio"><input type="radio" name="hr" value="max" checked> Ich kenne meine maximale Herzfrequenz</label>
         <div class="unit sub" data-for="max"><input name="hfmax" type="number" min="120" max="230" placeholder="z. B. 190"><span>Schläge/min</span></div>
@@ -2001,23 +2097,39 @@ function renderSetup(){
       <button class="btn big">Meinen Plan erstellen</button>
     </form></div>`;
   document.querySelectorAll('input[name=hr]').forEach(r=>r.onchange=()=>document.querySelectorAll('.sub').forEach(d=>d.classList.toggle('hidden', d.dataset.for!==r.value || !r.checked)));
-  bindDays($('#setupForm'));
-  $('#setupForm').onsubmit = e => { e.preventDefault(); const f=new FormData(e.target);
+  bindDays($('#setupForm')); bindTimeBoxes($('#setupForm'));
+  $('#setupForm').onsubmit = e => { e.preventDefault(); const f=new FormData(e.target), F=e.target;
     const days = readDays(f), dc = checkDays(days); if (dc.err) return $('#setErr').textContent = dc.err;
-    const weekKm = +String(f.get('weekKm')||'').replace(',','.') || null;
-    const longest=+String(f.get('longest')).replace(',','.'), avg=parseTime(f.get('avg')), comfort=parseTime(f.get('comfort'));
+    const weekKm = +String(f.get('weekKm')||'').replace(',','.') || null, maxKm = +String(f.get('maxKm')||'').replace(',','.') || null;
+    const longest=+String(f.get('longest')).replace(',','.'), avg=readT(F,'avg'), comfort=readT(F,'comfort');
     if (!(longest>=5)) return $('#setErr').textContent='Die längste Strecke sollte mindestens 5 km sein.';
-    if (!avg || avg<150 || avg>720) return $('#setErr').textContent='Bitte gib dein Durchschnittstempo als Minuten:Sekunden pro km ein (z. B. 6:15).';
-    if (!comfort || comfort<150 || comfort>720) return $('#setErr').textContent='Bitte gib dein Wohlfühltempo als Minuten:Sekunden pro km ein (z. B. 6:45).';
-    const goalRaw=f.get('goal'); const goal=parseGoal(goalRaw); if (String(goalRaw||'').trim() && (!goal || goal<3600 || goal>4*3600)) return $('#setErr').textContent='Bitte gib dein Zeitziel als Stunden:Minuten ein (z. B. 2:10) – oder lass das Feld leer.';
+    if (!avg || avg<150 || avg>720) return $('#setErr').textContent='Bitte gib dein Durchschnittstempo in Minuten und Sekunden pro km ein (z. B. 6 : 15).';
+    if (!comfort || comfort<150 || comfort>720) return $('#setErr').textContent='Bitte gib dein Wohlfühltempo in Minuten und Sekunden pro km ein (z. B. 6 : 45).';
+    const goal=readT(F,'goal'); if (goal!=null && (!(goal>=3600) || goal>4*3600)) return $('#setErr').textContent='Bitte gib dein Zeitziel in Stunden und Minuten ein (z. B. 2 : 10) – oder lass die Felder leer.';
+    if (maxKm!=null && (maxKm<10 || maxKm>COURSE_MAX)) return $('#setErr').textContent='Die Höchstgrenze pro Woche sollte zwischen 10 und '+COURSE_MAX+' km liegen – oder lass das Feld leer.';
+    const flo = (days.n===2?MIN_RUN:2*MIN_RUN) + Math.max(6, Math.round(longest*0.7));
+    if (maxKm!=null && maxKm < flo) return $('#setErr').textContent='Mit '+days.n+' Lauftagen und deinem längsten Lauf braucht der Plan mindestens ca. '+flo+' km pro Woche. Wähle eine höhere Grenze oder 2 Lauftage.';
     const hr=f.get('hr'); const est = estimateLevel(avg, comfort);
     const game = S && S.game ? S.game : blank().game; S = normalize(null); S.game = game;
-    S.profile = { name: Store.user.name, start: f.get('start'), race: RACE_DEFAULT, longest, avg, comfort, tenK: est.tenK, level: est.level, goal, days, weekKm,
+    S.profile = { name: Store.user.name, start: f.get('start'), race: RACE_DEFAULT, longest, avg, comfort, tenK: est.tenK, level: est.level, goal, days, weekKm, maxKm,
       hfmax: hr==='max' ? (+f.get('hfmax')||null) : null, age: hr==='age' ? (+f.get('age')||null) : null, noHR: hr==='none' };
-    buildPlan(S); syncUnlocks(); save(); renderApp('today'); };
+    buildPlan(S); syncUnlocks(); save(); renderApp(REDO_SNAP?'plan':'today'); if (REDO_SNAP){ const b=REDO_SNAP; REDO_SNAP=null; showChanges(b, '✨ Neuer Plan erstellt'); } };
 }
 function parseTime(s){ if (!s) return null; const p = String(s).trim().replace(',',':').replace('.',':').split(':').map(Number); if (p.some(isNaN)) return null;
   if (p.length===2) return p[0]*60+p[1]; if (p.length===3) return p[0]*3600+p[1]*60+p[2]; if (p.length===1 && p[0]>0) return p[0]*60; return null; }
+
+/* Zeit-Eingabe in getrennten Kästchen (Handy-Zahlentastatur hat keinen Doppelpunkt) */
+function tIn(name, parts, val, ph){ ph = ph||[]; let v = [];
+  if (val!=null){ v = parts.map(pt=> pt==='h' ? Math.floor(val/3600) : pt==='m' ? (parts[0]==='h' ? Math.floor(val%3600/60) : Math.floor(val/60)) : Math.round(val%60)); v = v.map((x,k)=> parts[k]==='h' || (k===0) ? String(x) : String(x).padStart(2,'0')); if (parts[0]==='h' && v[0]==='0' && parts.length===3) v[0]=''; }
+  return `<div class="tbox" data-t="${name}">${parts.map((pt,k)=>`${k?'<span class="colon">:</span>':''}<input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" data-p="${pt}" maxlength="${pt==='h'?1:(k===0&&name==='tk')?3:2}" ${k===0&&pt==='m'&&parts.length===2&&parts[0]==='m'?'data-quick="1"':''} placeholder="${ph[k]||(pt==='h'?'h':pt==='m'?'mm':'ss')}" value="${v[k]!=null?v[k]:''}" aria-label="${pt==='h'?'Stunden':pt==='m'?'Minuten':'Sekunden'}">`).join('')}</div>`; }
+function readT(root, name){ const box = root.querySelector(`[data-t="${name}"]`); if (!box) return null; const ins=[...box.querySelectorAll('input')]; const v=ins.map(i=>i.value.trim());
+  if (v.every(x=>x==='')) return null; if (v.some(x=>x!=='' && !/^\d+$/.test(x))) return NaN; const n=v.map(x=>+x||0), pt=ins.map(i=>i.dataset.p);
+  for (let k=1;k<pt.length;k++) if (n[k]>59) return NaN; return pt.reduce((a,p,k)=>a + n[k]*(p==='h'?3600:p==='m'?60:1), 0); }
+function bindTimeBoxes(root){ root.querySelectorAll('.tbox input').forEach((inp,k,all)=>{ const box=inp.closest('.tbox'), list=[...box.querySelectorAll('input')], idx=list.indexOf(inp);
+  inp.addEventListener('input', ()=>{ inp.value = inp.value.replace(/\D/g,''); const full = inp.value.length >= +inp.maxLength || (inp.dataset.quick && inp.value.length===1 && +inp.value>=2);
+    if (full && list[idx+1]) { list[idx+1].focus(); list[idx+1].select(); } });
+  inp.addEventListener('keydown', e=>{ if (e.key==='Backspace' && !inp.value && list[idx-1]) { e.preventDefault(); list[idx-1].focus(); } });
+  inp.addEventListener('focus', ()=>inp.select()); }); }
 
 /* ---------- Gerüst ---------- */
 let TAB = 'today';
@@ -2056,45 +2168,56 @@ function renderToday(){
   bindSessions();
 }
 
+function sessIcon(s){ return s.code==='KT' ? '💪' : s.code==='HM' ? '🏁' : CAT_OF[s.code] ? CATS[CAT_OF[s.code]].icon : '🏃'; }
 function sessionHTML(wi, si){
-  const s = S.weeks[wi].sessions[si], T0 = TYPES[s.code]||{}, P = myPaces(); const pace = paceFor(s.code, s.arg, P);
+  const s = S.weeks[wi].sessions[si], P = myPaces(wi); const pace = paceFor(s.code, s.arg, P);
   const isToday = s.date===todayS(); const cls = s.done?'done':s.skipped?'skipped':(s.date<todayS()?'past':'');
   return `<div class="sess ${cls} ${isToday?'today':''} ${s.code==='HM'?'race':''}" data-w="${wi}" data-s="${si}">
     <button class="chk" data-act="done" aria-label="erledigt">${s.done?'✓':''}</button>
     <div class="sx"><div class="sd">${WD[(parseD(s.date).getDay()+6)%7]} ${niceD(s.date,{day:'2-digit',month:'2-digit'})}${isToday?' · <b>heute</b>':''}</div>
-      <div class="sl">${esc(sessionLabel(s))}</div>
-      <div class="sm"><a href="#" data-act="info">${CAT_OF[s.code]?CATS[CAT_OF[s.code]].icon+' '+esc(CATS[CAT_OF[s.code]].name):esc(T0.name||'')} ⓘ</a>${pace?' · '+esc(pace):''}</div>
-      ${s.code==='EDL+ST' && s.arg.includes('/')?`<div class="sm">Steht am nächsten Tag ein Wettkampf an, nur ${esc(s.arg.split('/')[1])} km.</div>`:''}
-      ${intensity(s.code)?`<div class="sm">${esc(intensity(s.code))}</div>`:''}
-      ${s.orig?`<div class="sm">Im Buch ${String(s.orig).replace('.',',')} km – angepasst, damit dein Wochenumfang langsam steigt.</div>`:''}
-      ${s.code==='KT'?`<div class="sm">10 Übungen mit dem eigenen Körpergewicht. <button class="lnk" onclick="event.stopPropagation(); openStrength()">💪 Übungen ansehen</button>${s.wk?' Läufst du am Tag danach einen 10-km-Wettkampf, lass es diese Woche weg.':''}</div>`:''}
-      ${S.weeks[wi].flag==='reentry'?'<div class="sm warn">Wiedereinstieg: Tempo bewusst ruhiger, auf dein Körpergefühl achten.</div>':''}
+      <div class="sl">${sessIcon(s)} ${esc(sessionLabel(s))}</div>
+      ${pace?`<div class="spc">⏱️ <b>${esc(pace)}</b></div>`:''}
       ${s.done ? `<div class="logsum">${esc(logSummary(s))||'Daten eintragen'} <a href="#" data-act="log">✎ bearbeiten</a></div>`:''}
     </div>
-    <button class="skip" data-act="skip" title="ausgefallen">${s.skipped?'↺':'✕'}</button></div>`;
+    <div class="sbtns"><button class="ib" data-act="info" aria-label="Infos">ⓘ</button><button class="skip" data-act="skip" title="ausgefallen">${s.skipped?'↺':'✕'}</button></div></div>`;
+}
+function sessionInfo(wi, si){
+  const s = S.weeks[wi].sessions[si], w = S.weeks[wi], k = CAT_OF[s.code], t = TYPES[s.code]||{};
+  const notes = [];
+  if (intensity(s.code)) notes.push((S.profile.noHR?'🗣️ ':'❤️ ')+intensity(s.code));
+  if (s.code==='EDL+ST' && s.arg.includes('/')) notes.push('Steht am nächsten Tag ein Wettkampf an, nur '+s.arg.split('/')[1]+' km.');
+  if (s.orig) notes.push('Im Buch '+String(s.orig).replace('.',',')+' km – angepasst, damit dein Wochenumfang langsam steigt.');
+  if (s.wk) notes.push('Läufst du am Tag danach einen 10-km-Wettkampf, lass das Krafttraining diese Woche weg.');
+  if (w.flag==='reentry') notes.push('Wiedereinstieg nach einer Pause: Tempo bewusst ruhiger, auf dein Körpergefühl achten.');
+  const head = `<h3>${sessIcon(s)} ${esc(sessionLabel(s))}</h3>${notes.length?`<div class="ffbox light">${notes.map(n=>`<p class="small">${esc(n)}</p>`).join('')}</div>`:''}`;
+  if (s.code==='KT') return sheet(head+`<p>${esc(t.what)}</p><button class="btn" onclick="openStrength()">💪 Übungen ansehen</button><p class="src">${esc(t.src)}</p><button class="btn ghost mt" onclick="closeSheet()">OK</button>`);
+  if (!k) return sheet(head+`<p>${esc(t.what||'')}</p>${t.feel?`<p>🗣️ ${esc(t.feel)}</p>`:''}<p class="src">${esc(t.src||'')}</p><button class="btn" onclick="closeSheet()">OK</button>`);
+  const c = CATS[k];
+  sheet(head+`<p>${esc(t.what)}</p><details class="gl"><summary class="small"><b>Mehr über diese Laufart</b></summary>${catBody(k, wi)}</details>
+    <p class="small muted">Im Buch: ${esc(t.name)} (${esc(s.code)}) · ${esc(t.src)}</p>${isCreator()&&t.dev?`<p class="devnote">🛠 ${esc(t.dev)}</p>`:''}<button class="btn" onclick="closeSheet()">OK</button>`);
 }
 function weekSessions(wi){ const w=S.weeks[wi]; const rest = w.rest.map((t,d)=>t==='-'||t==='P'?WD[d]:null).filter(Boolean);
-  return `<div class="sessions">${w.sessions.map((s,si)=>sessionHTML(wi,si)).join('')}</div>${rest.length?`<p class="muted small">Ruhetage (${rest.join(', ')}): Pause oder leichter Ausgleichssport wie Radfahren oder Schwimmen.</p>`:''}`; }
+  return `<div class="sessions">${w.sessions.map((s,si)=>sessionHTML(wi,si)).join('')}</div>${rest.length?`<p class="muted small">😴 Ruhetage: ${rest.join(', ')}</p>`:''}`; }
 function bindSessions(){
   document.querySelectorAll('.sess').forEach(el=>{
     const s = S.weeks[+el.dataset.w].sessions[+el.dataset.s];
     el.querySelector('[data-act=done]').onclick = () => { if (s.code==='KT'){ s.done=!s.done; if (s.done) s.skipped=false; save(); renderApp(); if (s.done) toastMsg('💪 Krafttraining erledigt!'); return; } if (s.done){ const before=totalKm(S); s.done=false; save(); afterKm(before); } else openLog(s); };
     el.querySelector('[data-act=skip]').onclick = () => { s.skipped=!s.skipped; if (s.skipped) s.done=false; save(); renderApp(); };
-    el.querySelector('[data-act=info]').onclick = e => { e.preventDefault(); typeInfo(s.code); };
+    el.querySelector('[data-act=info]').onclick = e => { e.preventDefault(); sessionInfo(+el.dataset.w, +el.dataset.s); };
     const lg = el.querySelector('[data-act=log]'); if (lg) lg.onclick = e => { e.preventDefault(); openLog(s); };
   });
 }
 function logFields(o){ return `<div class="grid2">
   <label>Kilometer<input name="km" type="number" step="0.01" min="0" inputmode="decimal" value="${o.kmDone!=null?o.kmDone:(o.km||'')}" placeholder="optional"></label>
-  <label>Zeit<input name="time" placeholder="h:mm:ss oder mm:ss" value="${o.time?fmtTime(o.time):''}"></label>
+  <label>Zeit ${tIn('time',['h','m','s'],o.time||null,['h','mm','ss'])}</label>
   ${S.profile.noHR?'':`<label>Ø Herzfrequenz<input name="hr" type="number" min="60" max="230" inputmode="numeric" value="${o.hr||''}" placeholder="optional"></label>`}
   <label>Höhenmeter<input name="hm" type="number" min="0" inputmode="numeric" value="${o.hm||''}" placeholder="optional"></label></div>
   <p class="small muted">Alle Angaben sind freiwillig.</p>`; }
-function readLog(f, o){ const km=String(f.get('km')).replace(',','.'); o.kmDone = km===''?null:Math.max(0,+km); o.time = parseTime(f.get('time'))||null;
+function readLog(f, o, root){ const km=String(f.get('km')).replace(',','.'); o.kmDone = km===''?null:Math.max(0,+km); const tt = readT(root||$('#sheet'),'time'); o.time = tt>0 ? tt : null;
   o.hr = +f.get('hr')||null; o.hm = +f.get('hm')||null; }
 function openLog(s){
   sheet(`<h3>✓ ${esc(sessionLabel(s))}</h3><p class="muted small">${niceD(s.date)} – trag ein, was du gelaufen bist.</p><form id="lf">${logFields(s)}
-    <div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn">Speichern</button></div></form>`);
+    <div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn">Speichern</button></div></form>`); bindTimeBoxes($('#lf'));
   $('#lf').onsubmit = e => { e.preventDefault(); const before=totalKm(S); readLog(new FormData(e.target), s); s.done=true; s.skipped=false; save(); closeSheet(); afterKm(before); };
 }
 function afterKm(before){
@@ -2103,10 +2226,10 @@ function afterKm(before){
   if (newly.length && !isCreator()){ const i=newly[newly.length-1]; toastMsg('🎉 Level '+(i+1)+' „'+GT[S.game.lang].levels[i].name+'“ freigeschaltet!'); }
   else if (after>before) toastMsg(MOTIVATION[(dayIndex()+Math.floor(after))%MOTIVATION.length].t);
 }
-function catBody(k){ const c=CATS[k], P=myPaces(); const pr = P ? catPace(k,P) : '';
+function catBody(k, wi){ const c=CATS[k], P=myPaces(wi); const pr = P ? catPace(k,P) : '';
   return `<p>${esc(c.what)}</p><p><b>Wofür?</b> ${esc(c.why)}</p><p>❤️ <b>Mit Puls:</b> ${esc(c.hf)}</p><p>🗣️ <b>Nach Gefühl:</b> ${esc(c.feel)}</p>${pr?`<p>⏱️ <b>Dein Tempo:</b> ${esc(pr)}</p>`:''}
     <p class="small muted">📖 <b>Im Buch:</b> ${esc(c.book)}</p><span class="src">${esc(c.src)}</span>`; }
-function catPace(k,P){ if (k==='G') return fmtPace(P.EDL)+'–'+fmtPace(P.RDL)+' min/km'; if (k==='S') return 'zügig '+fmtPace(P.IDL)+', schnell '+fmtPace(P.TDL)+' min/km'; if (k==='I') return 'schnelle Abschnitte '+fmtPace(P.WHL1)+'–'+fmtPace(P.WHL3)+' min/km, im Renntempo '+fmtPace(P.HM)+' min/km'; return ''; }
+function catPace(k,P){ const f=fmtPace10; if (k==='G') return f(P.EDL)+'–'+f(P.RDL)+' min/km'; if (k==='S') return 'zügig '+f(P.IDL)+', schnell '+f(P.TDL)+' min/km'; if (k==='I') return 'schnelle Abschnitte '+f(P.WHL1)+'–'+f(P.WHL3)+' min/km, im Renntempo '+f(P.HM)+' min/km'; return ''; }
 function typeInfo(code){ const k=CAT_OF[code];
   if (k){ const t=TYPES[code], c=CATS[k];
     return sheet(`<h3>${c.icon} ${esc(c.name)}</h3>${catBody(k)}
@@ -2151,28 +2274,38 @@ function openStrength(){ sheet(`<h3>💪 Krafttraining – Übungsvorschläge</h
 
 /* ---------- Plan ---------- */
 function renderPlan(){
-  const cur = curWeekIdx(); let lastB = null; const p=S.profile; const hmKey = hmPlanForGoal(p.goal), hmPlan = PLANS[hmKey]; const ambitious = p.goal && p.tenK > HM_REQ[hmKey] + 90;
+  const cur = curWeekIdx(); let lastB = null; const p=S.profile; const hmKey = hmPlanForGoal(p.goal); const ambitious = p.goal && p.tenK > HM_REQ[hmKey] + 90;
+  const d = daysOf(p), lim = kmLimits(p);
   const html = S.weeks.map((w,wi)=>{
-    const head = w.b!==lastB ? `<div class="block-h"><h3>${esc(w.title)}</h3><span class="src">${esc(w.src)}</span></div>` : ''; lastB = w.b;
+    const head = w.b!==lastB ? `<div class="block-h"><h3>${esc(w.title)}</h3></div>` : ''; lastB = w.b;
     const done = w.sessions.filter(s=>s.done).length, km = w.sessions.reduce((a,s)=>a+(s.km||0),0);
-    return head + `<details class="week ${wi===cur?'cur':''} ${w.flag||''}" ${wi===cur?'open':''}><summary><span class="wn">W${wi+1}</span><span class="wd">${niceD(w.monday,{day:'2-digit',month:'2-digit'})}</span><span class="wt">Woche ${w.i+1}${w.flag==='reentry'?' · Wiedereinstieg':''}</span><span class="wk">${km?Math.round(km)+' km':''}</span><span class="wdn">${done}/${w.sessions.length}</span></summary>${weekSessions(wi)}</details>`;
+    return head + `<details class="week ${wi===cur?'cur':''} ${w.flag||''}" ${wi===cur?'open':''}><summary><span class="wn">W${wi+1}</span><span class="wd">${niceD(w.monday,{day:'2-digit',month:'2-digit'})}</span><span class="wt">${w.flag==='reentry'?'Wiedereinstieg':''}</span><span class="wk">${km?Math.round(km)+' km':''}</span><span class="wdn">${done}/${w.sessions.length}</span></summary>${weekSessions(wi)}</details>`;
   }).join('');
-  $('#view').innerHTML = `<div class="sec-h"><h2>Dein Plan</h2><div class="row"><button class="btn sm ghost" onclick="openDays()">Tage ändern</button><button class="btn sm ghost" onclick="openGoal()">Ziel ändern</button></div></div>
-    <section class="card"><p><b>Dein Ausgangsniveau:</b> längster Lauf ${String(p.longest||'–').replace('.',',')} km · Wohlfühltempo ${p.comfort?fmtPace(p.comfort):'–'} min/km · Ø ${p.avg?fmtPace(p.avg):'–'} min/km</p>
-      <p>Daraus ergibt sich etwa eine 10-km-Leistung von <b>${fmtTime(p.tenK)}</b> min.</p>
-      <p>🎯 <b>Dein Ziel: ${goalText(p.goal)}</b> → Halbmarathon-Plan <b>${esc(hmPlan.target)}</b>${p.goal?'':' (der ruhigste Plan – ideal, um gut anzukommen)'}.</p>
-      ${ambitious?`<p class="warnbox">Dein Ziel ist ehrgeizig: Dieser Plan setzt etwa 10 km in ${fmtTime(HM_REQ[hmKey])} min voraus, nach deinen Angaben liegst du derzeit bei ca. ${fmtTime(p.tenK)} min. Die erreichbare Zeit realistisch einschätzen und lieber verhaltener angehen (Aderhold, 2018, S. 141).</p>`:''}
-      <details class="gl"><summary class="small"><b>So schätzt die App dein Niveau</b></summary><p class="small">Dein <b>Wohlfühltempo</b> wird als gemütlicher Dauerlauf gewertet (im Buch: extensiver Dauerlauf): Aderhold beschreibt die Belastung, bei der man sich wohlfühlt und noch unterhalten kann, mit 60–75 % der maximalen Herzfrequenz – das entspricht etwa dem regenerativen bis extensiven Dauerlauf (Aderhold, 2018, S. 138 f.). Dass dein <b>Durchschnittstempo</b> zwischen gemütlichem und zügigem Dauerlauf liegt (im Buch: zwischen extensivem und intensivem Dauerlauf), ist eine <b>Annahme der App</b>, die so nicht in den Büchern steht. Aus beidem berechnet die App mit Aderholds Tempoformeln (S. 89) deine 10-km-Leistung und nimmt vorsichtshalber den langsameren Wert.</p></details>
-      <p class="src">Pläne: Aderhold, 2018, S. 468–481</p></section>
-    <section class="card note"><p class="small">📅 <b>Deine Woche:</b> ${daysSummary(daysOf(p))}</p>
-      <p class="small">📈 <b>Langsam steigern:</b> Dein Plan beginnt bei etwa ${String(p.startKm||'–').replace('.',',')} km pro Woche und steigert sich bis zum Halbmarathon-Block gleichmäßig auf bis zu 25 km, in den Wochen mit dem längsten Lauf auf bis zu 30 km. Jede 4. Woche ist eine leichtere Entlastungswoche. Aderhold rät, langsam aufzubauen, den Kilometerumfang bedächtig zu steigern und die langen Läufe kontinuierlich zu verlängern (Aderhold, 2018, S. 102), mit Entlastungswochen im Rhythmus 3:1 (S. 101). Die genaue Umsetzung (Startwert, gleichmäßige Steigerung, ca. 20 % weniger in Entlastungswochen) ist eine <b>Annahme der App</b>; die Obergrenzen von 3 Läufen und 25/30 km sind eine Vorgabe der Kursleitung.</p></section>
-    <p class="muted small">Passt ein Tag mal nicht, verschiebe die Einheit – und lass zwischen fordernden Einheiten Ruhetage. Tippe auf eine Trainingsform (ⓘ) für die Erklärung.</p>
-    ${S.notices.length?`<div class="card note">${S.notices.map(n=>`<p>ℹ️ ${esc(n)}</p>`).join('')}</div>`:''}
-    ${S.pauses.length?`<div class="card"><b>Eingetragene Pausen</b>${S.pauses.map(x=>`<p class="small">${niceD(x.from)} – ${niceD(x.to)} (${({fieber:'Krankheit mit Fieber',erkaeltung:'Erkältung',verletzung:'Verletzung',sonst:'Sonstiges'})[x.reason]})</p>`).join('')}</div>`:''}
+  $('#view').innerHTML = `<div class="sec-h"><h2>Dein Plan</h2><button class="ib big" onclick="planInfo()" aria-label="Infos zum Plan">ⓘ</button></div>
+    <section class="card plansum">
+      <div class="psum"><div><span>🎯 Ziel</span><b>${esc(goalText(p.goal))}</b></div><div><span>🏃 Läufe</span><b>${d.n}× / Woche</b></div><div><span>📈 Umfang</span><b>${p.startKm?String(p.startKm).replace('.',',')+' → ':''}${lim.wk} km</b></div></div>
+      ${ambitious?`<p class="warnbox small">⚠️ Ehrgeiziges Ziel – tippe auf ⓘ für Details.</p>`:''}
+      <div class="row wrap"><button class="btn sm ghost" onclick="openDays()">📅 Tage & Umfang</button><button class="btn sm ghost" onclick="openGoal()">🎯 Ziel ändern</button></div></section>
     ${html}
     ${S.extra.length?`<h3 class="mt">Zusätzliche Läufe</h3>${S.extra.map(e=>`<div class="sess done"><div class="sx"><div class="sd">${niceD(e.date)}</div><div class="sl">${esc(logSummary(e))}</div></div></div>`).join('')}`:''}`;
   bindSessions();
   const c = document.querySelector('.week.cur'); if (c) setTimeout(()=>c.scrollIntoView({block:'center'}),30);
+}
+function planInfo(){
+  const p=S.profile, hmKey = hmPlanForGoal(p.goal), hmPlan = PLANS[hmKey], ambitious = p.goal && p.tenK > HM_REQ[hmKey] + 90, lim = kmLimits(p);
+  sheet(`<h3>ⓘ Infos zu deinem Plan</h3>
+    <p><b>Dein Ausgangsniveau:</b> längster Lauf ${String(p.longest||'–').replace('.',',')} km · Wohlfühltempo ${p.comfort?fmtPace(p.comfort):'–'} · Ø ${p.avg?fmtPace(p.avg):'–'} min/km → etwa <b>10 km in ${fmtTime(p.tenK)} min</b>.</p>
+    <p><b>Dein Ziel:</b> ${esc(goalText(p.goal))} → Halbmarathon-Plan ${esc(hmPlan.target)}${p.goal?`. Dein Tempo wird bis zum Halbmarathon-Block schrittweise an dein Ziel herangeführt (ca. 10 km in ${fmtTime(goalTenK(p))} min).`:' (der ruhigste Plan – ideal, um gut anzukommen).'}</p>
+    ${ambitious?`<p class="warnbox small">Dein Ziel ist ehrgeizig: Der Plan setzt etwa 10 km in ${fmtTime(HM_REQ[hmKey])} min voraus, du liegst derzeit bei ca. ${fmtTime(p.tenK)} min. Lieber realistisch und verhaltener angehen (Aderhold, 2018, S. 141).</p>`:''}
+    <p><b>Deine Woche:</b> ${daysSummary(daysOf(p))}</p>
+    <p><b>Umfang:</b> Start bei ca. ${String(p.startKm||'–').replace('.',',')} km pro Woche, langsame Steigerung bis ${lim.wk} km${lim.pk>lim.wk?` (Wochen mit dem längsten Lauf bis ${lim.pk} km)`:''}; jede 4. Woche ist leichter. ${p.maxKm?'Die Obergrenze hast du selbst festgelegt.':'Die Obergrenze (25/30 km, max. 3 Läufe) ist eine Vorgabe der Kursleitung.'}</p>
+    <p class="small">Aderhold rät, langsam aufzubauen, den Umfang bedächtig zu steigern und die langen Läufe nach und nach zu verlängern (2018, S. 102), mit leichteren Wochen im Rhythmus 3:1 (S. 101). Die genaue Umsetzung (Startwert, gleichmäßige Steigerung, ca. 20 % weniger in leichten Wochen, schrittweise Annäherung ans Zieltempo) ist eine <b>Annahme der App</b>.</p>
+    <details class="gl"><summary class="small"><b>So schätzt die App dein Niveau</b></summary><p class="small">Dein <b>Wohlfühltempo</b> wird als gemütlicher Dauerlauf gewertet (im Buch: extensiver Dauerlauf; Aderhold, 2018, S. 138 f.: wohlfühlen und unterhalten = 60–75 % HFmax). Dass dein <b>Durchschnittstempo</b> zwischen gemütlichem und zügigem Dauerlauf liegt, ist eine <b>Annahme der App</b>. Daraus berechnet die App mit Aderholds Tempoformeln (S. 89) deine 10-km-Leistung und nimmt vorsichtshalber den langsameren Wert. Die Tempi im Plan sind auf 10 Sekunden gerundet.</p></details>
+    ${S.notices.length?S.notices.map(n=>`<p class="small">ℹ️ ${esc(n)}</p>`).join(''):''}
+    ${S.pauses.length?`<p><b>Eingetragene Pausen</b></p>${S.pauses.map(x=>`<p class="small">${niceD(x.from)} – ${niceD(x.to)} (${({fieber:'Krankheit mit Fieber',erkaeltung:'Erkältung',verletzung:'Verletzung',sonst:'Sonstiges'})[x.reason]})</p>`).join('')}`:''}
+    <p class="small muted">Passt ein Tag mal nicht, verschiebe die Einheit – und lass zwischen fordernden Einheiten Ruhetage.</p>
+    <p class="src">Pläne: Aderhold, 2018, S. 468–481 · ${[...new Set(S.weeks.map(w=>w.title))].map(esc).join(' · ')}</p>
+    <button class="btn" onclick="closeSheet()">OK</button>`);
 }
 
 /* ---------- Dialoge ---------- */
@@ -2193,20 +2326,21 @@ function openPause(){
     sheet(`<h3>Plan angepasst 💪</h3>${msgs.map(m=>`<p>• ${esc(m)}</p>`).join('')}<p class="quote-inline">„${esc(MOTIVATION[0].t)}“ <span class="src">(${MOTIVATION[0].src})</span></p><button class="btn" onclick="closeSheet()">Weiter geht's</button>`); };
 }
 function openExtra(){
-  sheet(`<h3>Zusätzlicher Lauf</h3><form id="xf"><label>Datum<input type="date" name="d" value="${todayS()}"></label>${logFields({})}<div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn">Speichern</button></div></form>`);
+  sheet(`<h3>Zusätzlicher Lauf</h3><form id="xf"><label>Datum<input type="date" name="d" value="${todayS()}"></label>${logFields({})}<div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn">Speichern</button></div></form>`); bindTimeBoxes($('#xf'));
   $('#xf').onsubmit = e => { e.preventDefault(); const f=new FormData(e.target); const o={ date:f.get('d') }; readLog(f,o); o.km=o.kmDone||0; delete o.kmDone;
     if (!o.km) return alertBox('Bitte trag zumindest die Kilometer ein.'); const before=totalKm(S); S.extra.push(o); closeSheet(); afterKm(before); };
 }
 function openGoal(){
   const p=S.profile;
   sheet(`<h3>🎯 Zeitziel ändern</h3><p class="muted small">Ab dieser Woche wird dein Plan an das neue Ziel angepasst; Vergangenes bleibt erhalten.</p>
-    <label>Zeitziel (Stunden:Minuten)<input id="ng" placeholder="z. B. 2:05" value="${p.goal?fmtTime(p.goal).replace(/:00$/,''):''}" inputmode="numeric"></label>
+    <label>Zeitziel<div class="unit" id="ngw">${tIn('ng',['h','m'],p.goal||null,['2','05'])}<span>Std : Min</span></div></label>
     <label class="radio"><input type="checkbox" id="na" ${p.goal?'':'checked'}> Ich will einfach ankommen</label>
     <p class="small muted">Die App wählt den passenden Halbmarathon-Plan: 2:15–2:20 h, 2:00–2:05 h, 1:50–1:52 h oder 1:45–1:47 h (Aderhold, 2018, S. 480 f.).</p><p id="ge" class="err"></p>
     <div class="row"><button class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn" id="ngb">Übernehmen</button></div>`);
-  $('#ng').oninput = () => { $('#na').checked = !$('#ng').value.trim(); };
-  $('#ngb').onclick = () => { let g = null; if (!$('#na').checked){ g = parseGoal($('#ng').value); if (!g || g<3600 || g>4*3600) return $('#ge').textContent='Bitte als Stunden:Minuten eingeben, z. B. 2:05.'; }
-    changeGoal(S, g); syncUnlocks(); save(); closeSheet(); renderApp('plan'); toastMsg('🎯 Neues Ziel: '+goalText(g)+' – Plan angepasst.'); };
+  const sb=$('#sheet'); bindTimeBoxes(sb); sb.querySelectorAll('[data-t=ng] input').forEach(i=>i.addEventListener('input',()=>{ $('#na').checked = readT(sb,'ng')==null; }));
+  $('#na').onchange = () => { if ($('#na').checked) sb.querySelectorAll('[data-t=ng] input').forEach(i=>i.value=''); };
+  $('#ngb').onclick = () => { let g = null; if (!$('#na').checked){ g = readT(sb,'ng'); if (g==null){ g=null; } else if (!(g>=3600) || g>4*3600) return $('#ge').textContent='Bitte Stunden und Minuten eingeben, z. B. 2 : 05.'; }
+    const before = planSnap(); changeGoal(S, g); syncUnlocks(); save(); closeSheet(); renderApp('plan'); showChanges(before, '🎯 Neues Ziel: '+goalText(g)); };
 }
 function openSettings(){
   const p=S.profile, hrMode = p.noHR?'none':p.age&&!p.hfmax?'age':'max';
@@ -2223,7 +2357,7 @@ function openSettings(){
     p.noHR = m==='none'; p.hfmax = m==='max' ? (+f.get('hfmax')||null) : null; p.age = m==='age' ? (+f.get('age')||null) : null;
     if (isCreator()) S.dev.testDate = f.get('td') || null; save(); closeSheet(); renderApp(); };
 }
-function redoPlan(){ sheet(`<h3>Plan neu erstellen?</h3><p>Deine Trainingseinträge werden gelöscht, Spielstand und Konto bleiben erhalten.</p><div class="row"><button class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn danger" onclick="closeSheet(); renderSetup();">Neu erstellen</button></div>`); }
+function redoPlan(){ sheet(`<h3>Plan neu erstellen?</h3><p>Deine Trainingseinträge werden gelöscht, Spielstand und Konto bleiben erhalten.</p><div class="row"><button class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn danger" onclick="REDO_SNAP = planSnap(); closeSheet(); renderSetup();">Neu erstellen</button></div>`); }
 
 /* ---------- Spiel-Tab ---------- */
 function renderGame(){
@@ -2238,8 +2372,8 @@ function renderGame(){
     <section class="card story"><div class="kicker">${esc(L.story)}</div><p>${esc(L.intro)}</p></section>
     <section class="card"><h3>${esc(L.gearTitle)}</h3><div class="gear">${GEAR.map(g=>`<div class="gi ${gs.gear[g.id]?'got':''}"><span>${g.icon}</span><small>${esc(g[gs.lang])}</small></div>`).join('')}</div></section>
     <div class="levels">${L.levels.map((lv,i)=>{ const u=levelUnlocked(i), d=gs.done[i];
-      return `<button class="lvl ${u?'':'locked'} ${d?'done':''}" ${u?`onclick="openGame('level',${i})"`:''}><span class="ln">${i+1}</span><span class="lt"><b>${esc(lv.name)}</b><small>${u ? (d?'✓ '+(gs.best[i]||0)+' '+esc(L.pretzels):esc(L.play)) : '🔒 '+(th[i]==null ? esc(L.unlockAt)+' '+niceD(UNLOCK_ALL_DATE) : esc(L.unlockAt)+' '+th[i]+' km')}</small></span><span class="lg">${gs.gear[GEAR[i].id]?GEAR[i].icon:'❔'}</span></button>`; }).join('')}
-      <button class="lvl boss ${bo?'':'locked'} ${gs.bossWon?'done':''}" onclick="openBoss()"><span class="ln">🐷</span><span class="lt"><b>${esc(L.boss)}</b><small>${bo ? (allGear? (gs.bossWon?'✓':esc(L.play)) : esc(L.missing)+': '+GEAR.filter(g=>!gs.gear[g.id]).map(g=>g.icon).join(' ')) : '🔒 '+esc(L.bossLocked)+' '+niceD(UNLOCK_ALL_DATE)}</small></span></button>
+      return `<button class="lvl ${u?'':'locked'} ${d?'done':''}" ${u?`onclick="openGame('level',${i})"`:''}><span class="ln">${i+1}</span><span class="lt"><b>${esc(lv.name)}</b><small>${u ? (d?'✓ '+(gs.best[i]||0)+' '+esc(L.pretzels):esc(L.play)) : '🔒 '+(th[i]==null ? esc(L.unlockAt)+' '+niceD(UNLOCK_ALL_DATE) : esc(L.unlockAt)+' '+th[i]+' km')}</small></span><span class="lg">${GEAR[i] ? (gs.gear[GEAR[i].id]?GEAR[i].icon:'❔') : '⭐'}</span></button>`; }).join('')}
+      <button class="lvl boss ${bo?'':'locked'} ${gs.bossWon?'done':''}" onclick="openBoss()"><span class="ln">12</span><span class="lt"><b>🐷 ${esc(L.boss)}</b><small>${bo ? (allGear? (gs.bossWon?'✓':esc(L.play)) : esc(L.missing)+': '+GEAR.filter(g=>!gs.gear[g.id]).map(g=>g.icon).join(' ')) : '🔒 '+esc(L.bossLocked)+' '+niceD(UNLOCK_ALL_DATE)}</small></span></button>
     </div>
     <h3 class="mt">Specials</h3><div class="levels">
       <button class="lvl xmas ${xmasOpen?'':'locked'} ${gs.xmasWon?'done':''}" onclick="openSpecial('xmas')"><span class="ln">🎄</span><span class="lt"><b>${esc(L.xmas)}</b><small>${xmasOpen?(gs.xmasWon?'✓':esc(L.play)):'🔒 '+esc(L.specialLocked)+' 24.12.'+ADVENT_YEAR}</small></span></button>
@@ -2286,7 +2420,8 @@ Game.onEnd = (mode, idx, r) => {
   if (!r.win){ html = `<h3>${r.why==='time'?'🎆 '+esc(L.nyeLose):'💔 '+esc(L.gameOver)}</h3>${factBox}${row}`; }
   else if (mode==='level'){
     gs.done[idx]=true; gs.best[idx]=Math.max(gs.best[idx]||0, r.coins); let itemTxt=''; const g = GEAR[idx];
-    if (r.item){ gs.gear[g.id]=true; itemTxt = `<div class="itembox"><span>${g.icon}</span><div><b>${esc(L.found)}: ${esc(g[lang])}</b><p class="small">${esc(lang==='de'?g.tipDe:g.tipEn)}</p></div></div>`; }
+    if (!g) itemTxt = '';
+    else if (r.item){ gs.gear[g.id]=true; itemTxt = `<div class="itembox"><span>${g.icon}</span><div><b>${esc(L.found)}: ${esc(g[lang])}</b><p class="small">${esc(lang==='de'?g.tipDe:g.tipEn)}</p></div></div>`; }
     else if (!gs.gear[g.id]) itemTxt = `<p>❔ ${esc(L.missing)}: ${g.icon} ${esc(g[lang])}</p>`;
     save(); html = `<h3>🏁 ${esc(L.complete)}</h3><p>${r.coins}/${r.total} ${esc(L.pretzels)}</p>${itemTxt}${factBox}${row}`;
   } else if (mode==='boss'){ gs.bossWon=true; save(); html = `<h3>🏆 ${esc(L.bossWin)}</h3><div class="ffbox">${RACE_TIPS.slice(1,5).map(t=>`<p class="small">• ${esc(lang==='en'&&t.en?t.en:t.t)} <span class="src">(${esc(t.src)})</span></p>`).join('')}</div>${row}`; }
@@ -2325,28 +2460,26 @@ function renderKnow(){
       <p>Die Magic Mile ist ein kurzer Leistungstest aus den Halbmarathon-Programmen von Jeff und Barbara Galloway. Du läufst eine Meile – das sind 1,609 km, auf der Laufbahn etwa vier Runden – auf Zeit. In Galloways Plänen taucht der Test regelmäßig donnerstags auf, zum Beispiel als „1 Meile Magic Mile + 3 Meilen“.</p>
       <p><b>So rechnest du:</b> Magic-Mile-Zeit × 1,2 = das Tempo pro Meile, das du aktuell im Halbmarathon laufen könntest. Das gilt bei höchstens 14 °C und wenn du die langen Läufe und Tempoeinheiten deines Plans absolviert hast.</p>
       <p><b>Zielwahl:</b> Nach dem ersten Test darfst du dir ein Ziel setzen, das bis zu 15 s/km (20 s pro Meile) schneller ist als die Prognose – oder jedes langsamere.</p>
-      <p><b>Lange Läufe:</b> Prognose-Tempo + 3 Minuten pro Meile – so bleiben sie wirklich locker. Bei Wärme über 14 °C zusätzlich pro 2 °C etwa 20 s/km langsamer.</p>
+      <p><b>Lange Läufe:</b> Prognose-Tempo + 3 Minuten pro Meile – so bleiben sie wirklich locker.</p>
       <span class="src">Galloway & Galloway, 2019, S. 49 ff.</span>
-      <label>Deine Zeit für 1 Meile (mm:ss)<input id="mm" placeholder="z. B. 9:30"></label><div id="mmr"></div></section>
+      <label>Deine Zeit für 1 Meile<div class="unit">${tIn('mm',['m','s'],null,['9','30'])}<span>Min : Sek</span></div></label><div id="mmr"></div></section>
     <section class="card" id="k-rech"><h3>⏱️ Tempo-Rechner</h3><p class="small muted">Trainingstempi aus einer 10-km-Zeit (Aderhold, 2018, S. 89) und Halbmarathon-Prognose (Beck, 2024).</p>
-      <label>10-km-Zeit (mm:ss)<input id="tk" value="${S.profile.tenK?fmtTime(S.profile.tenK):''}" placeholder="z. B. 58:30"></label><div id="tkr"></div></section>
-    <section class="card"><h3>🌡️ Wärme-Anpassung</h3><p class="small muted">Ab 14 °C pro 2 °C etwa 20 s/km langsamer (Galloway & Galloway, 2019, S. 49).</p>
-      <label>Temperatur (°C)<input id="tc" type="number" placeholder="z. B. 20"></label><div id="tcr"></div></section>
+      <label>10-km-Zeit<div class="unit">${tIn('tk',['m','s'],S.profile.tenK||null,['58','30'])}<span>Min : Sek</span></div></label><div id="tkr"></div></section>
     <section class="card" id="k-race"><h3>🏁 Renntag & Tapering</h3>${RACE_TIPS.map(t=>`<p>• ${esc(t.t)} <span class="src">(${esc(t.src)})</span></p>`).join('')}</section>
     <h2 class="mt" id="k-fakt">Fakten nach Rubriken</h2>
     ${FACT_CATS.map(c=>`<details class="factcat"><summary><span class="fci">${c.icon}</span><span><b>${esc(c.name)}</b><small>${esc(c.intro)}</small></span></summary>
       ${FACTS.filter(f=>f.cat===c.id).map(f=>`<div class="factitem"><h4>${esc(f.title)}</h4><p>${esc(f.de)}</p><span class="src">${esc(f.src)}</span></div>`).join('')}</details>`).join('')}`;
   bindStrength($('#view')); document.querySelectorAll('.chips button').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.t).scrollIntoView({behavior:'smooth', block:'start'}));
-  const calc = () => { const t = parseTime($('#tk').value); if (!t){ $('#tkr').innerHTML=''; return; } const p=paces(t);
+  const V=$('#view'); bindTimeBoxes(V);
+  const calc = () => { const t = readT(V,'tk'); if (!t){ $('#tkr').innerHTML=''; return; } const p=paces(t);
     $('#tkr').innerHTML = `<table class="tbl">${[['🟠 Schneller Dauerlauf – schnell',p.TDL],['🟠 Schneller Dauerlauf – zügig',p.IDL],['🟢 Gemütlicher Dauerlauf',p.EDL],['🟢 Gemütlich – sehr ruhig',p.RDL],['🔴 Intervalle à 1 km',p.WHL1],['🔴 Intervalle à 2 km',p.WHL2],['🔴 Intervalle à 3 km',p.WHL3]].map(r=>`<tr><td>${r[0]}</td><td><b>${fmtPace(r[1])}</b> min/km</td></tr>`).join('')}
       <tr class="hl"><td>Halbmarathon-Prognose (× 2,2234)</td><td><b>${fmtTime(p.HMtime)}</b> h · ${fmtPace(p.HM)} min/km</td></tr></table>
       ${t!==S.profile.tenK?'<button class="btn sm ghost" id="tks">Für meine Tempoangaben übernehmen</button>':''}`;
     const b=$('#tks'); if (b) b.onclick = () => { S.profile.tenK=t; save(); toastMsg('Übernommen – dein Plan zeigt jetzt diese Tempi.'); calc(); }; };
-  $('#tk').oninput = calc; calc();
-  $('#mm').oninput = () => { const t=parseTime($('#mm').value); if(!t){ $('#mmr').innerHTML=''; return; } const hm=t*1.2, lr=hm+180;
+  V.querySelectorAll('[data-t=tk] input').forEach(i=>i.addEventListener('input',calc)); calc();
+  const mmc = () => { const t=readT(V,'mm'); if(!t){ $('#mmr').innerHTML=''; return; } const hm=t*1.2, lr=hm+180;
     $('#mmr').innerHTML = `<table class="tbl"><tr><td>Halbmarathon-Tempo (aktuell)</td><td><b>${fmtPace(hm/1.609)}</b> min/km · ${fmtPace(hm)} /Meile</td></tr><tr><td>≈ Halbmarathon-Zeit</td><td><b>${fmtTime(hm*13.109)}</b></td></tr><tr><td>Schnellstes sinnvolles Ziel</td><td><b>${fmtPace(hm/1.609-15)}</b> min/km</td></tr><tr><td>Lange Läufe</td><td><b>${fmtPace(lr/1.609)}</b> min/km · ${fmtPace(lr)} /Meile</td></tr></table>`; };
-  $('#tc').oninput = () => { const c=+$('#tc').value; if($('#tc').value===''){ $('#tcr').innerHTML=''; return; } const add = c>14 ? Math.ceil((c-14)/2)*20 : 0;
-    $('#tcr').innerHTML = `<p>${add?`Etwa <b>${add} s/km</b> langsamer laufen.`:'Keine Anpassung nötig.'}${add && P?` Dein Halbmarathon-Tempo: ${fmtPace(P.HM)} → <b>${fmtPace(P.HM+add)}</b> min/km.`:''}</p>`; };
+  V.querySelectorAll('[data-t=mm] input').forEach(i=>i.addEventListener('input',mmc));
 }
 
 /* ---------- Literatur ---------- */
