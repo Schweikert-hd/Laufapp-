@@ -719,7 +719,7 @@ function sessionLabel(s){
 /* Aufbauplan: ohne Ziel nach aktuellem Niveau; mit Ziel nach dem 10-km-Niveau, das zum Ziel passt
    (Halbmarathon-Prognose = 10-km-Zeit × 2,2234, Beck, 2024; Aderholds Pläne setzen jeweils ein 10-km-Niveau voraus, 2018, S. 469 ff., 480 f.) */
 function goalTenK(p){ return p && p.goal ? Math.round(p.goal/2.2234) : null; }
-function planLevel(p){ const g = goalTenK(p); return g ? levelFrom10k(g) : p.level; }
+function planLevel(p){ const g = goalTenK(p); return g && g < p.tenK ? levelFrom10k(g) : p.level; } // nur ein schnelleres Ziel hebt den Aufbauplan an
 function canonFor(p){
   const seq=[]; preBlocks(p.longest||11, planLevel(p)).forEach(b => PLANS[b].weeks.forEach((w,i)=>seq.push({b, i, pre:true})));
   const hm = hmPlanForGoal(p.goal); PLANS[hm].weeks.forEach((w,i)=>seq.push({b:hm, i, pre:false}));
@@ -861,6 +861,8 @@ function buildPlan(state){
   setupRamp(p, n, fl && fl.km);
   state.weeks = r.list.map((k,j)=>Object.assign(makeWeek(addDays(start,7*j), state.canon[k], null, p, j), {ci:k}));
   state.notices = r.notes;
+  // erste Woche: Einheiten vor dem Trainingsstart entfallen
+  const w0 = state.weeks[0]; if (w0){ w0.sessions = w0.sessions.filter(x=>x.date >= p.start || x.code==='HM'); w0.rest = [0,1,2,3,4,5,6].map(d=> w0.sessions.some(x=>x.day===d) ? 'x' : '-'); }
   // HM-Tag auf echtes Renndatum legen (falls Rennen kein Sonntag)
   const last = state.weeks[state.weeks.length-1];
   if (last) last.sessions.forEach(s=>{ if(s.code==='HM') s.date=p.race; });
@@ -926,7 +928,7 @@ function changeDays(state, days){ state.profile.days = days; replanFromNow(state
 
 /* 10-km-Niveau einer Woche: ohne Ziel das aktuelle; mit Ziel steigt es bis zum Halbmarathon-Block gleichmäßig auf das Zielniveau
    (Aderhold, 2018, S. 96: Trainingstempi beginnen deutlich unter der Zielgeschwindigkeit und steigern sich allmählich; die gleichmäßige Verteilung ist eine ANNAHME DER APP) */
-function weekTenK(state, wi){ const p = state.profile, g = goalTenK(p); if (!g || !p.tenK) return p.tenK; const n = state.weeks.length, hm = Math.max(0, n-8);
+function weekTenK(state, wi){ const p = state.profile, g = goalTenK(p); if (!g || !p.tenK || g >= p.tenK) return p.tenK; /* langsameres Ziel: Training im aktuellen Tempo */ const n = state.weeks.length, hm = Math.max(0, n-8);
   if (wi >= hm) return g; return Math.round(p.tenK + (g - p.tenK) * (wi+1) / (hm+1)); }
 /* Tempi nach Aderhold (2018, S. 89; nach Wenzel, 1991) */
 function paces(tenKsec){
@@ -1744,7 +1746,8 @@ const Game = (() => {
       layer(0.4, 520, (x)=>{ const gx=x+90, nod=Math.sin(G.t/40)*2;                                                             // Giraffe
         ctx.fillStyle='#e2b25a'; ctx.fillRect(gx,150,30,16); [0,8,20,27].forEach(lx=>ctx.fillRect(gx+lx,164,3,22)); ctx.save(); ctx.translate(gx+27,154); ctx.rotate(0.33); ctx.fillRect(-3,-48,7,50); ctx.restore(); ctx.fillRect(gx+38,104+nod,12,7);
         ctx.fillStyle='#9b6a2c'; [[5,155],[13,160],[21,154],[27,158]].forEach(([a,b])=>{ ctx.beginPath(); ctx.arc(gx+a,b,2.2,0,7); ctx.fill(); });   // Flecken auf dem Körper
-        ctx.save(); ctx.translate(gx+27,154); ctx.rotate(0.33); [[0.5,-10],[1,-22],[0.5,-34]].forEach(([a,b])=>{ ctx.beginPath(); ctx.arc(a,b,1.8,0,7); ctx.fill(); }); ctx.restore();   // Flecken am Hals ctx.fillStyle='#6b4a2b'; ctx.fillRect(gx+39,100+nod,2,4); ctx.fillRect(gx+44,100+nod,2,4);
+        ctx.save(); ctx.translate(gx+27,154); ctx.rotate(0.33); [[0.5,-10],[1,-22],[0.5,-34]].forEach(([a,b])=>{ ctx.beginPath(); ctx.arc(a,b,1.8,0,7); ctx.fill(); }); ctx.restore();   // Flecken am Hals ctx.fillStyle='#6b4a2b'; ctx.fillRect(gx+39,100+nod,2,4); ctx.fillRect(gx+44,100+nod,2,4); ctx.fillStyle='#d79b3e'; ctx.fillRect(gx+36,104+nod,3,2.5);   // Hörner und Ohr
+        ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(gx+45,106.5+nod,1.8,0,7); ctx.fill(); ctx.fillStyle='#222'; ctx.beginPath(); ctx.arc(gx+45.5,106.7+nod,1.1,0,7); ctx.fill(); ctx.fillStyle='#6b4a2b'; ctx.fillRect(gx+48.5,108+nod,1,1);   // Auge und Nasenloch
         const ex=x+300; ctx.fillStyle='#8f8f95'; ctx.beginPath(); ctx.ellipse(ex,166,26,16,0,0,7); ctx.fill(); [-18,-8,8,16].forEach(lx=>ctx.fillRect(ex+lx,176,7,12));   // Elefant
         ctx.beginPath(); ctx.arc(ex+24,158,11,0,7); ctx.fill(); ctx.fillStyle='#7c7c83'; ctx.beginPath(); ctx.ellipse(ex+18,158,6,9,0,0,7); ctx.fill(); ctx.strokeStyle='#8f8f95'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(ex+33,162); ctx.quadraticCurveTo(ex+40,176+Math.sin(G.t/20)*3,ex+34,184); ctx.stroke(); ctx.lineWidth=1;
         ctx.fillStyle='#222'; ctx.fillRect(ex+27,155,2,2);
@@ -2123,13 +2126,14 @@ function bindDays(form){
 }
 function daysSummary(d){ const it = d.n===2 ? [[d.A,'2. Lauf (abwechselnd)'],[d.L,'langer Lauf']] : [[d.A,'schneller Dauerlauf'],[d.B,'Intervalllauf'],[d.L,'langer Lauf']]; if (d.K!=null) it.push([d.K,'Krafttraining']);
   return it.sort((a,b)=>a[0]-b[0]).map(([x,t])=>`<b>${WD[x]}</b> ${t}`).join(' · '); }
+function bindKmWarn(form){ const i=form.querySelector('input[name=maxKm]'), w=form.querySelector('.kmwarn'); if(!i||!w) return; const u=()=>w.classList.toggle('hidden', !(+String(i.value).replace(',','.')>25)); i.addEventListener('input',u); u(); }
 function openDays(){
   const p=S.profile;
   sheet(`<h3>📅 Trainingstage & Umfang</h3><p class="muted small">Ab dieser Woche wird dein Plan angepasst; Erledigtes bleibt erhalten.</p>
     <form id="df">${daysFields(daysOf(p))}
-      <label>Höchstens so viele Kilometer pro Woche <span class="opt">freiwillig</span><div class="unit"><input name="maxKm" type="number" step="1" min="10" max="${COURSE_MAX}" inputmode="numeric" placeholder="25" value="${p.maxKm||''}"><span>km</span></div><small>Leer lassen: bis 25 km, in einzelnen Wochen 30 km.</small></label>
+      <label>Höchstens so viele Kilometer pro Woche <span class="opt">freiwillig</span><div class="unit"><input name="maxKm" type="number" step="1" min="10" max="${COURSE_MAX}" inputmode="numeric" placeholder="25" value="${p.maxKm||''}"><span>km</span></div></label><p class="warnbox small kmwarn hidden">⚠️ Mehr als 25 km pro Woche können für den Körper belastend werden: Kilometerreiche Trainingsprogramme belasten den Bewegungsapparat stark – die Folge sind nicht selten Überlastungsverletzungen (Aderhold, 2018, S. 146). Plane bei hohem Umfang mindestens eine regenerative oder ausgleichende Einheit pro Woche ein (Aderhold, 2018, S. 147).</p>
       <p id="dfe" class="err"></p><div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn">Übernehmen</button></div></form>`);
-  bindDays($('#df'));
+  bindDays($('#df')); bindKmWarn($('#df'));
   $('#df').onsubmit = e => { e.preventDefault(); const f=new FormData(e.target); const d = readDays(f); const c = checkDays(d); if (c.err) return;
     const mk = +String(f.get('maxKm')||'').replace(',','.') || null;
     if (mk!=null && (mk<10 || mk>COURSE_MAX)) return $('#dfe').textContent='Bitte zwischen 10 und '+COURSE_MAX+' km – oder leer lassen.';
@@ -2158,7 +2162,7 @@ function renderSetup(){
       <label>Wie schnell bist du durchschnittlich bei deinen Läufen unterwegs?<div class="unit">${tIn('avg',['m','s'],null,['6','15'])}<span>min/km</span></div><small>Durchschnittstempo pro Kilometer, z. B. aus deiner Laufuhr oder App.</small></label>
       <label>Bei welchem Tempo fühlst du dich beim Laufen richtig wohl?<div class="unit">${tIn('comfort',['m','s'],null,['6','45'])}<span>min/km</span></div><small>Das Tempo, bei dem du locker laufen und dich noch gut unterhalten kannst.</small></label>
       <label>Wie viele Kilometer läufst du zurzeit ungefähr pro Woche? <span class="opt">freiwillig</span><div class="unit"><input name="weekKm" type="number" step="1" min="0" max="80" inputmode="numeric" placeholder="z. B. 15"><span>km</span></div><small>Dein Plan startet bei diesem Umfang (höchstens ${START_MAX} km) und steigert sich dann langsam.</small></label>
-      <label>Wie viele Kilometer möchtest du höchstens pro Woche laufen? <span class="opt">freiwillig</span><div class="unit"><input name="maxKm" type="number" step="1" min="10" max="${COURSE_MAX}" inputmode="numeric" placeholder="z. B. 20"><span>km</span></div><small>Leer lassen: bis 25 km, in einzelnen Wochen 30 km. Höchstens ${COURSE_MAX} km.</small></label>
+      <label>Wie viele Kilometer möchtest du höchstens pro Woche laufen? <span class="opt">freiwillig</span><div class="unit"><input name="maxKm" type="number" step="1" min="10" max="${COURSE_MAX}" inputmode="numeric" placeholder="z. B. 20"><span>km</span></div></label><p class="warnbox small kmwarn hidden">⚠️ Mehr als 25 km pro Woche können für den Körper belastend werden: Kilometerreiche Trainingsprogramme belasten den Bewegungsapparat stark – die Folge sind nicht selten Überlastungsverletzungen (Aderhold, 2018, S. 146). Plane bei hohem Umfang mindestens eine regenerative oder ausgleichende Einheit pro Woche ein (Aderhold, 2018, S. 147).</p>
       ${daysFields(DEFAULT_DAYS)}
       <label>Welches Zeitziel setzt du dir für den Halbmarathon? <span class="opt">freiwillig</span><div class="unit">${tIn('goal',['h','m'],null,['2','10'])}<span>Std : Min</span></div><small>Leer lassen, wenn du einfach ankommen willst. Du kannst dein Ziel später jederzeit ändern.</small></label>
       <fieldset><legend>Herzfrequenz</legend>
@@ -2172,7 +2176,7 @@ function renderSetup(){
       <button class="btn big">Meinen Plan erstellen</button>
     </form></div>`;
   document.querySelectorAll('input[name=hr]').forEach(r=>r.onchange=()=>document.querySelectorAll('.sub').forEach(d=>d.classList.toggle('hidden', d.dataset.for!==r.value || !r.checked)));
-  bindDays($('#setupForm')); bindTimeBoxes($('#setupForm'));
+  bindDays($('#setupForm')); bindTimeBoxes($('#setupForm')); bindKmWarn($('#setupForm'));
   $('#setupForm').onsubmit = e => { e.preventDefault(); const f=new FormData(e.target), F=e.target;
     const days = readDays(f), dc = checkDays(days); if (dc.err) return $('#setErr').textContent = dc.err;
     const weekKm = +String(f.get('weekKm')||'').replace(',','.') || null, maxKm = +String(f.get('maxKm')||'').replace(',','.') || null;
@@ -2299,7 +2303,7 @@ function sessionInfo(wi, si){
 function weekSessions(wi){ const w=S.weeks[wi]; const rest = w.rest.map((t,d)=>t==='-'||t==='P'?WD[d]:null).filter(Boolean);
   return `<div class="sessions">${w.sessions.map((s,si)=>sessionHTML(wi,si)).join('')}</div>${rest.length?`<p class="muted small">😴 Ruhetage: ${rest.join(', ')}</p>`:''}`; }
 function bindSessions(){
-  document.querySelectorAll('.sess').forEach(el=>{
+  document.querySelectorAll('.sess[data-w]').forEach(el=>{
     const s = S.weeks[+el.dataset.w].sessions[+el.dataset.s];
     el.querySelector('[data-act=done]').onclick = () => { if (s.code==='KT'){ s.done=!s.done; if (s.done) s.skipped=false; save(); renderApp(); if (s.done) toastMsg('💪 Krafttraining erledigt!'); return; } if (s.done){ const before=totalKm(S); s.done=false; save(); afterKm(before); } else openLog(s); };
     el.querySelector('[data-act=skip]').onclick = () => { s.skipped=!s.skipped; if (s.skipped) s.done=false; save(); renderApp(); };
@@ -2325,6 +2329,35 @@ function afterKm(before){
   const after = totalKm(S);
   if (newly.length && !isCreator()){ const i=newly[newly.length-1]; toastMsg('🎉 Level '+(i+1)+' „'+GT[S.game.lang].levels[i].name+'“ freigeschaltet!'); }
   else if (after>before) toastMsg(MOTIVATION[(dayIndex()+Math.floor(after))%MOTIVATION.length].t);
+  if (after>before) setTimeout(()=>checkGoalOffer('run'), 600);
+}
+/* ---------- Besseres Ziel vorschlagen ----------
+   Aus eingetragenen Läufen (Kilometer + Zeit) wird das aktuelle 10-km-Niveau zurückgerechnet (Tempoformeln: Aderhold, 2018, S. 89),
+   daraus die Halbmarathon-Prognose (× 2,2234; Beck, 2024). Vorgeschlagen wird vorsichtig die nächste volle 5 Minuten über der Prognose
+   (Zielzeit realistisch einschätzen: Aderhold, 2018, S. 141). Die Rückrechnung aus Trainingsläufen ist eine ANNAHME DER APP. */
+function runTenK(x){ const km = x.kmDone!=null ? x.kmDone : x.km; if (!x.time || !(km>=3)) return null; const pace = x.time/km;
+  const tdl = { RDL:pace/1.37, 'R-EDL':pace/1.31, 'E-RDL':pace/1.31, EDL:pace/1.25, 'EDL+ST':pace/1.25, 'EDL/WK':pace/1.25, IDL:pace-25, 'I-TDL':pace-12, TDL:pace }[x.code];
+  if (x.code==='HM' && km>=20) return x.time/2.2234; return tdl ? (tdl-15)*10 : null; }
+function goalSuggestion(){ const p=S.profile, from=addDays(todayS(),-28), est=[];
+  S.weeks.forEach(w=>w.sessions.forEach(x=>{ if (x.done && x.date>=from && x.date<=todayS()){ const t=runTenK(x); if (t && t>1500 && t<6000) est.push(t); } }));
+  if (est.length < 3) return null; /* erst ab 3 Läufen mit Zeitangabe */ est.sort((a,b)=>a-b); const ten = est[Math.floor(est.length/2)];      // Median der letzten 4 Wochen
+  const pred = ten*2.2234, sug = Math.max(6300, Math.ceil(pred/300)*300); return { ten, pred, sug, n:est.length }; }   // schnellster Halbmarathon-Plan der App: 1:45 h
+function checkGoalOffer(trigger){ if (!S || !S.profile) return; const p=S.profile;
+  const g = trigger==='setup' ? (p.tenK ? { pred:p.tenK*2.2234, sug:Math.max(6300, Math.ceil(p.tenK*2.2234/300)*300), n:0 } : null) : goalSuggestion(); if (!g) return;
+  if (trigger==='setup' && !p.goal) return;
+  const cur = p.goal || null, off = S.goalOffer || {};
+  if (cur && g.sug > cur - 300) return;                                   // erst ab mind. 5 Minuten besser
+  if (!cur && g.sug > 2.5*3600) return;
+  if (off.declined && g.sug > off.declined - 300 && off.date && daysBetween(off.date, todayS()) < 28) return;   // nach „Nein“ nicht ständig nachfragen
+  if (!$('#sheet').classList.contains('hidden')) return;
+  const txt = goalText(g.sug);
+  sheet(`<h3>🚀 ${g.n ? 'Du bist schneller unterwegs als geplant!' : 'Du kannst mehr, als du dir vornimmst!'}</h3>
+    <p>${g.n ? 'Deine eingetragenen Läufe der letzten Wochen deuten' : 'Deine Tempoangaben deuten'} auf eine Halbmarathon-Zeit von etwa <b>${fmtTime(g.pred)} h</b> hin.</p>
+    <p>${cur ? `Möchtest du dein Ziel von <b>${esc(goalText(cur))}</b> auf <b>${esc(txt)}</b> anheben?` : `Möchtest du dir statt „Ankommen“ ein Zeitziel von <b>${esc(txt)}</b> setzen?`} Dein Plan wird dann ab dieser Woche angepasst.</p>
+    <p class="small muted">Die Prognose ist bewusst vorsichtig: Zielzeiten realistisch einschätzen (Aderhold, 2018, S. 141). ${g.n ? 'Berechnet aus '+g.n+' Läufen mit Zeitangabe' : 'Berechnet aus deinem Durchschnitts- und Wohlfühltempo'} (Tempoformeln: Aderhold, 2018, S. 89; Prognose: Beck, 2024) – eine Schätzung der App.</p>
+    <div class="row wrap"><button class="btn ghost" id="goNo">Bei meinem Ziel bleiben</button><button class="btn" id="goYes">Ja, ${esc(txt)} als Ziel</button></div>`);
+  $('#goNo').onclick = () => { S.goalOffer = { declined:g.sug, date:todayS() }; save(); closeSheet(); toastMsg('👍 Du bleibst bei deinem Ziel: '+goalText(cur)); };
+  $('#goYes').onclick = () => { const before = planSnap(); S.goalOffer = { accepted:g.sug, date:todayS() }; changeGoal(S, g.sug); syncUnlocks(); save(); closeSheet(); renderApp('plan'); showChanges(before, '🎯 Neues Ziel: '+txt); };
 }
 function catBody(k, wi){ const c=CATS[k], P=myPaces(wi); const pr = P ? catPace(k,P) : '';
   return `<p>${esc(c.what)}</p><p><b>Wofür?</b> ${esc(c.why)}</p><p>❤️ <b>Mit Puls:</b> ${esc(c.hf)}</p><p>🗣️ <b>Nach Gefühl:</b> ${esc(c.feel)}</p>${pr?`<p>⏱️ <b>Dein Tempo:</b> ${esc(pr)}</p>`:''}
@@ -2402,7 +2435,7 @@ function planInfo(){
   const p=S.profile, hmKey = hmPlanForGoal(p.goal), hmPlan = PLANS[hmKey], ambitious = p.goal && p.tenK > HM_REQ[hmKey] + 90, lim = kmLimits(p);
   sheet(`<h3>ⓘ Infos zu deinem Plan</h3>
     <p><b>Dein Ausgangsniveau:</b> längster Lauf ${String(p.longest||'–').replace('.',',')} km · Wohlfühltempo ${p.comfort?fmtPace(p.comfort):'–'} · Ø ${p.avg?fmtPace(p.avg):'–'} min/km → etwa <b>10 km in ${fmtTime(p.tenK)} min</b>.</p>
-    <p><b>Dein Ziel:</b> ${esc(goalText(p.goal))} → Halbmarathon-Plan ${esc(hmPlan.target)}${p.goal?`. Dein Tempo wird bis zum Halbmarathon-Block schrittweise an dein Ziel herangeführt (ca. 10 km in ${fmtTime(goalTenK(p))} min).`:' (der ruhigste Plan – ideal, um gut anzukommen).'}</p>
+    <p><b>Dein Ziel:</b> ${esc(goalText(p.goal))} → Halbmarathon-Plan ${esc(hmPlan.target)}${!p.goal?' (der ruhigste Plan – ideal, um gut anzukommen).': goalTenK(p) < p.tenK ? `. Dein Tempo wird bis zum Halbmarathon-Block schrittweise an dein Ziel herangeführt (ca. 10 km in ${fmtTime(goalTenK(p))} min; Aderhold, 2018, S. 96).` : '. Dein Ziel liegt im Rahmen deines jetzigen Niveaus – du trainierst in deinem aktuellen Tempo, nur das Renntempo richtet sich nach deinem Ziel.'}</p>
     ${ambitious?`<p class="warnbox small">Dein Ziel ist ehrgeizig: Der Plan setzt etwa 10 km in ${fmtTime(HM_REQ[hmKey])} min voraus, du liegst derzeit bei ca. ${fmtTime(p.tenK)} min. Lieber realistisch und verhaltener angehen (Aderhold, 2018, S. 141).</p>`:''}
     <p><b>Deine Woche:</b> ${daysSummary(daysOf(p))}</p>
     <p><b>Umfang:</b> Start bei ca. ${String(p.startKm||'–').replace('.',',')} km pro Woche, langsame Steigerung bis ${lim.wk} km${lim.pk>lim.wk?` (Wochen mit dem längsten Lauf bis ${lim.pk} km)`:''}; jede 4. Woche ist leichter. ${p.maxKm?'Die Obergrenze hast du selbst festgelegt.':'Die Obergrenze (25/30 km, max. 3 Läufe) ist eine Vorgabe der Kursleitung.'}</p>
