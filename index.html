@@ -278,7 +278,7 @@ const PLANS = {
       ['EDL 10','-','FS 8','RDL 6','-','R-EDL 14','-'],
       ['EDL 10','-','FS 10','RDL 8','-','R-EDL 14','-'],
       ['EDL 8','-','EDL+ST 8','-','-','E-RDL 12','-'] ] },
-  A65: { title: 'Aufbauplan bis Halbmarathon (10 km in 65:00)', src: 'Aderhold, 2018, S. 469 (Tab. A.3)',
+  A65: { title: 'Aufbauplan bis Halbmarathon', src: 'Aderhold, 2018, S. 469 (Tab. A.3)',
     weeks: [
       ['IDL 5','-','FS 8','-','-','EDL 12','-'],
       ['IDL 8','-','FS 10','-','-','EDL 12','-'],
@@ -288,7 +288,7 @@ const PLANS = {
       ['I-TDL 8','-','FS 10','-','-','EDL 12','-'],
       ['I-TDL 10','-','FS 10','-','-','EDL 10','-'],
       ['IDL 8','-','FS 10','-','-','EDL/WK 10','-'] ] },
-  A60: { title: 'Aufbauplan bis Halbmarathon (10 km in 60:00)', src: 'Aderhold, 2018, S. 469 (Tab. A.4)',
+  A60: { title: 'Aufbauplan bis Halbmarathon', src: 'Aderhold, 2018, S. 469 (Tab. A.4)',
     weeks: [
       ['IDL 8','-','FS 10','-','-','EDL 12','-'],
       ['IDL 8','-','FS 8','-','EDL+ST 6','EDL 12','-'],
@@ -298,7 +298,7 @@ const PLANS = {
       ['I-TDL 8','-','FS 10','-','EDL+ST 6','EDL 14','-'],
       ['I-TDL 10','-','FS 10','-','EDL+ST 6','EDL 14','-'],
       ['IDL 8','-','FS 10','-','EDL+ST 6/2','EDL/WK 10','-'] ] },
-  A55: { title: 'Aufbauplan bis Halbmarathon (10 km in 55:00)', src: 'Aderhold, 2018, S. 470 (Tab. A.5)',
+  A55: { title: 'Aufbauplan bis Halbmarathon', src: 'Aderhold, 2018, S. 470 (Tab. A.5)',
     weeks: [
       ['IDL 8','-','FS 10','-','-','EDL 12','-'],
       ['IDL 8','-','FS 8','-','EDL+ST 8','EDL 12','-'],
@@ -308,7 +308,7 @@ const PLANS = {
       ['I-TDL 8','-','FS 10','-','EDL+ST 8','EDL 14','-'],
       ['I-TDL 10','-','FS 10','-','EDL+ST 10','EDL 15','-'],
       ['IDL 8','-','FS 10','-','EDL+ST 8/2','EDL/WK 10','-'] ] },
-  A50: { title: 'Aufbauplan bis Halbmarathon (10 km in 50:00)', src: 'Aderhold, 2018, S. 470 (Tab. A.6)',
+  A50: { title: 'Aufbauplan bis Halbmarathon', src: 'Aderhold, 2018, S. 470 (Tab. A.6)',
     weeks: [
       ['IDL 8','-','FS 10','-','-','EDL 12','-'],
       ['IDL 8','-','FS 10','-','EDL+ST 8','EDL 14','-'],
@@ -318,7 +318,7 @@ const PLANS = {
       ['I-TDL 8','-','FS 10','-','EDL+ST 10','EDL 14','-'],
       ['I-TDL 10','-','FS 12','-','EDL+ST 12','EDL 16','-'],
       ['IDL 8','-','FS 10','-','EDL+ST 8/2','EDL/WK 12','-'] ] },
-  A46: { title: 'Aufbauplan bis Halbmarathon (10 km in 46:00)', src: 'Aderhold, 2018, S. 471 (Tab. A.7)',
+  A46: { title: 'Aufbauplan bis Halbmarathon', src: 'Aderhold, 2018, S. 471 (Tab. A.7)',
     weeks: [
       ['IDL 8','-','FS 10','-','EDL+ST 10','EDL 12','-'],
       ['IDL 8','-','FS 10','-','EDL+ST 10','EDL 14','-'],
@@ -549,8 +549,8 @@ const FACT_CATS = [
 ];
 const FACTS = [
   { id:'wr', cat:'rekorde', fun:true, title:'Die schnellsten Halbmarathons',
-    de:'Laut Buch hält Jacob Kiplimo die Halbmarathon-Weltbestzeit der Männer mit 57:31 min (Lissabon, 2021), bei den Frauen Letesenbent Gidey mit 1:02:52 h (2021). Zum Vergleich: Kiplimo lief damit im Schnitt rund 2:44 min pro Kilometer.',
-    en:'According to the book, Jacob Kiplimo ran 57:31 (Lisbon, 2021) and Letesenbet Gidey 1:02:52 (2021) – that is about 2:44 per km for Kiplimo!', src:'Beck, 2024' },
+    de:'Laut Beck lief Jacob Kiplimo 2021 in Lissabon den Halbmarathon in 57:31 min – das sind im Schnitt rund 2:44 min pro Kilometer! Bei den Frauen nennt Beck Letesenbet Gidey mit 1:02:52 h (2021). Rekorde werden immer wieder verbessert; das ist der Stand in Becks Buch von 2024.',
+    en:'According to Beck, Jacob Kiplimo ran the half marathon in 57:31 in Lisbon in 2021 – about 2:44 per km! For women, Beck names Letesenbet Gidey with 1:02:52 (2021). Records keep improving; this is the state of Beck\'s 2024 book.', src:'Beck, 2024' },
   { id:'olymp', cat:'rekorde', fun:true, title:'Kein olympischer Halbmarathon',
     de:'Der Halbmarathon ist bei Olympischen Spielen und Leichtathletik-Weltmeisterschaften keine Standarddistanz. Viele 10.000-m-Läufer wechseln mit zunehmendem Alter über den Halbmarathon zum Marathon.',
     en:'The half marathon is not a standard distance at the Olympics or the World Championships.', src:'Beck, 2024' },
@@ -719,7 +719,7 @@ function sessionLabel(s){
 /* Aufbauplan: ohne Ziel nach aktuellem Niveau; mit Ziel nach dem 10-km-Niveau, das zum Ziel passt
    (Halbmarathon-Prognose = 10-km-Zeit × 2,2234, Beck, 2024; Aderholds Pläne setzen jeweils ein 10-km-Niveau voraus, 2018, S. 469 ff., 480 f.) */
 function goalTenK(p){ return p && p.goal ? Math.round(p.goal/2.2234) : null; }
-function planLevel(p){ const g = goalTenK(p); return g && g < p.tenK ? levelFrom10k(g) : p.level; } // nur ein schnelleres Ziel hebt den Aufbauplan an
+function planLevel(p){ const g = goalTenK(p); return g ? levelFrom10k(g) : p.level; } /* mit Ziel: Aufbauplan passend zum Ziel */
 function canonFor(p){
   const seq=[]; preBlocks(p.longest||11, planLevel(p)).forEach(b => PLANS[b].weeks.forEach((w,i)=>seq.push({b, i, pre:true})));
   const hm = hmPlanForGoal(p.goal); PLANS[hm].weeks.forEach((w,i)=>seq.push({b:hm, i, pre:false}));
@@ -777,9 +777,9 @@ function fitWeeks(canon, from, n){
      Entlastungswochen im Rhythmus 3:1, in denen der Umfang sinkt (Aderhold, 2018, S. 101).
      Die Umsetzung (Start beim aktuellen Wochenumfang, gleichmäßige Steigerung bis zum Halbmarathon-Block, Entlastungswoche ca. 20 % weniger) ist eine ANNAHME DER APP.
    – Krafttraining einmal pro Woche am gewählten Tag (Aderhold, 2018, S. 154 f.). */
-const WEEK_KM = 25, PEAK_KM = 30, MIN_RUN = 5, START_MAX = 20, COURSE_MAX = 30;
+const WEEK_KM = 25, PEAK_KM = 30, MIN_RUN = 5, START_MAX = 20, COURSE_MAX = 30, HARD_MAX = 40; // über 30 km nur auf ausdrücklichen Wunsch
 /* Obergrenzen: ohne Angabe 25 km (Spitzenwochen 30 km); mit eigener Höchstgrenze diese (höchstens 30 km, Vorgabe der Kursleitung) */
-function kmLimits(p){ if (p && p.maxKm){ const m = Math.min(COURSE_MAX, p.maxKm); return { wk:m, pk:m }; } return { wk:WEEK_KM, pk:PEAK_KM }; }
+function kmLimits(p){ if (p && p.maxKm){ const m = Math.min(p.over30 ? HARD_MAX : COURSE_MAX, p.maxKm); return { wk:m, pk:m }; } return { wk:WEEK_KM, pk:PEAK_KM }; }
 const DEFAULT_DAYS = { n:3, A:0, B:2, L:5, K:4 };
 function daysOf(p){ return Object.assign({}, DEFAULT_DAYS, (p&&p.days)||{}); }
 function runDays(d){ return (d.n===2 ? [d.A, d.L] : [d.A, d.B, d.L]).slice().sort((x,y)=>x-y); }
@@ -793,7 +793,10 @@ function checkDays(d){
   if (d.K!=null && (adj(d.K,d.A) || (d.n===3 && adj(d.K,d.B)))) warn.push('Das Krafttraining liegt direkt neben einer fordernden Laufeinheit. Besser an einem Pausentag vor einem lockeren Lauf (Aderhold, 2018, S. 154 f.).');
   return { warn };
 }
-function longMin(p){ return Math.max(6, Math.round((p.longest||8)*0.7)); } // ANNAHME DER APP: langer Lauf anfangs nicht unter ca. 70 % deines bisher längsten Laufs
+const LONG_ABS = 8; // langer Lauf mind. 1,5 × 5 km (Vorgabe der Kursleitung) -> mind. 8 km
+function minWeekKm(n){ return (n===2 ? MIN_RUN : 2*MIN_RUN) + LONG_ABS; }
+/* ANNAHME DER APP: langer Lauf anfangs nicht unter ca. 70 % deines bisher längsten Laufs – aber nie so lang, dass die eigene Wochen-Höchstgrenze nicht mehr passt */
+function longMin(p){ const d=daysOf(p); let m = Math.max(6, Math.round((p.longest||8)*0.7)); if (p.maxKm) m = Math.min(m, Math.max(LONG_ABS, p.maxKm - (d.n===2?MIN_RUN:2*MIN_RUN))); return m; }
 function runFloor(p, firstLong){ const d=daysOf(p); return (d.n===2?MIN_RUN:2*MIN_RUN) + Math.min(firstLong||10, longMin(p)); }
 /* Wochenumfang-Grenze für Woche rw (0 = erste Trainingswoche) */
 function weekCap(p, rw, recovery){
@@ -928,7 +931,7 @@ function changeDays(state, days){ state.profile.days = days; replanFromNow(state
 
 /* 10-km-Niveau einer Woche: ohne Ziel das aktuelle; mit Ziel steigt es bis zum Halbmarathon-Block gleichmäßig auf das Zielniveau
    (Aderhold, 2018, S. 96: Trainingstempi beginnen deutlich unter der Zielgeschwindigkeit und steigern sich allmählich; die gleichmäßige Verteilung ist eine ANNAHME DER APP) */
-function weekTenK(state, wi){ const p = state.profile, g = goalTenK(p); if (!g || !p.tenK || g >= p.tenK) return p.tenK; /* langsameres Ziel: Training im aktuellen Tempo */ const n = state.weeks.length, hm = Math.max(0, n-8);
+function weekTenK(state, wi){ const p = state.profile, g = goalTenK(p); if (!g || !p.tenK) return p.tenK; if (g >= p.tenK) return g; /* Ziel langsamer als die Schätzung: vorsichtshalber im Ziel-Niveau trainieren (Schätzung aus Tempoangaben ist unsicher) */ const n = state.weeks.length, hm = Math.max(0, n-8);
   if (wi >= hm) return g; return Math.round(p.tenK + (g - p.tenK) * (wi+1) / (hm+1)); }
 /* Tempi nach Aderhold (2018, S. 89; nach Wenzel, 1991) */
 function paces(tenKsec){
@@ -951,6 +954,19 @@ function paceFor(code, arg, P){
   if (code==='WHL/WKT'||code==='HM') return f(P.HM)+u;
   if (code==='FS') return 'wechselnd: '+f(P.TDL)+' / '+f(P.EDL)+u;
   return '';
+}
+
+/* Konkreter Ablauf für Intervalle:
+   Wiederholungsläufe mit gleich langen Trabpausen, je schneller desto länger die Pause; Ein- und Auslaufen gehört immer dazu (Aderhold, 2018, S. 94);
+   Fahrtspiel als Pyramide mit erst länger, dann kürzer werdenden schnellen Abschnitten (Aderhold, 2018, S. 94), z. B. 1-2-3-2-1 km mit je 3 Min. lockerem Trab (Beck, 2024).
+   Die Aufteilung je nach Streckenlänge ist ein Vorschlag der App. */
+function intervalPlan(s, P){
+  const f = x => fmtPace10(x)+' min/km';
+  if (s.code==='WHL' || s.code==='WHL/WKT'){ const [a,b] = s.arg.split('x'); const v = s.code==='WHL/WKT' ? P.HM : (b==='1'?P.WHL1:b==='2'?P.WHL2:P.WHL3);
+    return { short: a+' × '+b+' km in '+fmtPace10(v)+', dazwischen Trabpause', steps:['ca. 10 Min. gemütlich einlaufen', a+' × '+b+' km '+(s.code==='WHL/WKT'?'im Renntempo ':'')+'in '+f(v), 'dazwischen jeweils gleich lange Trabpausen – gemütlich traben, bis du wieder gut sprechen kannst', 'ca. 10 Min. gemütlich auslaufen'] }; }
+  if (s.code==='FS' && s.km){ const pat = s.km<=6 ? [1,1,1] : s.km<=8 ? [1,2,1] : s.km<=10 ? [1,2,2,1] : [1,2,3,2,1];
+    return { short: pat.join('–')+' km schnell, dazwischen je 3 Min. gemütlich', steps:['ca. 10 Min. gemütlich einlaufen', 'schnelle Abschnitte als Pyramide: '+pat.join(' – ')+' km in ca. '+f(P.TDL), 'dazwischen jeweils ca. 3 Min. gemütlich traben', 'den Rest der Strecke gemütlich in ca. '+f(P.EDL)+' auslaufen'] }; }
+  return null;
 }
 
 /* Level-Schwellen: Level 1 bei 5 km, Level 2 bei 10 km, Level 3–11 bei 6–86 % der geplanten Gesamtkilometer (kleinere Sprünge).
@@ -2133,19 +2149,25 @@ function bindDays(form){
 }
 function daysSummary(d){ const it = d.n===2 ? [[d.A,'2. Lauf (abwechselnd)'],[d.L,'langer Lauf']] : [[d.A,'schneller Dauerlauf'],[d.B,'Intervalllauf'],[d.L,'langer Lauf']]; if (d.K!=null) it.push([d.K,'Krafttraining']);
   return it.sort((a,b)=>a[0]-b[0]).map(([x,t])=>`<b>${WD[x]}</b> ${t}`).join(' · '); }
-function bindKmWarn(form){ const i=form.querySelector('input[name=maxKm]'), w=form.querySelector('.kmwarn'); if(!i||!w) return; const u=()=>w.classList.toggle('hidden', !(+String(i.value).replace(',','.')>25)); i.addEventListener('input',u); u(); }
+function longCapText(n, mk){ if (!mk) return ''; const lmax = mk - (n===2 ? MIN_RUN : 2*MIN_RUN); if (lmax >= 16) return '';
+  return '⚠️ Mit '+n+' Lauftagen und höchstens '+mk+' km pro Woche kann dein langer Lauf nur bis etwa '+lmax+' km wachsen. In Aderholds Halbmarathon-Plänen wird der lange Lauf bis auf 18–22 km gesteigert (Aderhold, 2018, S. 480 f.). Überlege, eine höhere Grenze oder 2 Lauftage zu wählen.'; }
+function bindKmWarn(form){ const i=form.querySelector('input[name=maxKm]'), w=form.querySelector('.kmwarn'); if(!i||!w) return; let lw=form.querySelector('.longwarn'); if(!lw){ lw=document.createElement('p'); lw.className='warnbox small longwarn hidden'; w.after(lw); }
+  const u=()=>{ const v=+String(i.value).replace(',','.'); w.classList.toggle('hidden', !(v>25 && v<=30)); const k30=form.querySelector('.km30'); if (k30) k30.classList.toggle('hidden', !(v>30)); const n = +((form.querySelector('input[name=dn]:checked')||{}).value||3); const t = longCapText(n, v||null); lw.textContent=t; lw.classList.toggle('hidden', !t); };
+  i.addEventListener('input',u); form.querySelectorAll('input[name=dn]').forEach(r=>r.addEventListener('change',u)); u(); }
 function openDays(){
   const p=S.profile;
   sheet(`<h3>📅 Trainingstage & Umfang</h3><p class="muted small">Ab dieser Woche wird dein Plan angepasst; Erledigtes bleibt erhalten.</p>
     <form id="df">${daysFields(daysOf(p))}
-      <label>Höchstens so viele Kilometer pro Woche <span class="opt">freiwillig</span><div class="unit"><input name="maxKm" type="number" step="1" min="10" max="${COURSE_MAX}" inputmode="numeric" placeholder="25" value="${p.maxKm||''}"><span>km</span></div></label><p class="warnbox small kmwarn hidden">⚠️ Mehr als 25 km pro Woche können für den Körper belastend werden: Kilometerreiche Trainingsprogramme belasten den Bewegungsapparat stark – die Folge sind nicht selten Überlastungsverletzungen (Aderhold, 2018, S. 146). Plane bei hohem Umfang mindestens eine regenerative oder ausgleichende Einheit pro Woche ein (Aderhold, 2018, S. 147).</p>
+      <label>Höchstens so viele Kilometer pro Woche <span class="opt">freiwillig</span><div class="unit"><input name="maxKm" type="number" step="1" min="10" max="${HARD_MAX}" inputmode="numeric" placeholder="25" value="${p.maxKm||''}"><span>km</span></div></label><p class="warnbox small kmwarn hidden">⚠️ Mehr als 25 km pro Woche können für den Körper belastend werden: Kilometerreiche Trainingsprogramme belasten den Bewegungsapparat stark – die Folge sind nicht selten Überlastungsverletzungen (Aderhold, 2018, S. 146). Plane bei hohem Umfang mindestens eine regenerative oder ausgleichende Einheit pro Woche ein (Aderhold, 2018, S. 147).</p><div class="km30 hidden"><p class="warnbox small" style="border-color:#c0392b">🛑 <b>Mehr als 30 km pro Woche</b> gehen über die Empfehlung dieses Kurses hinaus. Kilometerreiche Trainingsprogramme belasten den Bewegungsapparat stark, die Folge sind nicht selten Überlastungsverletzungen (Aderhold, 2018, S. 146). Steigere den Umfang nur langsam (Aderhold, 2018, S. 102) und plane mindestens eine regenerative oder ausgleichende Einheit pro Woche ein (S. 147). Höchstens 40 km sind möglich.</p><label class="radio"><input type="checkbox" name="over30" ${p.over30?'checked':''}> Ja, ich möchte ausdrücklich mehr als 30 km pro Woche laufen.</label></div>
       <p id="dfe" class="err"></p><div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">Abbrechen</button><button class="btn">Übernehmen</button></div></form>`);
   bindDays($('#df')); bindKmWarn($('#df'));
   $('#df').onsubmit = e => { e.preventDefault(); const f=new FormData(e.target); const d = readDays(f); const c = checkDays(d); if (c.err) return;
     const mk = +String(f.get('maxKm')||'').replace(',','.') || null;
-    if (mk!=null && (mk<10 || mk>COURSE_MAX)) return $('#dfe').textContent='Bitte zwischen 10 und '+COURSE_MAX+' km – oder leer lassen.';
-    const flo = (d.n===2?MIN_RUN:2*MIN_RUN) + longMin(p); if (mk!=null && mk<flo) return $('#dfe').textContent='Mit '+d.n+' Lauftagen braucht der Plan mindestens ca. '+flo+' km pro Woche.';
-    const before = planSnap(); const kmChanged = (mk||null)!==(p.maxKm||null); p.maxKm = mk; if (kmChanged){ p.startKm = null; p.rampR = null; }
+    const o30 = !!f.get('over30');
+    if (mk!=null && (mk<10 || mk>HARD_MAX)) return $('#dfe').textContent='Bitte zwischen 10 und '+HARD_MAX+' km – oder leer lassen.';
+    if (mk!=null && mk>COURSE_MAX && !o30) return $('#dfe').textContent='Mehr als 30 km pro Woche nur, wenn du es unten ausdrücklich bestätigst.';
+    const flo = minWeekKm(d.n); if (mk!=null && mk<flo) return $('#dfe').textContent='Mit '+d.n+' Lauftagen braucht der Plan mindestens '+flo+' km pro Woche.';
+    const before = planSnap(); const kmChanged = (mk||null)!==(p.maxKm||null); p.maxKm = mk; p.over30 = !!(mk && mk>COURSE_MAX && o30); if (kmChanged){ p.startKm = null; p.rampR = null; }
     changeDays(S, d); syncUnlocks(); save(); closeSheet(); renderApp('plan'); showChanges(before, '📅 Tage & Umfang übernommen'); };
 }
 /* Vorher/Nachher-Vergleich der nächsten Wochen, damit Änderungen sichtbar werden */
@@ -2169,7 +2191,7 @@ function renderSetup(){
       <label>Wie schnell bist du durchschnittlich bei deinen Läufen unterwegs?<div class="unit">${tIn('avg',['m','s'],null,['6','15'])}<span>min/km</span></div><small>Durchschnittstempo pro Kilometer, z. B. aus deiner Laufuhr oder App.</small></label>
       <label>Bei welchem Tempo fühlst du dich beim Laufen richtig wohl?<div class="unit">${tIn('comfort',['m','s'],null,['6','45'])}<span>min/km</span></div><small>Das Tempo, bei dem du locker laufen und dich noch gut unterhalten kannst.</small></label>
       <label>Wie viele Kilometer läufst du zurzeit ungefähr pro Woche? <span class="opt">freiwillig</span><div class="unit"><input name="weekKm" type="number" step="1" min="0" max="80" inputmode="numeric" placeholder="z. B. 15"><span>km</span></div><small>Dein Plan startet bei diesem Umfang (höchstens ${START_MAX} km) und steigert sich dann langsam.</small></label>
-      <label>Wie viele Kilometer möchtest du höchstens pro Woche laufen? <span class="opt">freiwillig</span><div class="unit"><input name="maxKm" type="number" step="1" min="10" max="${COURSE_MAX}" inputmode="numeric" placeholder="z. B. 20"><span>km</span></div></label><p class="warnbox small kmwarn hidden">⚠️ Mehr als 25 km pro Woche können für den Körper belastend werden: Kilometerreiche Trainingsprogramme belasten den Bewegungsapparat stark – die Folge sind nicht selten Überlastungsverletzungen (Aderhold, 2018, S. 146). Plane bei hohem Umfang mindestens eine regenerative oder ausgleichende Einheit pro Woche ein (Aderhold, 2018, S. 147).</p>
+      <label>Wie viele Kilometer möchtest du höchstens pro Woche laufen? <span class="opt">freiwillig</span><div class="unit"><input name="maxKm" type="number" step="1" min="10" max="${HARD_MAX}" inputmode="numeric" placeholder="z. B. 20"><span>km</span></div></label><p class="warnbox small kmwarn hidden">⚠️ Mehr als 25 km pro Woche können für den Körper belastend werden: Kilometerreiche Trainingsprogramme belasten den Bewegungsapparat stark – die Folge sind nicht selten Überlastungsverletzungen (Aderhold, 2018, S. 146). Plane bei hohem Umfang mindestens eine regenerative oder ausgleichende Einheit pro Woche ein (Aderhold, 2018, S. 147).</p><div class="km30 hidden"><p class="warnbox small" style="border-color:#c0392b">🛑 <b>Mehr als 30 km pro Woche</b> gehen über die Empfehlung dieses Kurses hinaus. Kilometerreiche Trainingsprogramme belasten den Bewegungsapparat stark, die Folge sind nicht selten Überlastungsverletzungen (Aderhold, 2018, S. 146). Steigere den Umfang nur langsam (Aderhold, 2018, S. 102) und plane mindestens eine regenerative oder ausgleichende Einheit pro Woche ein (S. 147). Höchstens 40 km sind möglich.</p><label class="radio"><input type="checkbox" name="over30"> Ja, ich möchte ausdrücklich mehr als 30 km pro Woche laufen.</label></div>
       ${daysFields(DEFAULT_DAYS)}
       <label>Welches Zeitziel setzt du dir für den Halbmarathon? <span class="opt">freiwillig</span><div class="unit">${tIn('goal',['h','m'],null,['2','10'])}<span>Std : Min</span></div><small>Leer lassen, wenn du einfach ankommen willst. Du kannst dein Ziel später jederzeit ändern.</small></label>
       <fieldset><legend>Herzfrequenz</legend>
@@ -2192,12 +2214,14 @@ function renderSetup(){
     if (!avg || avg<150 || avg>720) return $('#setErr').textContent='Bitte gib dein Durchschnittstempo in Minuten und Sekunden pro km ein (z. B. 6 : 15).';
     if (!comfort || comfort<150 || comfort>720) return $('#setErr').textContent='Bitte gib dein Wohlfühltempo in Minuten und Sekunden pro km ein (z. B. 6 : 45).';
     const goal=readT(F,'goal'); if (goal!=null && (!(goal>=3600) || goal>4*3600)) return $('#setErr').textContent='Bitte gib dein Zeitziel in Stunden und Minuten ein (z. B. 2 : 10) – oder lass die Felder leer.';
-    if (maxKm!=null && (maxKm<10 || maxKm>COURSE_MAX)) return $('#setErr').textContent='Die Höchstgrenze pro Woche sollte zwischen 10 und '+COURSE_MAX+' km liegen – oder lass das Feld leer.';
-    const flo = (days.n===2?MIN_RUN:2*MIN_RUN) + Math.max(6, Math.round(longest*0.7));
-    if (maxKm!=null && maxKm < flo) return $('#setErr').textContent='Mit '+days.n+' Lauftagen und deinem längsten Lauf braucht der Plan mindestens ca. '+flo+' km pro Woche. Wähle eine höhere Grenze oder 2 Lauftage.';
+    const over30 = !!f.get('over30');
+    if (maxKm!=null && (maxKm<10 || maxKm>HARD_MAX)) return $('#setErr').textContent='Die Höchstgrenze pro Woche sollte zwischen 10 und '+HARD_MAX+' km liegen – oder lass das Feld leer.';
+    if (maxKm!=null && maxKm>COURSE_MAX && !over30) return $('#setErr').textContent='Mehr als 30 km pro Woche nur, wenn du es beim Feld „höchstens pro Woche“ ausdrücklich bestätigst.';
+    const flo = minWeekKm(days.n);
+    if (maxKm!=null && maxKm < flo) return $('#setErr').textContent='Mit '+days.n+' Lauftagen braucht der Plan mindestens '+flo+' km pro Woche (zwei Läufe à 5 km und ein langer Lauf ab 8 km). Wähle eine höhere Grenze oder 2 Lauftage.';
     const hr=f.get('hr'); const est = estimateLevel(avg, comfort);
     const game = S && S.game ? S.game : blank().game; S = normalize(null); S.game = game;
-    S.profile = { name: Store.user.name, start: f.get('start'), race: RACE_DEFAULT, longest, avg, comfort, tenK: est.tenK, level: est.level, goal, days, weekKm, maxKm,
+    S.profile = { name: Store.user.name, start: f.get('start'), race: RACE_DEFAULT, longest, avg, comfort, tenK: est.tenK, level: est.level, goal, days, weekKm, maxKm, over30: !!(maxKm && maxKm>COURSE_MAX && over30),
       hfmax: hr==='max' ? (+f.get('hfmax')||null) : null, age: hr==='age' ? (+f.get('age')||null) : null, noHR: hr==='none' };
     buildPlan(S); syncUnlocks(); save(); renderApp(REDO_SNAP?'plan':'today'); if (REDO_SNAP){ const b=REDO_SNAP; REDO_SNAP=null; showChanges(b, '✨ Neuer Plan erstellt'); } };
 }
@@ -2262,7 +2286,7 @@ function sessionHTML(wi, si){
     <button class="chk" data-act="done" aria-label="erledigt">${s.done?'✓':''}</button>
     <div class="sx"><div class="sd">${WD[(parseD(s.date).getDay()+6)%7]} ${niceD(s.date,{day:'2-digit',month:'2-digit'})}${isToday?' · <b>heute</b>':''}</div>
       <div class="sl">${sessIcon(s)} ${esc(sessionLabel(s))}</div>
-      ${pace?`<div class="spc">⏱️ <b>${esc(pace)}</b></div>`:''}
+      ${pace && !intervalPlan(s,P)?`<div class="spc">⏱️ <b>${esc(pace)}</b></div>`:''}${intervalPlan(s,P)?`<div class="spc">🔁 <b>${esc(intervalPlan(s,P).short)}</b></div>`:''}
       ${s.done ? `<div class="logsum">${esc(logSummary(s))||'Daten eintragen'} <a href="#" data-act="log">✎ bearbeiten</a></div>`:''}
     </div>
     <div class="sbtns"><button class="ib" data-act="info" aria-label="Infos">ⓘ</button><button class="skip" data-act="skip" title="ausgefallen">${s.skipped?'↺':'✕'}</button></div></div>`;
@@ -2304,7 +2328,8 @@ function sessionInfo(wi, si){
   if (s.code==='KT') return sheet(head+`<p>${esc(t.what)}</p><button class="btn" onclick="openStrength()">💪 Übungen ansehen</button><p class="src">${esc(t.src)}</p><button class="btn ghost mt" onclick="closeSheet()">OK</button>`);
   if (!k) return sheet(head+`<p>${esc(t.what||'')}</p>${t.feel?`<p>🗣️ ${esc(t.feel)}</p>`:''}<p class="src">${esc(t.src||'')}</p><button class="btn" onclick="closeSheet()">OK</button>`);
   const c = CATS[k];
-  sheet(head+`<p>${esc(t.what)}</p><details class="gl"><summary class="small"><b>Mehr über diese Laufart</b></summary>${catBody(k, wi)}</details>
+  const ip = intervalPlan(s, myPaces(wi));
+  sheet(head+`${ip?`<div class="ffbox light"><b>So läufst du diese Einheit</b><ol class="small">${ip.steps.map(x=>`<li>${esc(x)}</li>`).join('')}</ol><span class="src">Aderhold, 2018, S. 94; Beck, 2024 · Aufteilung: Vorschlag der App</span></div>`:''}<p>${esc(t.what)}</p><details class="gl"><summary class="small"><b>Mehr über diese Laufart</b></summary>${catBody(k, wi)}</details>
     <p class="small muted">Laut Aderhold: ${esc(t.name)} (${esc(s.code)}) · ${esc(t.src)}</p>${isCreator()&&t.dev?`<p class="devnote">🛠 ${esc(t.dev)}</p>`:''}<button class="btn" onclick="closeSheet()">OK</button>`);
 }
 function weekSessions(wi){ const w=S.weeks[wi]; const rest = w.rest.map((t,d)=>t==='-'||t==='P'?WD[d]:null).filter(Boolean);
@@ -2442,10 +2467,14 @@ function planInfo(){
   const p=S.profile, hmKey = hmPlanForGoal(p.goal), hmPlan = PLANS[hmKey], ambitious = p.goal && p.tenK > HM_REQ[hmKey] + 90, lim = kmLimits(p);
   sheet(`<h3>ⓘ Infos zu deinem Plan</h3>
     <p><b>Dein Ausgangsniveau:</b> längster Lauf ${String(p.longest||'–').replace('.',',')} km · Wohlfühltempo ${p.comfort?fmtPace(p.comfort):'–'} · Ø ${p.avg?fmtPace(p.avg):'–'} min/km → etwa <b>10 km in ${fmtTime(p.tenK)} min</b>.</p>
-    <p><b>Dein Ziel:</b> ${esc(goalText(p.goal))} → Halbmarathon-Plan ${esc(hmPlan.target)}${!p.goal?' (der ruhigste Plan – ideal, um gut anzukommen).': goalTenK(p) < p.tenK ? `. Dein Tempo wird bis zum Halbmarathon-Block schrittweise an dein Ziel herangeführt (ca. 10 km in ${fmtTime(goalTenK(p))} min; Aderhold, 2018, S. 96).` : '. Dein Ziel liegt im Rahmen deines jetzigen Niveaus – du trainierst in deinem aktuellen Tempo, nur das Renntempo richtet sich nach deinem Ziel.'}</p>
+    <p><b>Dein Ziel:</b> ${esc(goalText(p.goal))} → Halbmarathon-Plan ${esc(hmPlan.target)}${!p.goal?' (der ruhigste Plan – ideal, um gut anzukommen).': goalTenK(p) < p.tenK ? `. Dein Tempo wird bis zum Halbmarathon-Block schrittweise an dein Ziel herangeführt (ca. 10 km in ${fmtTime(goalTenK(p))} min; Aderhold, 2018, S. 96).` : '. Deine Tempoangaben deuten auf ein etwas höheres Niveau hin – weil diese Schätzung unsicher ist, richtet sich dein Plan vorsichtshalber nach deinem Ziel. Läufst du schneller, schlägt dir die App nach 3 eingetragenen Läufen ein besseres Ziel vor.'}</p>
+    <p><b>Warum sind die gemütlichen Läufe so ruhig?</b> Gemütliche Läufe bauen die Ausdauer auf und sollen gemütlich bleiben – auf dein Renntempo bereiten dich die schnellen Dauerläufe und die Intervalle im Renntempo vor. Laut Aderhold beginnt der Dauerlauf deutlich unter der Zielgeschwindigkeit und das Tempo wird je nach Phase angepasst (2018, S. 96).</p><p></p>
     ${ambitious?`<p class="warnbox small">Dein Ziel ist ehrgeizig: Der Plan setzt etwa 10 km in ${fmtTime(HM_REQ[hmKey])} min voraus, du liegst derzeit bei ca. ${fmtTime(p.tenK)} min. Lieber realistisch und verhaltener angehen (Aderhold, 2018, S. 141).</p>`:''}
+    <p><b>Dein Aufbauplan</b> stammt aus Aderholds Tabellen für ein Niveau von etwa ${esc(LEVELS[planLevel(p)].label)} – das ist die Stufe, für die der Plan gedacht ist, kein Lauf, den du schaffen musst.</p>
     <p><b>Deine Woche:</b> ${daysSummary(daysOf(p))}</p>
     <p><b>Umfang:</b> Start bei ca. ${String(p.startKm||'–').replace('.',',')} km pro Woche, langsame Steigerung bis ${lim.wk} km${lim.pk>lim.wk?` (Wochen mit dem längsten Lauf bis ${lim.pk} km)`:''}; jede 4. Woche ist leichter. ${p.maxKm?'Die Obergrenze hast du selbst festgelegt.':'Die Obergrenze (25/30 km, max. 3 Läufe) ist eine Vorgabe der Kursleitung.'}</p>
+    ${p.maxKm>COURSE_MAX ? `<p class="warnbox small">🛑 Du hast ausdrücklich mehr als 30 km pro Woche gewählt (${p.maxKm} km). Das geht über die Empfehlung dieses Kurses hinaus: Hohe Umfänge belasten den Bewegungsapparat stark, Überlastungsverletzungen sind nicht selten (Aderhold, 2018, S. 146). Achte auf Erholung und mindestens eine regenerative Einheit pro Woche (S. 147).</p>` : ''}
+    ${longCapText(daysOf(p).n, p.maxKm) ? `<p class="warnbox small">${esc(longCapText(daysOf(p).n, p.maxKm))}</p>` : ''}
     <p class="small">Aderhold rät, langsam aufzubauen, den Umfang bedächtig zu steigern und die langen Läufe nach und nach zu verlängern (2018, S. 102), mit leichteren Wochen im Rhythmus 3:1 (S. 95). Die genaue Umsetzung (Startwert, gleichmäßige Steigerung, ca. 20 % weniger in leichten Wochen, schrittweise Annäherung ans Zieltempo) ist eine <b>Annahme der App</b>.</p>
     <details class="gl"><summary class="small"><b>So schätzt die App dein Niveau</b></summary><p class="small">Dein <b>Wohlfühltempo</b> wird als gemütlicher Dauerlauf gewertet (laut Aderhold: extensiver Dauerlauf; Aderhold, 2018, S. 138 f.: wohlfühlen und unterhalten = 60–75 % HFmax). Dass dein <b>Durchschnittstempo</b> zwischen gemütlichem und zügigem Dauerlauf liegt, ist eine <b>Annahme der App</b>. Daraus berechnet die App mit Aderholds Tempoformeln (S. 89) deine 10-km-Leistung und nimmt vorsichtshalber den langsameren Wert. Die Tempi im Plan sind auf 10 Sekunden gerundet.</p></details>
     ${S.notices.length?S.notices.map(n=>`<p class="small">ℹ️ ${esc(n)}</p>`).join(''):''}
